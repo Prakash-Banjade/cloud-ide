@@ -7,8 +7,8 @@ async function bootstrap() {
   
   const configService = app.get(ConfigService);
   
-  const PORT = configService.get("PORT") || 3000;
+  const PORT = configService.get("PORT") || 3001;
   await app.listen(PORT);
-  console.log(`Api gateway listening on ${await app.getUrl()}`);
+  console.log(`Runner listening on ${await app.getUrl()}`);
 }
 bootstrap();

@@ -18,27 +18,49 @@ spec:
         - name: workspace-volume
           emptyDir: {}
       initContainers:
-        - name: copy-s3-resources
-          image: amazon/aws-cli
-          command: ["/bin/sh", "-c"]
+        - name: copy-minio-resources
+          image: minio/mc
+          command: ["sh", "-c"]
           args:
-            - >
-              aws s3 cp s3://repl/code/service_name/ /workspace/ --recursive &&
-              echo "Resources copied from S3";
+            - |
+              set -e
+              # Use service DNS, not localhost
+              mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc cp --recursive minio/cloud-ide/projects/service_name/ /workspace/
           env:
-            - name: AWS_ACCESS_KEY_ID
-              value: "your_aws_key_id"
-            - name: AWS_SECRET_ACCESS_KEY
-              value: "your_aws_secret"
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-creds
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-creds
+                  key: MINIO_SECRET_KEY
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
       containers:
         - name: runner
-          image: 100xdevs/runner:latest
+          image: prakashbanjade/cloud-ide-runner:latest
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-creds
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-creds
+                  key: MINIO_SECRET_KEY
+            - name: MINIO_ENDPOINT
+              value: minio.minio-dev.svc.cluster.local
+            - name: MINIO_PORT
+              value: "9000"
           ports:
-            - containerPort: 3001
-            - containerPort: 3000
+            - containerPort: 3001 # expose ws port
+            - containerPort: 3000 # expose the port where the application might run on. eg: a node app running on port 3000
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
@@ -76,7 +98,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: service_name.peetcode.com
+    - host: service_name.runner.com # ws endpoint
       http:
         paths:
           - path: /
@@ -86,7 +108,7 @@ spec:
                 name: service_name
                 port:
                   number: 3001
-    - host: service_name.autogpt-cloud.com
+    - host: service_name.node-app.com # node/python app endpoint
       http:
         paths:
           - path: /

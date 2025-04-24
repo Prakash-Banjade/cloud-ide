@@ -1,5 +1,5 @@
-# Base image with build dependencies
-FROM node:20-alpine AS build
+# Base image with build dependencies, no alpine because to include Python, make needed by 'node-pty' as build dependency
+FROM node:20 AS build
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:20-alpine AS production
+FROM node:20 AS production
 
 WORKDIR /usr/src/app
 
