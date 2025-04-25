@@ -7,7 +7,11 @@ import { File, ItemType, RemoteFile } from "@/lib/file-manager";
 import { ORCHESTRATOR_URL } from "@/lib/utils";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CodeEditor } from "./editor/editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { Play, Save } from "lucide-react";
+import { FileTree, TreeItem } from "./file-tree";
+import { TerminalComponent } from "./terminal";
 
 export default function CodingPageClient() {
     const params = useParams();
@@ -39,23 +43,23 @@ export const CodingPagePostPodCreation = () => {
 
     const socket = useSocket("node-node"); // hardcoded for now
 
-    const [fileStructure, setFileStructure] = useState<RemoteFile[]>([]);
-    const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
+    const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
+    const [selectedFile, setSelectedFile] = useState<TreeItem | undefined>(undefined);
     const [showOutput, setShowOutput] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         if (socket) {
-            socket.on('loaded', ({ rootContent }: { rootContent: RemoteFile[] }) => {
+            socket.on('loaded', ({ rootContent }: { rootContent: TreeItem[] }) => {
                 setLoaded(true);
                 setFileStructure(rootContent);
             });
         }
     }, [socket]);
 
-    const onSelect = (file: File) => {
-        if (file.type === ItemType.DIRECTORY) {
-            socket?.emit("fetchDir", file.path, (data: RemoteFile[]) => {
+    const onSelect = (file: TreeItem) => {
+        if (file.type === "folder") {
+            socket?.emit("fetchDir", file.path, (data: TreeItem[]) => {
                 setFileStructure(prev => {
                     const allFiles = [...prev, ...data];
                     return allFiles.filter((file, index, self) =>
@@ -75,20 +79,81 @@ export const CodingPagePostPodCreation = () => {
         return "Loading...";
     }
 
+    console.log(fileStructure)
+
     if (!socket) return null;
 
     return (
-        <section className="h-screen">
-            <Button onClick={() => setShowOutput(!showOutput)}>See output</Button>
-            <section className="flex w-full">
-                <div>
-                    <CodeEditor socket={socket} selectedFile={selectedFile} onSelect={onSelect} files={fileStructure} />
+        <div className="h-screen flex flex-col bg-[#1e1e1e] text-white">
+            {/* Top bar */}
+            <div className="h-12 border-b border-[#333] flex items-center px-4 bg-[#252526]">
+                <div className="flex-1 flex items-center gap-2">
+                    <span className="font-semibold">Cloud IDE</span>
+                    <span className="text-xs text-gray-400">v1.0.0</span>
                 </div>
-                <div>
-                    {/* {showOutput && <Output />}
-                    <Terminal socket={socket} /> */}
+                <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" className="gap-1">
+                        <Save size={16} />
+                        Save
+                    </Button>
+                    <Button size="sm" variant="default" className="gap-1">
+                        <Play size={16} />
+                        Run
+                    </Button>
                 </div>
-            </section>
-        </section>
+            </div>
+
+            {/* Main content */}
+            <ResizablePanelGroup direction="horizontal" className="flex-1">
+                {/* File tree panel */}
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-[#252526]">
+                    <div className="p-2 text-sm font-medium text-gray-400 uppercase">Explorer</div>
+                    <FileTree files={fileStructure} onSelectFile={onSelect} selectedFile={selectedFile?.name ?? ""} />
+                </ResizablePanel>
+
+                <ResizableHandle withHandle />
+
+                {/* Code editor panel */}
+                <ResizablePanel defaultSize={50} minSize={30}>
+                    <div className="h-full flex flex-col">
+                        <div className="px-2 py-1 text-sm bg-[#2d2d2d] border-b border-[#333]">
+                            {
+                                selectedFile?.path.split("/").join(" > ")
+                            }
+                        </div>
+                        {/* <CodeEditor code={code} language={selectedFile.split(".").pop()} onChange={setCode} /> */}
+                    </div>
+                </ResizablePanel>
+
+                <ResizableHandle withHandle />
+
+                {/* Terminal and preview panel */}
+                <ResizablePanel defaultSize={30} minSize={20}>
+                    <Tabs defaultValue="terminal" className="h-full flex flex-col">
+                        <TabsList className="mx-2 mt-1 bg-[#2d2d2d]">
+                            <TabsTrigger value="terminal">Terminal</TabsTrigger>
+                            <TabsTrigger value="preview">Preview</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="terminal" className="flex-1 p-0 m-0">
+                            <TerminalComponent socket={socket} />
+                        </TabsContent>
+                        <TabsContent value="preview" className="flex-1 p-0 m-0">
+                            {/* <Preview /> */}
+                        </TabsContent>
+                    </Tabs>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+        </div>
+    );
+}
+
+function SelectedFileBreadCrumb(selectedFile: TreeItem | undefined, tree: TreeItem[]) {
+    if (!selectedFile || selectedFile.type === 'folder') return null;
+
+    return (
+        <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-400">File</span>
+            <span className="text-sm font-medium text-gray-400">{selectedFile?.name}</span>
+        </div>
     );
 }

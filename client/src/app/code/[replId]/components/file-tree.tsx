@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 // File type icons mapping
 const fileIcons = {
-    javascript: <FileCode className="h-4 w-4 text-yellow-400" />,
+    js: <FileCode className="h-4 w-4 text-yellow-400" />,
     jsx: <FileCode className="h-4 w-4 text-blue-400" />,
     tsx: <FileCode className="h-4 w-4 text-blue-500" />,
     css: <FileCode className="h-4 w-4 text-purple-400" />,
@@ -17,8 +17,46 @@ const fileIcons = {
     default: <FileIcon className="h-4 w-4 text-gray-400" />,
 }
 
-export function FileTree({ files, onSelectFile, selectedFile }) {
-    const renderFileTree = (items, level = 0) => {
+interface FileItem {
+    name: string
+    type: "file"
+    path: string
+    content?: string
+    language?: string
+}
+
+interface FolderItem {
+    name: string
+    type: "folder"
+    path: string
+    expanded?: boolean
+    children: (FileItem | FolderItem)[]
+}
+
+export type TreeItem = (FileItem | FolderItem);
+
+interface FileTreeProps {
+    files: TreeItem[]
+    onSelectFile: (treeItem: TreeItem) => void
+    selectedFile: string
+}
+
+interface FolderItemProps {
+    item: FolderItem
+    level: number
+    onSelectFile: (treeItem: TreeItem) => void
+    selectedFile: string
+}
+
+interface FileItemProps {
+    item: FileItem
+    level: number
+    onSelectFile: (treeItem: TreeItem) => void
+    isSelected: boolean
+}
+
+export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
+    const renderFileTree = (items: (FileItem | FolderItem)[], level = 0) => {
         return items.map((item) => {
             if (item.type === "folder") {
                 return (
@@ -47,7 +85,7 @@ export function FileTree({ files, onSelectFile, selectedFile }) {
     return <div className="text-sm overflow-auto h-full">{renderFileTree(files)}</div>
 }
 
-function FolderItem({ item, level, onSelectFile, selectedFile }) {
+function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps) {
     const [expanded, setExpanded] = useState(item.expanded || false)
 
     const toggleExpand = () => {
@@ -106,18 +144,18 @@ function FolderItem({ item, level, onSelectFile, selectedFile }) {
     )
 }
 
-function FileItem({ item, level, onSelectFile, isSelected }) {
+function FileItem({ item, level, onSelectFile, isSelected }: FileItemProps) {
     const paddingLeft = `${level * 12 + 8}px`
 
     const getFileIcon = () => {
-        return fileIcons[item.language] || fileIcons.default
+        return item.language && fileIcons[item.language as keyof typeof fileIcons] || fileIcons.default
     }
 
     return (
         <div
             className={cn("flex items-center py-1 hover:bg-[#2a2d2e] cursor-pointer", isSelected && "bg-[#37373d]")}
             style={{ paddingLeft }}
-            onClick={() => onSelectFile(item.name)}
+            onClick={() => onSelectFile(item)}
         >
             <span className="mr-1 ml-5">{getFileIcon()}</span>
             <span>{item.name}</span>

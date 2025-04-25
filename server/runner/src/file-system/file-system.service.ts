@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 
-interface File {
+export interface File {
     type: "file" | "dir";
     name: string;
+    path: string;
+    language?: string
 }
 
 @Injectable()
@@ -15,7 +17,16 @@ export class FileSystemService {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(files.map(file => ({ type: file.isDirectory() ? "dir" : "file", name: file.name, path: `${baseDir}/${file.name}` })));
+                    resolve(files.map(file => {
+                        const isDir = file.isDirectory();
+
+                        return {
+                            type: isDir ? "dir" : "file",
+                            name: file.name,
+                            path: `${baseDir}/${file.name}`,
+                            ...(!isDir ? { language: file.name.split('.').pop() } : {}),
+                        }
+                    }));
                 }
             });
         });
