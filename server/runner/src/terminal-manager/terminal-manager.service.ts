@@ -30,7 +30,7 @@ export class TerminalManagerService {
     }
 
     clear(terminalId: string) {
-        this.sessions[terminalId].terminal.kill();
+        this.sessions[terminalId]?.terminal.kill();
         delete this.sessions[terminalId];
     }
 

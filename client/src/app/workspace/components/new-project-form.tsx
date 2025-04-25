@@ -3,15 +3,19 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ELanguage } from "@/types"
 import { Icons } from "@/components/icons"
+import { API_URL } from "@/lib/utils"
+import LoadingButton from "@/components/loading-button"
+import { Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAppMutation } from "@/hooks/useAppMutation"
 
 const formSchema = z.object({
-    projectName: z
+    replId: z
         .string()
         .min(3, { message: "Project name must be at least 3 characters." })
         .max(50, { message: "Project name must be less than 50 characters." })
@@ -22,15 +26,27 @@ const formSchema = z.object({
 })
 
 export function NewProjectForm() {
+    const router = useRouter();
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            projectName: "",
+            replId: "",
         },
-    })
+    });
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
+    const { mutateAsync, isPending } = useAppMutation();
+
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        const res = await mutateAsync({
+            endpoint: `${API_URL}/projects`,
+            method: 'post',
+            data: values
+        });
+
+        if (res.status === 201) {
+            router.push(`/code/${values.replId}`);
+        }
     }
 
     return (
@@ -39,7 +55,7 @@ export function NewProjectForm() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                         control={form.control}
-                        name="projectName"
+                        name="replId"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Project Name</FormLabel>
@@ -79,9 +95,14 @@ export function NewProjectForm() {
                             </FormItem>
                         )}
                     />
-                    <Button type="submit" className="w-full">
-                        Create Project
-                    </Button>
+                    <LoadingButton
+                        type="submit"
+                        isLoading={isPending}
+                        className="w-full"
+                        loadingText="Creating Project..."
+                    >
+                        <Plus />Create Project
+                    </LoadingButton>
                 </form>
             </Form>
         </section>

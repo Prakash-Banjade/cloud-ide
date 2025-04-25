@@ -7,6 +7,13 @@ async function bootstrap() {
   const app = await NestFactory.create(OrchestratorModule);
   const configService = app.get(ConfigService);
 
+  app.enableCors({
+    origin: '*',
+    credentials: true,
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'DELETE', 'PATCH'],
+  });
+  
   app.setGlobalPrefix("api");
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
