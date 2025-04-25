@@ -14,7 +14,7 @@ async function bootstrap() {
     transform: true,
   }));
 
-  const PORT = configService.get("PORT") || 3000;
+  const PORT = configService.get("PORT") || 3002;
   await app.listen(PORT);
   console.log(`Api gateway listening on ${await app.getUrl()}`);
 }

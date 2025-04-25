@@ -5,6 +5,8 @@ import * as yaml from 'yaml';
 import { ResourceStartDto } from './dto/start-resource.dto';
 import * as path from 'path';
 
+const namespace = "qubide" as const;
+
 @Injectable()
 export class OrchestratorService {
   constructor(
@@ -15,7 +17,6 @@ export class OrchestratorService {
 
   async startResource(dto: ResourceStartDto) {
     const { replId } = dto; // Assume a unique identifier for each user
-    const namespace = "default";
 
     const kubeManifests = this.readAndParseKubeYaml(path.join(__dirname, "./kubernetes/manifest/service.yaml"), replId);
 
