@@ -1,0 +1,89 @@
+"use client"
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ELanguage } from "@/types"
+import { Icons } from "@/components/icons"
+
+const formSchema = z.object({
+    projectName: z
+        .string()
+        .min(3, { message: "Project name must be at least 3 characters." })
+        .max(50, { message: "Project name must be less than 50 characters." })
+        .refine((value) => /^[a-zA-Z0-9-_]+$/.test(value), {
+            message: "Project name can only contain letters, numbers, hyphens, and underscores.",
+        }),
+    language: z.nativeEnum(ELanguage, { errorMap: () => ({ message: "Please select a programming language." }) }),
+})
+
+export function NewProjectForm() {
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            projectName: "",
+        },
+    })
+
+    function onSubmit(values: z.infer<typeof formSchema>) {
+        console.log(values)
+    }
+
+    return (
+        <section>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="projectName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Project Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="my-awesome-project" {...field} />
+                                </FormControl>
+                                <FormDescription>This will be the unique identifier for your project.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="language"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Programming Language</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select a language" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value={ELanguage.NODE_JS}>
+                                            <Icons.node />
+                                            Node JS
+                                        </SelectItem>
+                                        <SelectItem value={ELanguage.PYTHON}>
+                                            <Icons.python />
+                                            Python
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Select the primary language for your project.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <Button type="submit" className="w-full">
+                        Create Project
+                    </Button>
+                </form>
+            </Form>
+        </section>
+    )
+}
