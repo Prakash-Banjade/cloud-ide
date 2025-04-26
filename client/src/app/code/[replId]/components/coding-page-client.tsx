@@ -9,13 +9,14 @@ import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ChevronRight, CircleCheck, LoaderCircle, Play } from "lucide-react";
-import { TFileItem, FileTree, TreeItem } from "./file-tree";
+import { FileTree, TreeItem } from "./file-tree";
 import { TerminalComponent } from "./terminal";
 import { fetchDirAsync, findItem, onItemSelect, updateTree } from "./file-manager-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CodeEditor } from "./editor/editor";
 import { Badge } from "@/components/ui/badge";
-import { useCodingEvents } from "@/context/coding-events-provider";
+import { useCodingStates } from "@/context/coding-states-provider";
+import ExplorerActions from "./explorer-actions";
 
 export default function CodingPageClient() {
     const params = useParams();
@@ -46,12 +47,10 @@ export const CodingPagePostPodCreation = () => {
     const router = useRouter();
     const searchParams = useSearchParams(); // used to get path
     const replId = params.replId ?? '';
-    const { isSyncing } = useCodingEvents();
+    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile } = useCodingStates();
 
     const socket = useSocket("node-node"); // hardcoded for now
 
-    const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
-    const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [showOutput, setShowOutput] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
@@ -107,6 +106,8 @@ export const CodingPagePostPodCreation = () => {
     }, [socket])
 
     const onSelect = (file: TreeItem) => {
+        setSelectedItem(file); // can be a folder or file
+        
         if (socket) {
             onItemSelect(file, setFileStructure, setSelectedFile, socket);
         }
@@ -152,14 +153,14 @@ export const CodingPagePostPodCreation = () => {
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel
-                    defaultSize={20}
-                    minSize={15}
-                    maxSize={30}
-                    className="bg-sidebar"
-                >
-                    <div className="p-2 pl-4 text-sm font-medium uppercase">Explorer</div>
-                    <FileTree files={fileStructure} onSelectFile={onSelect} selectedFile={selectedFile?.name ?? ""} />
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
+                    <section className="p-2 pl-4 flex justify-between items-center gap-4">
+                        <div className="text-sm font-medium uppercase">Explorer</div>
+                        <div className="flex items-center gap-0.5 text-muted-foreground">
+                            <ExplorerActions />
+                        </div>
+                    </section>
+                    <FileTree onSelectFile={onSelect} />
                 </ResizablePanel>
 
                 <ResizableHandle withHandle />
@@ -168,9 +169,9 @@ export const CodingPagePostPodCreation = () => {
                 <ResizablePanel defaultSize={50} minSize={30}>
                     <div className="h-full flex flex-col">
                         <div className="px-2 py-1 text-sm bg-secondary">
-                            <SelectedFileBreadCrumb selectedFile={selectedFile} />
+                            <SelectedFileBreadCrumb />
                         </div>
-                        <CodeEditor selectedFile={selectedFile} socket={socket} />
+                        <CodeEditor socket={socket} />
                     </div>
                 </ResizablePanel>
 
@@ -184,7 +185,7 @@ export const CodingPagePostPodCreation = () => {
                             <TabsTrigger value="preview">Preview</TabsTrigger>
                         </TabsList>
                         <TabsContent value="terminal" className="flex-1 p-0 m-0">
-                            <TerminalComponent socket={socket} />
+                            {/* <TerminalComponent socket={socket} /> */}
                         </TabsContent>
                         <TabsContent value="preview" className="flex-1 p-0 m-0">
                             {/* <Preview /> */}
@@ -196,8 +197,10 @@ export const CodingPagePostPodCreation = () => {
     );
 }
 
-function SelectedFileBreadCrumb({ selectedFile }: { selectedFile: TreeItem | undefined }) {
-    if (!selectedFile || selectedFile.type === 'dir') return null;
+function SelectedFileBreadCrumb() {
+    const { selectedFile } = useCodingStates();
+
+    if (!selectedFile) return null;
 
     const parts = selectedFile.path.split("/");
     parts.shift();

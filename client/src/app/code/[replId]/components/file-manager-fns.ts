@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction } from "react";
 import { Socket } from "socket.io-client";
 import { TFileItem, TreeItem } from "./file-tree";
+import { Dispatch, SetStateAction } from "react";
 
 export const onItemSelect = (
     file: TreeItem,

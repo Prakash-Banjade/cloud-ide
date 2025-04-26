@@ -2,6 +2,7 @@
 
 import { ChevronRight, ChevronDown, FileIcon, Folder, FolderOpen, FileCode, FileText, FileJson } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCodingStates } from "@/context/coding-states-provider"
 
 // File type icons mapping
 const fileIcons = {
@@ -35,26 +36,24 @@ interface TFolderItem {
 export type TreeItem = (TFileItem | TFolderItem);
 
 interface FileTreeProps {
-    files: TreeItem[]
     onSelectFile: (treeItem: TreeItem) => void
-    selectedFile: string
 }
 
 interface FolderItemProps {
     item: TFolderItem
     level: number
     onSelectFile: (treeItem: TreeItem) => void
-    selectedFile: string
 }
 
 interface FileItemProps {
     item: TFileItem
     level: number
     onSelectFile: (treeItem: TreeItem) => void
-    isSelected: boolean
 }
 
-export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
+export function FileTree({ onSelectFile }: FileTreeProps) {
+    const { fileStructure } = useCodingStates();
+
     const renderFileTree = (items: (TFileItem | TFolderItem)[], level = 0) => {
         return items.map((item) => {
             if (item.type === "dir") {
@@ -64,7 +63,6 @@ export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
                         item={item}
                         level={level}
                         onSelectFile={onSelectFile}
-                        selectedFile={selectedFile}
                     />
                 )
             } else {
@@ -74,23 +72,25 @@ export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
                         item={item}
                         level={level}
                         onSelectFile={onSelectFile}
-                        isSelected={selectedFile === item.name}
                     />
                 )
             }
         })
     }
 
-    return <div className="text-sm overflow-auto h-full">{renderFileTree(files)}</div>
+    return <div className="text-sm overflow-auto h-full">{renderFileTree(fileStructure)}</div>
 }
 
-function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps) {
-    const paddingLeft = `${level * 12 + 8}px`
+function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
+    const { selectedItem } = useCodingStates();
+    const isSelected = item.path === selectedItem?.path;
+
+    const paddingLeft = `${level * 12 + 8}px`;
 
     return (
         <div>
             <div
-                className="flex items-center py-1 hover:bg-sidebar-accent cursor-pointer"
+                className={cn("flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
                 style={{ paddingLeft }}
                 onClick={() => onSelectFile(item)}
             >
@@ -116,7 +116,6 @@ function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps
                                     item={child}
                                     level={level + 1}
                                     onSelectFile={onSelectFile}
-                                    selectedFile={selectedFile}
                                 />
                             )
                         } else {
@@ -126,7 +125,6 @@ function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps
                                     item={child}
                                     level={level + 1}
                                     onSelectFile={onSelectFile}
-                                    isSelected={selectedFile === child.name}
                                 />
                             )
                         }
@@ -137,8 +135,11 @@ function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps
     )
 }
 
-function FileItem({ item, level, onSelectFile, isSelected }: FileItemProps) {
-    const paddingLeft = `${level * 12 + 8}px`
+function FileItem({ item, level, onSelectFile }: FileItemProps) {
+    const { selectedFile, selectedItem } = useCodingStates();
+    const isSelected = item.path === selectedFile?.path && item.path === selectedItem?.path; // for file to be selected, both path must match
+
+    const paddingLeft = `${level * 12 + 8}px`;
 
     const getFileIcon = () => {
         return item.language && fileIcons[item.language as keyof typeof fileIcons] || fileIcons.default

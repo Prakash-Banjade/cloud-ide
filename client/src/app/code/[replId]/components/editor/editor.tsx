@@ -1,12 +1,11 @@
 import Editor from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
-import { TFileItem } from "../file-tree";
 import { useTheme } from "next-themes";
-import { useCodingEvents } from "@/context/coding-events-provider";
+import { useCodingStates } from "@/context/coding-states-provider";
 
-export const CodeEditor = ({ selectedFile, socket }: { selectedFile: TFileItem | undefined, socket: Socket }) => {
+export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
-    const { setIsSyncing } = useCodingEvents();
+    const { setIsSyncing, selectedFile } = useCodingStates();
 
     if (!selectedFile) return null;
 

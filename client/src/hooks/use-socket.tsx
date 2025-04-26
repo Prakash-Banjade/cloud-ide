@@ -6,6 +6,7 @@ export function useSocket(replId: string) {
 
     useEffect(() => {
         // const newSocket = io(`ws://${replId}.peetcode.com`);
+        console.log(1, "from useSocket")
         const newSocket = io(`ws://127.0.0.1:3003`);
         setSocket(newSocket);
 
