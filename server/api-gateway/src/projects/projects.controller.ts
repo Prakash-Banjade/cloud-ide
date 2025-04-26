@@ -1,15 +1,24 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from './dto/create-project.dto';
+import { CreateProjectDto, ResourceStartDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { OrchestratorService } from './orchestrator.service';
 
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly orchestratorService: OrchestratorService
+  ) { }
 
   @Post()
   create(@Body() createProjectDto: CreateProjectDto) {
     return this.projectsService.create(createProjectDto);
+  }
+
+  @Post('start')
+  startResource(@Body() resourceStartDto: ResourceStartDto) {
+    return this.orchestratorService.startResource(resourceStartDto);
   }
 
   @Get()

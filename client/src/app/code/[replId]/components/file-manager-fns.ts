@@ -1,11 +1,11 @@
 import { Dispatch, SetStateAction } from "react";
-import { TreeItem } from "./file-tree";
+import { FileItem, TreeItem } from "./file-tree";
 import { Socket } from "socket.io-client";
 
 export const onItemSelect = (
     file: TreeItem,
     setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
-    setSelectedFile: Dispatch<SetStateAction<TreeItem | undefined>>,
+    setSelectedFile: Dispatch<SetStateAction<FileItem | undefined>>,
     socket: Socket
 ) => {
     if (file.type === "dir") {

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { ChevronRight, ChevronDown, FileIcon, Folder, FolderOpen, FileCode, FileText, FileJson } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -17,7 +16,7 @@ const fileIcons = {
     default: <FileIcon className="h-4 w-4 text-gray-400" />,
 }
 
-interface FileItem {
+export interface FileItem {
     name: string
     type: "file"
     path: string

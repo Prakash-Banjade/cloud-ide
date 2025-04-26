@@ -3,6 +3,10 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "assets": [
+      "kubernetes/manifest/**/*",
+      "/kubernetes/manifest/**/*"
+    ],
     "deleteOutDir": true
   }
 }

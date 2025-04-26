@@ -3,16 +3,17 @@
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/hooks/use-socket";
 import { useAppMutation } from "@/hooks/useAppMutation";
-import { cn, ORCHESTRATOR_URL } from "@/lib/utils";
+import { API_URL, cn } from "@/lib/utils";
 import { useParams } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ChevronRight, Play, Save } from "lucide-react";
-import { FileTree, TreeItem } from "./file-tree";
+import { FileItem, FileTree, TreeItem } from "./file-tree";
 import { TerminalComponent } from "./terminal";
 import { onItemSelect } from "./file-manager-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CodeEditor } from "./editor/editor";
 
 export default function CodingPageClient() {
     const params = useParams();
@@ -22,7 +23,7 @@ export default function CodingPageClient() {
     useEffect(() => {
         const startResources = async () => {
             await mutateAsync({
-                endpoint: `${ORCHESTRATOR_URL}/start`,
+                endpoint: `${API_URL}/projects/start`,
                 method: 'post',
                 data: { replId: params.replId }
             });
@@ -45,7 +46,7 @@ export const CodingPagePostPodCreation = () => {
     const socket = useSocket("node-node"); // hardcoded for now
 
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
-    const [selectedFile, setSelectedFile] = useState<TreeItem | undefined>(undefined);
+    const [selectedFile, setSelectedFile] = useState<FileItem | undefined>(undefined);
     const [showOutput, setShowOutput] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
@@ -107,7 +108,7 @@ export const CodingPagePostPodCreation = () => {
                         <div className="px-2 py-1 text-sm bg-secondary">
                             <SelectedFileBreadCrumb selectedFile={selectedFile} />
                         </div>
-                        {/* <CodeEditor code={code} language={selectedFile.split(".").pop()} onChange={setCode} /> */}
+                        <CodeEditor selectedFile={selectedFile} socket={socket} />
                     </div>
                 </ResizablePanel>
 

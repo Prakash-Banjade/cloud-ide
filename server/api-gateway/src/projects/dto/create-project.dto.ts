@@ -13,3 +13,9 @@ export class CreateProjectDto {
     @IsEnum(ELanguage)
     language: ELanguage;
 }
+
+export class ResourceStartDto {
+    @IsString()
+    @IsNotEmpty()
+    replId: string;
+}
