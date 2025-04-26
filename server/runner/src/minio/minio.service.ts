@@ -26,9 +26,8 @@ export class MinioService {
     async fetchMinioFolder(
         key: string,
         localPath: string
-    ): Promise<void> {
-        const bucket = process.env.MINIO_BUCKET!;
-        const objects = await this.listObjects(bucket, key);
+    ): Promise<void> {;
+        const objects = await this.listObjects(this._bucketName, key);
         for (const obj of objects) {
             const fileKey = obj.name;
 
@@ -40,7 +39,7 @@ export class MinioService {
 
             if (!fileKey) return;
 
-            const dataStream = await this.minioClient.getObject(bucket, fileKey);
+            const dataStream = await this.minioClient.getObject(this._bucketName, fileKey);
             await new Promise<void>((resolve, reject) => {
                 const writeStream = fs.createWriteStream(outPath);
                 dataStream.pipe(writeStream)
@@ -84,10 +83,9 @@ export class MinioService {
         key: string,
         filePath: string,
         content: string
-    ): Promise<void> {
-        const bucket = process.env.MINIO_BUCKET!;
+    ): Promise<void> {;
         const objectName = `${key}${filePath}`;
-        await this.minioClient.putObject(bucket, objectName, Buffer.from(content));
-        console.log(`Uploaded to ${bucket}/${objectName}`);
+        await this.minioClient.putObject(this._bucketName, objectName, Buffer.from(content));
+        console.log(`Uploaded to ${this._bucketName}/${objectName}`);
     };
 }
