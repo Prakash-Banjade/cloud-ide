@@ -3,14 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/hooks/use-socket";
 import { useAppMutation } from "@/hooks/useAppMutation";
-import { ORCHESTRATOR_URL } from "@/lib/utils";
+import { cn, ORCHESTRATOR_URL } from "@/lib/utils";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { Play, Save } from "lucide-react";
+import { ChevronRight, Play, Save } from "lucide-react";
 import { FileTree, TreeItem } from "./file-tree";
 import { TerminalComponent } from "./terminal";
+import { onItemSelect } from "./file-manager-fns";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function CodingPageClient() {
     const params = useParams();
@@ -57,20 +59,8 @@ export const CodingPagePostPodCreation = () => {
     }, [socket]);
 
     const onSelect = (file: TreeItem) => {
-        if (file.type === "dir") {
-            socket?.emit("fetchDir", file.path, (data: TreeItem[]) => {
-                setFileStructure(prev => {
-                    const allFiles = [...prev, ...data];
-                    return allFiles.filter((file, index, self) =>
-                        index === self.findIndex(f => f.path === file.path)
-                    );
-                });
-            });
-        } else {
-            socket?.emit("fetchContent", { path: file.path }, (data: string) => {
-                file.content = data;
-                setSelectedFile(file);
-            });
+        if (socket) {
+            onItemSelect(file, setFileStructure, setSelectedFile, socket);
         }
     };
 
@@ -78,19 +68,18 @@ export const CodingPagePostPodCreation = () => {
         return "Loading...";
     }
 
-    console.log(fileStructure)
-
     if (!socket) return null;
 
     return (
-        <div className="h-screen flex flex-col bg-[#1e1e1e] text-white">
+        <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
-            <div className="h-12 border-b border-[#333] flex items-center px-4 bg-[#252526]">
+            <div className="h-12 border-b-2 flex items-center px-4 bg-secondary">
                 <div className="flex-1 flex items-center gap-2">
-                    <span className="font-semibold">Cloud IDE</span>
-                    <span className="text-xs text-gray-400">v1.0.0</span>
+                    <span className="font-semibold">Qubide</span>
+                    <span className="text-xs text-muted-foreground">v1.0.0</span>
                 </div>
                 <div className="flex items-center gap-2">
+                    <ThemeToggle />
                     <Button size="sm" variant="ghost" className="gap-1">
                         <Save size={16} />
                         Save
@@ -105,8 +94,8 @@ export const CodingPagePostPodCreation = () => {
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-[#252526]">
-                    <div className="p-2 text-sm font-medium text-gray-400 uppercase">Explorer</div>
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
+                    <div className="p-2 text-sm font-medium uppercase">Explorer</div>
                     <FileTree files={fileStructure} onSelectFile={onSelect} selectedFile={selectedFile?.name ?? ""} />
                 </ResizablePanel>
 
@@ -115,10 +104,8 @@ export const CodingPagePostPodCreation = () => {
                 {/* Code editor panel */}
                 <ResizablePanel defaultSize={50} minSize={30}>
                     <div className="h-full flex flex-col">
-                        <div className="px-2 py-1 text-sm bg-[#2d2d2d] border-b border-[#333]">
-                            {
-                                selectedFile?.path.split("/").join(" > ")
-                            }
+                        <div className="px-2 py-1 text-sm bg-secondary">
+                            <SelectedFileBreadCrumb selectedFile={selectedFile} />
                         </div>
                         {/* <CodeEditor code={code} language={selectedFile.split(".").pop()} onChange={setCode} /> */}
                     </div>
@@ -129,7 +116,7 @@ export const CodingPagePostPodCreation = () => {
                 {/* Terminal and preview panel */}
                 <ResizablePanel defaultSize={30} minSize={20}>
                     <Tabs defaultValue="terminal" className="h-full flex flex-col">
-                        <TabsList className="mx-2 mt-1 bg-[#2d2d2d]">
+                        <TabsList className="mx-2 mt-1">
                             <TabsTrigger value="terminal">Terminal</TabsTrigger>
                             <TabsTrigger value="preview">Preview</TabsTrigger>
                         </TabsList>
@@ -146,13 +133,22 @@ export const CodingPagePostPodCreation = () => {
     );
 }
 
-function SelectedFileBreadCrumb(selectedFile: TreeItem | undefined, tree: TreeItem[]) {
+function SelectedFileBreadCrumb({ selectedFile }: { selectedFile: TreeItem | undefined }) {
     if (!selectedFile || selectedFile.type === 'dir') return null;
+
+    const parts = selectedFile.path.split("/");
+    parts.shift();
 
     return (
         <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-400">File</span>
-            <span className="text-sm font-medium text-gray-400">{selectedFile?.name}</span>
+            <div className="text-sm font-medium flex items-center">
+                {parts.map((part, index) => (
+                    <div key={index} className="flex items-center">
+                        <span className={cn(index < parts.length - 1 && "text-muted-foreground")}>{part}</span>
+                        {index < parts.length - 1 && <span className="text-muted-foreground"><ChevronRight size={18} /></span>}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

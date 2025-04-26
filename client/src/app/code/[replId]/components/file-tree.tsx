@@ -86,26 +86,20 @@ export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
 }
 
 function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps) {
-    const [expanded, setExpanded] = useState(item.expanded || false)
-
-    const toggleExpand = () => {
-        setExpanded(!expanded)
-    }
-
     const paddingLeft = `${level * 12 + 8}px`
 
     return (
         <div>
             <div
-                className="flex items-center py-1 hover:bg-[#2a2d2e] cursor-pointer"
+                className="flex items-center py-1 hover:bg-sidebar-accent cursor-pointer"
                 style={{ paddingLeft }}
-                onClick={toggleExpand}
+                onClick={() => onSelectFile(item)}
             >
                 <span className="mr-1">
-                    {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    {item.expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </span>
                 <span className="mr-1">
-                    {expanded ? (
+                    {item.expanded ? (
                         <FolderOpen className="h-4 w-4 text-yellow-400" />
                     ) : (
                         <Folder className="h-4 w-4 text-yellow-400" />
@@ -113,7 +107,7 @@ function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps
                 </span>
                 <span>{item.name}</span>
             </div>
-            {expanded && item.children && (
+            {item.expanded && item.children && (
                 <div>
                     {item.children.map((child) => {
                         if (child.type === "dir") {
@@ -153,12 +147,12 @@ function FileItem({ item, level, onSelectFile, isSelected }: FileItemProps) {
 
     return (
         <div
-            className={cn("flex items-center py-1 hover:bg-[#2a2d2e] cursor-pointer", isSelected && "bg-[#37373d]")}
+            className={cn("flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
             style={{ paddingLeft }}
             onClick={() => onSelectFile(item)}
         >
             <span className="mr-1 ml-5">{getFileIcon()}</span>
-            <span>{item.name}</span>
+            <span className={cn(isSelected && "font-medium")}>{item.name}</span>
         </div>
     )
 }

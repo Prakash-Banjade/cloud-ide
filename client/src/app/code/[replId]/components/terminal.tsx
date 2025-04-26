@@ -20,6 +20,7 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
             cols: 200,
             theme: { background: "black" },
         });
+        
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
