@@ -5,12 +5,14 @@ import { Socket } from "socket.io-client";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import { useTheme } from "next-themes";
 
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
 
 export const TerminalComponent = ({ socket }: { socket: Socket }) => {
     const terminalRef = useRef<HTMLDivElement | null>(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         if (!terminalRef.current || !socket) return;
@@ -18,9 +20,13 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
         const term = new Terminal({
             cursorBlink: true,
             cols: 200,
-            theme: { background: "black" },
+            theme: {
+                background: theme === "dark" ? "black" : "white",
+                foreground: theme === "dark" ? "white" : "black",
+                cursor: theme === "dark" ? "white" : "black",
+            },
         });
-        
+
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
@@ -42,7 +48,7 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
             socket.off("terminal");
             term.dispose();
         };
-    }, [socket]);
+    }, [socket, theme]);
 
     return (
         <div className="h-full w-full" ref={terminalRef} />

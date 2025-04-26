@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import React from 'react'
 import CodingPageClient from './components/coding-page-client';
+import { CodingEventsProvider } from '@/context/coding-events-provider';
 
 type Props = {
     replId: string;
@@ -12,6 +13,8 @@ export default async function CodePage({ params }: { params: Promise<Props> }) {
     if (!replId) redirect('/');
 
     return (
-        <CodingPageClient />
+        <CodingEventsProvider>
+            <CodingPageClient />
+        </CodingEventsProvider>
     )
 }

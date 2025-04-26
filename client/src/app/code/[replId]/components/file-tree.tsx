@@ -16,7 +16,7 @@ const fileIcons = {
     default: <FileIcon className="h-4 w-4 text-gray-400" />,
 }
 
-export interface FileItem {
+export interface TFileItem {
     name: string
     type: "file"
     path: string
@@ -24,15 +24,15 @@ export interface FileItem {
     language?: string
 }
 
-interface FolderItem {
+interface TFolderItem {
     name: string
     type: "dir"
     path: string
     expanded?: boolean
-    children: (FileItem | FolderItem)[]
+    children: (TFileItem | TFolderItem)[]
 }
 
-export type TreeItem = (FileItem | FolderItem);
+export type TreeItem = (TFileItem | TFolderItem);
 
 interface FileTreeProps {
     files: TreeItem[]
@@ -41,21 +41,21 @@ interface FileTreeProps {
 }
 
 interface FolderItemProps {
-    item: FolderItem
+    item: TFolderItem
     level: number
     onSelectFile: (treeItem: TreeItem) => void
     selectedFile: string
 }
 
 interface FileItemProps {
-    item: FileItem
+    item: TFileItem
     level: number
     onSelectFile: (treeItem: TreeItem) => void
     isSelected: boolean
 }
 
 export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
-    const renderFileTree = (items: (FileItem | FolderItem)[], level = 0) => {
+    const renderFileTree = (items: (TFileItem | TFolderItem)[], level = 0) => {
         return items.map((item) => {
             if (item.type === "dir") {
                 return (

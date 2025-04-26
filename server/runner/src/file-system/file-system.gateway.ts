@@ -77,6 +77,8 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     if (!replId) return;
 
     await this.minioService.saveToMinio(`code/${replId}`, filePath, content);
+
+    return true; // need to return something, used in frontend to handle syncing status
   }
 
   @SubscribeMessage('requestTerminal')

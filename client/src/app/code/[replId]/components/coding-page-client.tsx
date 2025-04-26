@@ -4,16 +4,18 @@ import { Button } from "@/components/ui/button";
 import { useSocket } from "@/hooks/use-socket";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { API_URL, cn } from "@/lib/utils";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { ChevronRight, Play, Save } from "lucide-react";
-import { FileItem, FileTree, TreeItem } from "./file-tree";
+import { ChevronRight, CircleCheck, LoaderCircle, Play } from "lucide-react";
+import { TFileItem, FileTree, TreeItem } from "./file-tree";
 import { TerminalComponent } from "./terminal";
-import { onItemSelect } from "./file-manager-fns";
+import { fetchDirAsync, findItem, onItemSelect, updateTree } from "./file-manager-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CodeEditor } from "./editor/editor";
+import { Badge } from "@/components/ui/badge";
+import { useCodingEvents } from "@/context/coding-events-provider";
 
 export default function CodingPageClient() {
     const params = useParams();
@@ -41,50 +43,105 @@ export default function CodingPageClient() {
 
 export const CodingPagePostPodCreation = () => {
     const params = useParams();
+    const router = useRouter();
+    const searchParams = useSearchParams(); // used to get path
     const replId = params.replId ?? '';
+    const { isSyncing } = useCodingEvents();
 
     const socket = useSocket("node-node"); // hardcoded for now
 
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
-    const [selectedFile, setSelectedFile] = useState<FileItem | undefined>(undefined);
+    const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [showOutput, setShowOutput] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
-        if (socket) {
-            socket.on('loaded', ({ rootContent }: { rootContent: TreeItem[] }) => {
-                setLoaded(true);
-                setFileStructure(rootContent);
-            });
-        }
-    }, [socket]);
+        if (!socket) return
+
+        socket.on('loaded', async ({ rootContent }) => {
+            setLoaded(true)
+            // first show whatever the server gave us at top-level
+            let tree = rootContent
+            setFileStructure(tree)
+
+            const path = searchParams.get('path')
+            if (!path) return
+
+            // break “/a/b/c.txt” into ["a","b","c.txt"]
+            const segments = path.split('/').filter(Boolean)
+            let cumulative = ''
+
+            // for each folder segment (all except the last)
+            for (let i = 0; i < segments.length - 1; i++) {
+                cumulative += '/' + segments[i]
+
+                // do we already have that folder in our current tree?
+                const folder = findItem(tree, cumulative)
+                if (!folder || folder.type !== 'dir') break
+
+                // if it has no children yet, fetch them
+                if (!Array.isArray(folder.children)) {
+                    const data = await fetchDirAsync(socket, cumulative)
+                    tree = updateTree(tree, cumulative, data)
+                }
+                // if it already has children, just toggle expanded
+                else {
+                    tree = updateTree(tree, cumulative, null)
+                }
+
+                // update state so UI shows the expansion as we go
+                setFileStructure(tree)
+            }
+
+            // now finally select the last segment (could be file or dir)
+            const target = findItem(tree, path)
+            if (target) {
+                // if it’s a file, fetch its content & mark selected
+                onItemSelect(target, setFileStructure, setSelectedFile, socket)
+                // also push the same URL so router stays in sync
+                if (target.type === 'file') {
+                    router.replace(`/code/${replId}?path=${target.path}`)
+                }
+            }
+        })
+    }, [socket])
 
     const onSelect = (file: TreeItem) => {
         if (socket) {
             onItemSelect(file, setFileStructure, setSelectedFile, socket);
         }
+
+        if (file.type === 'file') {
+            router.push(`/code/${replId}?path=${file.path}`);
+        }
     };
 
-    if (!loaded) {
-        return "Loading...";
-    }
+    if (!loaded) return "Loading...";
 
     if (!socket) return null;
 
     return (
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
-            <div className="h-12 border-b-2 flex items-center px-4 bg-secondary">
-                <div className="flex-1 flex items-center gap-2">
+            <div className="h-12 border-b-2 flex items-center justify-between px-4 bg-secondary">
+                <div className="flex items-center gap-2">
                     <span className="font-semibold">Qubide</span>
                     <span className="text-xs text-muted-foreground">v1.0.0</span>
                 </div>
+
+                <div className="flex gap-2 items-center -ml-10">
+                    <Badge variant={'outline'}>
+                        {
+                            isSyncing ?
+                                (<><LoaderCircle className="animate-spin" size={16} /> Syncing...</>)
+                                : (<><CircleCheck size={16} /> Synced</>)
+                        }
+                    </Badge>
+                    <h1 className="font-semibold">{replId}</h1>
+                </div>
+
                 <div className="flex items-center gap-2">
                     <ThemeToggle />
-                    <Button size="sm" variant="ghost" className="gap-1">
-                        <Save size={16} />
-                        Save
-                    </Button>
                     <Button size="sm" variant="default" className="gap-1">
                         <Play size={16} />
                         Run
@@ -95,8 +152,13 @@ export const CodingPagePostPodCreation = () => {
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
-                    <div className="p-2 text-sm font-medium uppercase">Explorer</div>
+                <ResizablePanel
+                    defaultSize={20}
+                    minSize={15}
+                    maxSize={30}
+                    className="bg-sidebar"
+                >
+                    <div className="p-2 pl-4 text-sm font-medium uppercase">Explorer</div>
                     <FileTree files={fileStructure} onSelectFile={onSelect} selectedFile={selectedFile?.name ?? ""} />
                 </ResizablePanel>
 

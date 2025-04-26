@@ -1,28 +1,38 @@
 import Editor from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
-import { FileItem } from "../file-tree";
+import { TFileItem } from "../file-tree";
+import { useTheme } from "next-themes";
+import { useCodingEvents } from "@/context/coding-events-provider";
 
-export const CodeEditor = ({ selectedFile, socket }: { selectedFile: FileItem | undefined, socket: Socket }) => {
-    if (!selectedFile) return null
+export const CodeEditor = ({ selectedFile, socket }: { selectedFile: TFileItem | undefined, socket: Socket }) => {
+    const { theme } = useTheme();
+    const { setIsSyncing } = useCodingEvents();
+
+    if (!selectedFile) return null;
 
     return (
         <Editor
             height="100vh"
             language={getLanguageFromName(selectedFile.name)}
             value={selectedFile.content}
-            theme="vs-dark"
-            onChange={value => debounce((value) => {
-                // TODO: Should send diffs, for now sending the whole file
-                socket.emit("updateContent", { path: selectedFile.path, content: value });
+            theme={theme === "dark" ? "vs-dark" : "light"}
+            onChange={debounce((value: string | undefined) => {
+                if (value !== undefined) {
+                    // TODO: Should send diffs, for now sending the whole file
+                    setIsSyncing(true);
+                    socket.emit("updateContent", { path: selectedFile.path, content: value }, (data: boolean) => {
+                        setIsSyncing(false);
+                    });
+                }
             }, 1000)}
         />
     )
 }
 
-function debounce(func: (value: string) => void, wait: number) {
+function debounce(func: (value: string | undefined) => void, wait: number) {
     let timeout: NodeJS.Timeout;
 
-    return (value: string) => {
+    return (value: string | undefined) => {
         clearTimeout(timeout);
         timeout = setTimeout(() => {
             func(value);

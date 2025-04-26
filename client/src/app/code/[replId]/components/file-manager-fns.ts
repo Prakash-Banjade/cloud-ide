@@ -1,11 +1,11 @@
 import { Dispatch, SetStateAction } from "react";
-import { FileItem, TreeItem } from "./file-tree";
 import { Socket } from "socket.io-client";
+import { TFileItem, TreeItem } from "./file-tree";
 
 export const onItemSelect = (
     file: TreeItem,
     setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
-    setSelectedFile: Dispatch<SetStateAction<FileItem | undefined>>,
+    setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
     socket: Socket
 ) => {
     if (file.type === "dir") {
@@ -31,7 +31,7 @@ export const onItemSelect = (
     }
 };
 
-function updateTree(
+export function updateTree(
     items: TreeItem[],
     targetPath: string,
     newChildren: TreeItem[] | null,
@@ -55,5 +55,24 @@ function updateTree(
         }
         // files are untouched
         return item
+    })
+}
+
+
+// helper to recursively find any item by path
+export function findItem(items: TreeItem[], targetPath: string): TreeItem | undefined {
+    for (const item of items) {
+        if (item.path === targetPath) return item
+        if (item.type === 'dir' && Array.isArray(item.children)) {
+            const found = findItem(item.children, targetPath)
+            if (found) return found
+        }
+    }
+}
+
+// helper to wrap socket.emit dir-fetch in a Promise
+export function fetchDirAsync(socket: Socket, path: string): Promise<TreeItem[]> {
+    return new Promise(resolve => {
+        socket.emit('fetchDir', path, (data: TreeItem[]) => resolve(data))
     })
 }
