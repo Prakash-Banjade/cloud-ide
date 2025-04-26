@@ -50,24 +50,26 @@ export class OrchestratorService {
         name: manifest.metadata.name,
         namespace,
       });
+      
       // If it exists, check status:
       if ((body.status?.availableReplicas ?? 0) > 0) {
-        this.logger.log(`Deployment ${body.metadata?.name} is already running`);  // :contentReference[oaicite:0]{index=0}
+        this.logger.log(`Deployment ${body.metadata?.name} is already running`);
         return;
       }
+
       this.logger.log(`Deployment ${body.metadata?.name} exists but has no available replicas, updating...`);
       await this.appsV1Api.replaceNamespacedDeployment({
         body: manifest,
         name: manifest.metadata.name,
         namespace,
-      });  // :contentReference[oaicite:1]{index=1}
+      }); 
     } catch (err: any) {
-      if (err.response?.statusCode === 404) {
+      if (err?.code === 404) {
         this.logger.log(`Creating Deployment ${manifest.metadata.name}...`);
         await this.appsV1Api.createNamespacedDeployment({
           body: manifest,
           namespace,
-        });  // :contentReference[oaicite:2]{index=2}
+        });
       } else {
         throw new HttpException(`Error checking Deployment: ${err.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
       }
@@ -82,7 +84,7 @@ export class OrchestratorService {
       });
       this.logger.log(`Service ${manifest.metadata.name} already exists`);  // :contentReference[oaicite:3]{index=3}
     } catch (err: any) {
-      if (err.response?.statusCode === 404) {
+      if (err?.code === 404) {
         this.logger.log(`Creating Service ${manifest.metadata.name}...`);
         await this.coreV1Api.createNamespacedService({
           body: manifest,
@@ -102,7 +104,7 @@ export class OrchestratorService {
       });
       this.logger.log(`Ingress ${manifest.metadata.name} already exists`);
     } catch (err: any) {
-      if (err.response?.statusCode === 404) {
+      if (err?.code === 404) {
         this.logger.log(`Creating Ingress ${manifest.metadata.name}...`);
         await this.networkingV1Api.createNamespacedIngress({
           body: manifest,

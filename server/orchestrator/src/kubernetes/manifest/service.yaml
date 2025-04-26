@@ -61,7 +61,7 @@ spec:
             - name: MINIO_PORT
               value: "9000"
           ports:
-            - containerPort: 3001 # expose ws port
+            - containerPort: 3003 # expose ws port
             - containerPort: 3000 # expose the port where the application might run on. eg: a node app running on port 3000
           volumeMounts:
             - name: workspace-volume
@@ -87,8 +87,8 @@ spec:
   ports:
     - protocol: TCP
       name: ws
-      port: 3001
-      targetPort: 3001
+      port: 3003
+      targetPort: 3003
     - protocol: TCP
       name: user
       port: 3000
@@ -111,7 +111,7 @@ spec:
               service:
                 name: service_name
                 port:
-                  number: 3001
+                  number: 3003
     - host: service_name.node-app.com # node/python app endpoint
       http:
         paths:

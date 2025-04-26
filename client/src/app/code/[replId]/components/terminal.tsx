@@ -1,65 +1,49 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react";
 import { Socket } from "socket.io-client";
-import { FitAddon } from '@xterm/addon-fit'
 import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import "@xterm/xterm/css/xterm.css";
 
 const fitAddon = new FitAddon();
+const decoder = new TextDecoder();
 
-function bufToString(buf: string | ArrayBuffer): string {
-    if (typeof buf === "string") {
-        return buf;
-    }
-    // TextDecoder.decode accepts ArrayBuffer or TypedArray
-    return new TextDecoder().decode(buf);
-}
-
-const OPTIONS_TERM = {
-    useStyle: true,
-    screenKeys: true,
-    cursorBlink: true,
-    cols: 200,
-    theme: {
-        background: "black"
-    }
-};
 export const TerminalComponent = ({ socket }: { socket: Socket }) => {
-    const terminalRef = useRef(null);
+    const terminalRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        if (!terminalRef || !terminalRef.current || !socket) {
-            return;
-        }
+        if (!terminalRef.current || !socket) return;
 
-        socket.emit("requestTerminal");
-        socket.on("terminal", terminalHandler)
-        
-        const term = new Terminal(OPTIONS_TERM)
+        const term = new Terminal({
+            cursorBlink: true,
+            cols: 200,
+            theme: { background: "black" },
+        });
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
 
-        function terminalHandler({ data }: { data: string | ArrayBuffer }) {
-            if (data instanceof ArrayBuffer) {
-                term.write(bufToString(data))
-            }
-        }
-        
-        term.onData((data) => {
-            socket.emit('terminalData', {
-                data
-            });
+        socket.emit("requestTerminal");
+        socket.on("terminal", ({ data }: { data: string | ArrayBuffer }) => {
+            const text = typeof data === "string" ? data : decoder.decode(data);
+            term.write(text);
         });
 
-        socket.emit('terminalData', {
-            data: '\n'
+        term.onData((input) => {
+            socket.emit("terminalData", { data: input });
         });
+
+        // Kickstart the shell
+        socket.emit("terminalData", { data: "\n" });
 
         return () => {
-            socket.off("terminal")
-        }
-    }, [terminalRef]);
+            socket.off("terminal");
+            term.dispose();
+        };
+    }, [socket]);
 
-    return <div style={{ width: "40vw", height: "400px", textAlign: "left" }} ref={terminalRef}></div>
-}
+    return (
+        <div className="h-full w-full" ref={terminalRef} />
+    );
+};

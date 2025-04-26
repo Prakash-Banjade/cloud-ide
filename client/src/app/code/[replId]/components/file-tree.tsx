@@ -27,7 +27,7 @@ interface FileItem {
 
 interface FolderItem {
     name: string
-    type: "folder"
+    type: "dir"
     path: string
     expanded?: boolean
     children: (FileItem | FolderItem)[]
@@ -58,7 +58,7 @@ interface FileItemProps {
 export function FileTree({ files, onSelectFile, selectedFile }: FileTreeProps) {
     const renderFileTree = (items: (FileItem | FolderItem)[], level = 0) => {
         return items.map((item) => {
-            if (item.type === "folder") {
+            if (item.type === "dir") {
                 return (
                     <FolderItem
                         key={item.name}
@@ -116,7 +116,7 @@ function FolderItem({ item, level, onSelectFile, selectedFile }: FolderItemProps
             {expanded && item.children && (
                 <div>
                     {item.children.map((child) => {
-                        if (child.type === "folder") {
+                        if (child.type === "dir") {
                             return (
                                 <FolderItem
                                     key={child.name}

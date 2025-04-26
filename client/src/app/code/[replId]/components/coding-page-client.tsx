@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/hooks/use-socket";
 import { useAppMutation } from "@/hooks/useAppMutation";
-import { File, ItemType, RemoteFile } from "@/lib/file-manager";
 import { ORCHESTRATOR_URL } from "@/lib/utils";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -58,7 +57,7 @@ export const CodingPagePostPodCreation = () => {
     }, [socket]);
 
     const onSelect = (file: TreeItem) => {
-        if (file.type === "folder") {
+        if (file.type === "dir") {
             socket?.emit("fetchDir", file.path, (data: TreeItem[]) => {
                 setFileStructure(prev => {
                     const allFiles = [...prev, ...data];
@@ -148,7 +147,7 @@ export const CodingPagePostPodCreation = () => {
 }
 
 function SelectedFileBreadCrumb(selectedFile: TreeItem | undefined, tree: TreeItem[]) {
-    if (!selectedFile || selectedFile.type === 'folder') return null;
+    if (!selectedFile || selectedFile.type === 'dir') return null;
 
     return (
         <div className="flex items-center gap-2">
