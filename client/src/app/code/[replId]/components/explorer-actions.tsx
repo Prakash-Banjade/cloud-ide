@@ -1,16 +1,16 @@
 import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
-import { CopyMinus, FilePlus2, FolderPlus, RotateCcw, File } from 'lucide-react'
+import { CopyMinus, FilePlus2, FolderPlus, RotateCcw, Folder } from 'lucide-react'
 import React, { useState } from 'react'
 import { getParentFolder } from './file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Input } from '@/components/ui/input'
 import { useSocket } from '@/context/socket-provider'
+import { TreeItem } from './file-tree'
+import { getFileIcon } from './file-icons'
 
-type Props = {}
-
-export default function ExplorerActions({ }: Props) {
-    const { selectedItem, fileStructure } = useCodingStates();
+export default function ExplorerActions() {
+    const { selectedItem, fileStructure, refreshTree, setFileStructure } = useCodingStates();
     const [isOpen, setIsOpen] = useState(false);
     const [newItemType, setNewItemType] = useState<'file' | 'dir'>('file');
     const [newItemName, setNewItemName] = useState('');
@@ -23,12 +23,33 @@ export default function ExplorerActions({ }: Props) {
 
         if (!parentFolderPath || !socket) return;
 
-        const parentPathWithoutLeadingSlash = parentFolderPath?.slice(1);
-
         const itempath = !!parentFolderPath ? `${parentFolderPath}/${newItemName}` : newItemName;
 
-        socket.emit("createItem", { path: itempath, type: newItemType }, (data: boolean) => { });
+        socket.emit("createItem", { path: itempath, type: newItemType }, (data: boolean) => {
+            if (data) {
+                setNewItemName('');
+                refresh(); // TODO: refreshing the whole tree is expensive
+                setIsOpen(false);
+            }
+        });
+    }
 
+    const refresh = () => {
+        if (!socket) return;
+
+        socket.emit('fetchDir', '', (data: TreeItem[]) => {
+            refreshTree(data);
+        })
+    }
+
+    const collapse = () => {
+        setFileStructure(prev => {
+            return prev.map(item => {
+                return item.type === 'file'
+                    ? item
+                    : { ...item, expanded: false }
+            });
+        })
     }
 
     return (
@@ -42,7 +63,11 @@ export default function ExplorerActions({ }: Props) {
                 <form onSubmit={handleNewItem}>
                     <section className='relative flex items-center'>
                         <div className='absolute left-2'>
-                            <File size={18} />
+                            {
+                                newItemType === 'file'
+                                    ? getFileIcon(newItemName)
+                                    : <Folder size={16} />
+                            }
                         </div>
                         <Input
                             className='pl-8 w-full'
@@ -82,11 +107,11 @@ export default function ExplorerActions({ }: Props) {
             </TooltipWrapper>
 
             <TooltipWrapper label="Refresh Explorer" contentProps={{ side: "bottom" }}>
-                <button type="button" className="cursor-pointer hover:bg-secondary p-1 rounded-md"><RotateCcw size={16} /></button>
+                <button type="button" className="cursor-pointer hover:bg-secondary p-1 rounded-md" onClick={refresh}><RotateCcw size={16} /></button>
             </TooltipWrapper>
 
             <TooltipWrapper label="Collapse Folders in Explorer" contentProps={{ side: "bottom" }}>
-                <button type="button" className="cursor-pointer hover:bg-secondary p-1 rounded-md"><CopyMinus size={16} /></button>
+                <button type="button" className="cursor-pointer hover:bg-secondary p-1 rounded-md" onClick={collapse}><CopyMinus size={16} /></button>
             </TooltipWrapper>
         </section>
     )

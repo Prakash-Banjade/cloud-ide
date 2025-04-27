@@ -61,7 +61,6 @@ export function updateTree(
     })
 }
 
-
 // helper to recursively find any item by path
 export function findItem(items: TreeItem[], targetPath: string): TreeItem | undefined {
     for (const item of items) {
@@ -132,4 +131,33 @@ export function getParentFolder(
         expanded: true,
         children: tree,
     }
+}
+
+/**
+ * Return a new TreeItem[] sorted so that:
+ *  - all folders come before files
+ *  - names are alphabetical within each group
+ *  - folders’ children are sorted recursively
+ */
+export function sortFolderFirst(tree: TreeItem[]): TreeItem[] {
+    // first, shallow‐sort this array: dirs before files, then by name
+    if (!Array.isArray(tree)) return tree;
+
+    const sorted = [...tree].sort((a, b) => {
+        if (a.type !== b.type) {
+            return a.type === "dir" ? -1 : 1
+        }
+        return a.name.localeCompare(b.name)
+    })
+
+    // then, for every folder, recurse into children
+    return sorted.map(item => {
+        if (item.type === "dir") {
+            return {
+                ...item,
+                children: sortFolderFirst(item.children)
+            }
+        }
+        return item
+    })
 }

@@ -53,7 +53,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
   @SubscribeMessage('fetchDir')
   async onFetchDir(@MessageBody() dir: string): Promise<File[]> {
-    const dirPath = `/workspace/${dir}`;
+    const dirPath = dir?.length ? `/workspace/${dir}` : '/workspace';
     const contents = await this.fileSystemService.fetchDir(dirPath, dir);
 
     return contents; // the data is returned in the cb function in the client

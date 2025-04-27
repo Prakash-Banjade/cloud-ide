@@ -1,21 +1,12 @@
 "use client"
 
-import { ChevronRight, ChevronDown, FileIcon, Folder, FolderOpen, FileCode, FileText, FileJson } from "lucide-react"
+import { ChevronRight, ChevronDown, FileIcon, Folder, FolderOpen, FileCode, FileText, FileJson, Icon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCodingStates } from "@/context/coding-states-provider"
+import { sortFolderFirst } from "./file-manager-fns"
+import { getFileIcon } from "./file-icons"
 
-// File type icons mapping
-const fileIcons = {
-    js: <FileCode className="h-4 w-4 text-yellow-400" />,
-    jsx: <FileCode className="h-4 w-4 text-blue-400" />,
-    tsx: <FileCode className="h-4 w-4 text-blue-500" />,
-    css: <FileCode className="h-4 w-4 text-purple-400" />,
-    html: <FileCode className="h-4 w-4 text-orange-400" />,
-    json: <FileJson className="h-4 w-4 text-yellow-300" />,
-    markdown: <FileText className="h-4 w-4 text-gray-400" />,
-    plaintext: <FileText className="h-4 w-4 text-gray-400" />,
-    default: <FileIcon className="h-4 w-4 text-gray-400" />,
-}
+
 
 export interface TFileItem {
     name: string
@@ -55,7 +46,7 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
     const { fileStructure } = useCodingStates();
 
     const renderFileTree = (items: (TFileItem | TFolderItem)[], level = 0) => {
-        return items.map((item) => {
+        return sortFolderFirst(items).map((item) => {
             if (item.type === "dir") {
                 return (
                     <FolderItem
@@ -141,17 +132,13 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
 
     const paddingLeft = `${level * 12 + 8}px`;
 
-    const getFileIcon = () => {
-        return item.language && fileIcons[item.language as keyof typeof fileIcons] || fileIcons.default
-    }
-
     return (
         <div
             className={cn("flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
             style={{ paddingLeft }}
             onClick={() => onSelectFile(item)}
         >
-            <span className="mr-1 ml-5">{getFileIcon()}</span>
+            <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
             <span className={cn(isSelected && "text-shadow-2xs")}>{item.name}</span>
         </div>
     )

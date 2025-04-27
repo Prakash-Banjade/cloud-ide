@@ -20,7 +20,7 @@ import { SocketProvider, useSocket } from "@/context/socket-provider";
 
 export default function CodingPageClient() {
     const params = useParams();
-    
+
     const { mutateAsync, isPending } = useAppMutation();
 
     useEffect(() => {
@@ -53,7 +53,7 @@ export const CodingPagePostPodCreation = () => {
     const router = useRouter();
     const searchParams = useSearchParams(); // used to get path
     const replId = params.replId ?? '';
-    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile } = useCodingStates();
+    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile, refreshTree } = useCodingStates();
 
     const { socket } = useSocket();
 
@@ -63,51 +63,9 @@ export const CodingPagePostPodCreation = () => {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('loaded', async ({ rootContent }) => {
+        socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
             setLoaded(true)
-            // first show whatever the server gave us at top-level
-            let tree = rootContent
-            setFileStructure(tree)
-
-            const path = searchParams.get('path')
-            if (!path) return
-
-            // break “/a/b/c.txt” into ["a","b","c.txt"]
-            const segments = path.split('/').filter(Boolean)
-            let cumulative = ''
-
-            // for each folder segment (all except the last)
-            for (let i = 0; i < segments.length - 1; i++) {
-                cumulative += '/' + segments[i]
-
-                // do we already have that folder in our current tree?
-                const folder = findItem(tree, cumulative)
-                if (!folder || folder.type !== 'dir') break
-
-                // if it has no children yet, fetch them
-                if (!Array.isArray(folder.children)) {
-                    const data = await fetchDirAsync(socket, cumulative)
-                    tree = updateTree(tree, cumulative, data)
-                }
-                // if it already has children, just toggle expanded
-                else {
-                    tree = updateTree(tree, cumulative, null)
-                }
-
-                // update state so UI shows the expansion as we go
-                setFileStructure(tree)
-            }
-
-            // now finally select the last segment (could be file or dir)
-            const target = findItem(tree, path)
-            if (target) {
-                // if it’s a file, fetch its content & mark selected
-                onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, socket)
-                // also push the same URL so router stays in sync
-                if (target.type === 'file') {
-                    router.replace(`/code/${replId}?path=${target.path}`)
-                }
-            }
+            await refreshTree(rootContent);
         })
     }, [socket])
 
