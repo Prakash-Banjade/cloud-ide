@@ -1,16 +1,20 @@
 "use client"
 
-import { ChevronRight, ChevronDown, FileIcon, Folder, FolderOpen, FileCode, FileText, FileJson, Icon } from "lucide-react"
+import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { sortFolderFirst } from "./file-manager-fns"
 import { getFileIcon } from "./file-icons"
 
+export enum EItemType {
+    FILE = 'file',
+    DIR = 'dir'
+}
 
 
 export interface TFileItem {
     name: string
-    type: "file"
+    type: EItemType.FILE
     path: string
     content?: string
     language?: string
@@ -18,7 +22,7 @@ export interface TFileItem {
 
 export interface TFolderItem {
     name: string
-    type: "dir"
+    type: EItemType.DIR
     path: string
     expanded?: boolean
     children: (TFileItem | TFolderItem)[]
@@ -47,7 +51,7 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
 
     const renderFileTree = (items: (TFileItem | TFolderItem)[], level = 0) => {
         return sortFolderFirst(items).map((item) => {
-            if (item.type === "dir") {
+            if (item.type === EItemType.DIR) {
                 return (
                     <FolderItem
                         key={item.name}
@@ -100,7 +104,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
             {item.expanded && item.children && (
                 <div>
                     {item.children.map((child) => {
-                        if (child.type === "dir") {
+                        if (child.type === EItemType.DIR) {
                             return (
                                 <FolderItem
                                     key={child.name}

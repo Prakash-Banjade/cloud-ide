@@ -1,6 +1,6 @@
 import { MinioService } from "src/minio/minio.service";
 import { TerminalManagerService } from "src/terminal-manager/terminal-manager.service";
-import { FileSystemService } from "./file-system.service";
+import { File, FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 
@@ -40,7 +40,10 @@ export class FileSystemCRUDGateway {
      * Create either an empty file or an empty directory at `payload.path`.
      */
     @SubscribeMessage('createItem')
-    async onCreateItem(@MessageBody() payload: { path: string, type: 'file' | 'dir' }, @ConnectedSocket() socket: Socket): Promise<boolean> {
+    async onCreateItem(
+        @MessageBody() payload: { path: string, type: 'file' | 'dir' },
+        @ConnectedSocket() socket: Socket
+    ): Promise<{ success: boolean, error: string | null }> {
         const replId = this.getReplId(socket);
 
         try {
@@ -60,11 +63,10 @@ export class FileSystemCRUDGateway {
             }
 
             // broadcast to all clients that a change occurred
-            this.server.emit('itemCreated', { path, type });
-            return true;
+            return { success: true, error: null };
         } catch (err) {
             console.error('createItem failed', err);
-            return false;
+            return { success: false, error: err.message };
         }
     }
 
@@ -91,7 +93,6 @@ export class FileSystemCRUDGateway {
                 await this.minioService.removeObject(`code/${replId}`, path);
             }
 
-            this.server.emit('itemDeleted', { path });
             return true;
         } catch (err) {
             console.error('deleteItem failed', err);
@@ -132,7 +133,6 @@ export class FileSystemCRUDGateway {
                 await this.minioService.removeObject(`code/${replId}`, oldPath);
             }
 
-            this.server.emit('itemRenamed', { oldPath, newPath, type });
             return true;
         } catch (err) {
             console.error('renameItem failed', err);

@@ -10,7 +10,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { ChevronRight, CircleCheck, LoaderCircle, Play } from "lucide-react";
 import { FileTree, TreeItem } from "./file-tree";
 import { TerminalComponent } from "./terminal";
-import { fetchDirAsync, findItem, onItemSelect, updateTree } from "./file-manager-fns";
+import { onItemSelect } from "./file-manager-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CodeEditor } from "./editor/editor";
 import { Badge } from "@/components/ui/badge";

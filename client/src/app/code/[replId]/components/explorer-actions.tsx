@@ -1,38 +1,20 @@
 import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
-import { CopyMinus, FilePlus2, FolderPlus, RotateCcw, Folder } from 'lucide-react'
+import { CopyMinus, FilePlus2, FolderPlus, RotateCcw } from 'lucide-react'
 import React, { useState } from 'react'
 import { getParentFolder } from './file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
-import { Input } from '@/components/ui/input'
 import { useSocket } from '@/context/socket-provider'
-import { TreeItem } from './file-tree'
-import { getFileIcon } from './file-icons'
+import { EItemType, TreeItem } from './file-tree'
+import { NewItemForm } from './new-item-form'
 
 export default function ExplorerActions() {
     const { selectedItem, fileStructure, refreshTree, setFileStructure } = useCodingStates();
     const [isOpen, setIsOpen] = useState(false);
-    const [newItemType, setNewItemType] = useState<'file' | 'dir'>('file');
-    const [newItemName, setNewItemName] = useState('');
+    const [newItemType, setNewItemType] = useState<EItemType>(EItemType.FILE);
     const { socket } = useSocket();
 
-    const parentFolderPath = selectedItem?.type === 'dir' ? selectedItem.path : getParentFolder(selectedItem, fileStructure).path;
-
-    const handleNewItem = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        if (!parentFolderPath || !socket) return;
-
-        const itempath = !!parentFolderPath ? `${parentFolderPath}/${newItemName}` : newItemName;
-
-        socket.emit("createItem", { path: itempath, type: newItemType }, (data: boolean) => {
-            if (data) {
-                setNewItemName('');
-                refresh(); // TODO: refreshing the whole tree is expensive
-                setIsOpen(false);
-            }
-        });
-    }
+    const parentFolderPath = selectedItem?.type === EItemType.DIR ? selectedItem.path : getParentFolder(selectedItem, fileStructure).path;
 
     const refresh = () => {
         if (!socket) return;
@@ -45,7 +27,7 @@ export default function ExplorerActions() {
     const collapse = () => {
         setFileStructure(prev => {
             return prev.map(item => {
-                return item.type === 'file'
+                return item.type === EItemType.FILE
                     ? item
                     : { ...item, expanded: false }
             });
@@ -55,29 +37,12 @@ export default function ExplorerActions() {
     return (
         <section>
             <ResponsiveDialog
-                title={newItemType === 'file' ? 'New file' : 'New folder'}
+                title={newItemType === EItemType.FILE ? 'New file' : 'New folder'}
                 isOpen={isOpen}
                 setIsOpen={setIsOpen}
-                description={parentFolderPath}
+                description={`Location: ${parentFolderPath}`}
             >
-                <form onSubmit={handleNewItem}>
-                    <section className='relative flex items-center'>
-                        <div className='absolute left-2'>
-                            {
-                                newItemType === 'file'
-                                    ? getFileIcon(newItemName)
-                                    : <Folder size={16} />
-                            }
-                        </div>
-                        <Input
-                            className='pl-8 w-full'
-                            name="newItem"
-                            placeholder={newItemType === 'file' ? 'filename.ext' : 'folder name'}
-                            value={newItemName}
-                            onChange={(e) => setNewItemName(e.target.value)}
-                        />
-                    </section>
-                </form>
+                <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} refresh={refresh} setIsOpen={setIsOpen} />
             </ResponsiveDialog>
 
             <TooltipWrapper label="New file" contentProps={{ side: "bottom" }}>
@@ -85,7 +50,7 @@ export default function ExplorerActions() {
                     type="button"
                     className="cursor-pointer hover:bg-secondary p-1 rounded-md"
                     onClick={() => {
-                        setNewItemType('file');
+                        setNewItemType(EItemType.FILE);
                         setIsOpen(true);
                     }}
                 >
@@ -98,7 +63,7 @@ export default function ExplorerActions() {
                     type="button"
                     className="cursor-pointer hover:bg-secondary p-1 rounded-md"
                     onClick={() => {
-                        setNewItemType('dir');
+                        setNewItemType(EItemType.DIR);
                         setIsOpen(true);
                     }}
                 >

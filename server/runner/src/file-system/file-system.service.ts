@@ -64,14 +64,16 @@ export class FileSystemService {
 
     /** Create a directory (including parents) */
     async createDir(dir: string): Promise<void> {
-        console.log(dir)
         await mkdir(dir, { recursive: true });       // recursive mkdir :contentReference[oaicite:5]{index=5}
     }
 
     /** Create an empty file */
-    async createFile(file: string, content = ''): Promise<void> {
-        console.log(file)
+    async createFile(file: string, content = ''): Promise<File> {
         await writeFile(file, content, 'utf8');
+
+        console.log({ type: 'file', name: file, path: file })
+        
+        return { type: 'file', name: file, path: file };
     }
 
     /** Delete a file or folder recursively */

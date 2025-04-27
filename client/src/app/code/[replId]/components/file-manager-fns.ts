@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { TFileItem, TFolderItem, TreeItem } from "./file-tree";
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "./file-tree";
 import { Dispatch, SetStateAction } from "react";
 
 export const onItemSelect = (
@@ -11,7 +11,7 @@ export const onItemSelect = (
 ) => {
     setSelectedItem(file); // just select what they clicked
 
-    if (file.type === "dir") {
+    if (file.type === EItemType.DIR) {
         // if we already loaded children, just toggle expanded
         if (Array.isArray(file.children)) {
             setFileStructure(prev =>
@@ -41,7 +41,7 @@ export function updateTree(
 ): TreeItem[] {
     return items.map(item => {
         // only folders can match
-        if (item.type === "dir") {
+        if (item.type === EItemType.DIR) {
             // did we hit the folder the user clicked?
             if (item.path === targetPath) {
                 // either assign new children (if we just fetched them), or leave them alone
@@ -65,7 +65,7 @@ export function updateTree(
 export function findItem(items: TreeItem[], targetPath: string): TreeItem | undefined {
     for (const item of items) {
         if (item.path === targetPath) return item
-        if (item.type === 'dir' && Array.isArray(item.children)) {
+        if (item.type === EItemType.DIR && Array.isArray(item.children)) {
             const found = findItem(item.children, targetPath)
             if (found) return found
         }
@@ -89,7 +89,7 @@ export function getParentFolder(
 ): TFolderItem {
     if (!target) return { // if no target, return a virtual root
         name: "",
-        type: "dir",
+        type: EItemType.DIR,
         path: "/",
         expanded: true,
         children: tree,
@@ -104,7 +104,7 @@ export function getParentFolder(
         if (!items) return null;
 
         for (const item of items) {
-            if (item.type === "dir") {
+            if (item.type === EItemType.DIR) {
                 if (item.path === parentPath) {
                     return item
                 }
@@ -126,7 +126,7 @@ export function getParentFolder(
     // 3) if nothing matched, return a “virtual” root folder
     return {
         name: "",
-        type: "dir",
+        type: EItemType.DIR,
         path: "/",
         expanded: true,
         children: tree,
@@ -145,14 +145,14 @@ export function sortFolderFirst(tree: TreeItem[]): TreeItem[] {
 
     const sorted = [...tree].sort((a, b) => {
         if (a.type !== b.type) {
-            return a.type === "dir" ? -1 : 1
+            return a.type === EItemType.DIR ? -1 : 1
         }
         return a.name.localeCompare(b.name)
     })
 
     // then, for every folder, recurse into children
     return sorted.map(item => {
-        if (item.type === "dir") {
+        if (item.type === EItemType.DIR) {
             return {
                 ...item,
                 children: sortFolderFirst(item.children)
