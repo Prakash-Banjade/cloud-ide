@@ -25,7 +25,7 @@ export interface TFileItem {
     language?: string
 }
 
-interface TFolderItem {
+export interface TFolderItem {
     name: string
     type: "dir"
     path: string

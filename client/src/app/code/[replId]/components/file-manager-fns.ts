@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { TFileItem, TreeItem } from "./file-tree";
+import { TFileItem, TFolderItem, TreeItem } from "./file-tree";
 import { Dispatch, SetStateAction } from "react";
 
 export const onItemSelect = (
@@ -75,4 +75,50 @@ export function fetchDirAsync(socket: Socket, path: string): Promise<TreeItem[]>
     return new Promise(resolve => {
         socket.emit('fetchDir', path, (data: TreeItem[]) => resolve(data))
     })
+}
+
+/**
+ * Find the folder within `tree` whose `children` array directly contains
+ * an item with path === target.path.  If none is found, returns a virtual root.
+ */
+export function getParentFolder(
+    target: (TFileItem | TFolderItem),
+    tree: TreeItem[]
+): TFolderItem {
+    // 1) compute the parent-path string (everything up to the last "/")
+    const idx = target.path.lastIndexOf("/")
+    const parentPath = idx > 0 ? target.path.slice(0, idx) : "/"
+
+    // 2) walk the tree looking for a folder whose path === parentPath
+    function dfs(items: TreeItem[] | undefined): TFolderItem | null {
+        if (!items) return null;
+        
+        for (const item of items) {
+            if (item.type === "dir") {
+                if (item.path === parentPath) {
+                    return item
+                }
+                // recurse into children
+                const found = dfs(item.children)
+                if (found) return found
+            }
+        }
+
+        return null
+    }
+
+    const found = dfs(tree)
+
+    if (found) {
+        return found
+    }
+
+    // 3) if nothing matched, return a “virtual” root folder
+    return {
+        name: "",
+        type: "dir",
+        path: "/",
+        expanded: true,
+        children: tree,
+    }
 }

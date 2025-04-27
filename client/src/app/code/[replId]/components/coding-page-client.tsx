@@ -178,7 +178,7 @@ export const CodingPagePostPodCreation = () => {
                 <ResizableHandle withHandle />
 
                 {/* Terminal and preview panel */}
-                <ResizablePanel defaultSize={30} minSize={20}>
+                <ResizablePanel defaultSize={20} minSize={20}>
                     <Tabs defaultValue="terminal" className="h-full flex flex-col">
                         <TabsList className="mx-2 mt-1">
                             <TabsTrigger value="terminal">Terminal</TabsTrigger>
