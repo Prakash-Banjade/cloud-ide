@@ -27,7 +27,7 @@ spec:
             - |
               set -e
               # Use service DNS, not localhost
-              mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc cp --recursive minio/cloud-ide/projects/service_name/ /workspace/
+              mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc cp --recursive minio/cloud-ide/code/service_name/ /workspace/
           env:
             - name: MINIO_ACCESS_KEY
               valueFrom:

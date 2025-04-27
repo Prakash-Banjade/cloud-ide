@@ -13,7 +13,7 @@ export class ProjectsService {
   async create(createProjectDto: CreateProjectDto) {
     // TODO: check if replId already exists
 
-    await this.minioService.copyMinioFolder(`base/${createProjectDto.language}`, `projects/${createProjectDto.replId}`);
+    await this.minioService.copyMinioFolder(`base/${createProjectDto.language}`, `code/${createProjectDto.replId}`);
 
     return { message: "Project created", slug: generateSlug(createProjectDto.replId) };
   }

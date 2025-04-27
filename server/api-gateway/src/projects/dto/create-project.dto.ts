@@ -6,7 +6,7 @@ import { generateSlug } from "src/utils";
 export class CreateProjectDto {
     @IsString()
     @IsNotEmpty()
-    @MaxLength(12) 
+    @MaxLength(50, { message: "Project name must be less than 50 characters." })
     @Transform(({ value }) => generateSlug(value)) // TODO: add nano id also
     replId: string;
 

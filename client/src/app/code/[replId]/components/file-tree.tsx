@@ -152,7 +152,7 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
             onClick={() => onSelectFile(item)}
         >
             <span className="mr-1 ml-5">{getFileIcon()}</span>
-            <span className={cn(isSelected && "font-medium")}>{item.name}</span>
+            <span className={cn(isSelected && "text-shadow-2xs")}>{item.name}</span>
         </div>
     )
 }

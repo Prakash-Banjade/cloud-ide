@@ -23,6 +23,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
   async handleConnection(@ConnectedSocket() socket: Socket) {
 
     // TODO: Perform authentication
+    console.log("user connected")
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');

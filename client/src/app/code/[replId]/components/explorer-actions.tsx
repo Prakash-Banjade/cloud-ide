@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { getParentFolder } from './file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Input } from '@/components/ui/input'
+import { useSocket } from '@/context/socket-provider'
 
 type Props = {}
 
@@ -13,15 +14,21 @@ export default function ExplorerActions({ }: Props) {
     const [isOpen, setIsOpen] = useState(false);
     const [newItemType, setNewItemType] = useState<'file' | 'dir'>('file');
     const [newItemName, setNewItemName] = useState('');
+    const { socket } = useSocket();
 
-    const parentFolderPath = selectedItem && (selectedItem?.type === 'dir' ? selectedItem.path : getParentFolder(selectedItem, fileStructure).path);
+    const parentFolderPath = selectedItem?.type === 'dir' ? selectedItem.path : getParentFolder(selectedItem, fileStructure).path;
 
     const handleNewItem = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (!selectedItem) return;
+        if (!parentFolderPath || !socket) return;
 
-        console.log(parentFolderPath, newItemType, newItemName)
+        const parentPathWithoutLeadingSlash = parentFolderPath?.slice(1);
+
+        const itempath = !!parentFolderPath ? `${parentFolderPath}/${newItemName}` : newItemName;
+
+        socket.emit("createItem", { path: itempath, type: newItemType }, (data: boolean) => { });
+
     }
 
     return (

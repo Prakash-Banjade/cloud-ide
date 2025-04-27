@@ -6,8 +6,11 @@ export const onItemSelect = (
     file: TreeItem,
     setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
     setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
+    setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
     socket: Socket
 ) => {
+    setSelectedItem(file); // just select what they clicked
+
     if (file.type === "dir") {
         // if we already loaded children, just toggle expanded
         if (Array.isArray(file.children)) {
@@ -25,8 +28,8 @@ export const onItemSelect = (
         }
     } else {
         socket?.emit("fetchContent", { path: file.path }, (data: string) => {
-            file.content = data;
             setSelectedFile(file);
+            file.content = data;
         });
     }
 };
@@ -82,9 +85,17 @@ export function fetchDirAsync(socket: Socket, path: string): Promise<TreeItem[]>
  * an item with path === target.path.  If none is found, returns a virtual root.
  */
 export function getParentFolder(
-    target: (TFileItem | TFolderItem),
+    target: (TFileItem | TFolderItem) | undefined,
     tree: TreeItem[]
 ): TFolderItem {
+    if (!target) return { // if no target, return a virtual root
+        name: "",
+        type: "dir",
+        path: "/",
+        expanded: true,
+        children: tree,
+    }
+
     // 1) compute the parent-path string (everything up to the last "/")
     const idx = target.path.lastIndexOf("/")
     const parentPath = idx > 0 ? target.path.slice(0, idx) : "/"
@@ -92,7 +103,7 @@ export function getParentFolder(
     // 2) walk the tree looking for a folder whose path === parentPath
     function dfs(items: TreeItem[] | undefined): TFolderItem | null {
         if (!items) return null;
-        
+
         for (const item of items) {
             if (item.type === "dir") {
                 if (item.path === parentPath) {

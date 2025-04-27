@@ -26,7 +26,8 @@ export class MinioService {
     async fetchMinioFolder(
         key: string,
         localPath: string
-    ): Promise<void> {;
+    ): Promise<void> {
+        ;
         const objects = await this.listObjects(this._bucketName, key);
         for (const obj of objects) {
             const fileKey = obj.name;
@@ -83,9 +84,59 @@ export class MinioService {
         key: string,
         filePath: string,
         content: string
-    ): Promise<void> {;
+    ): Promise<void> {
         const objectName = `${key}${filePath}`;
         await this.minioClient.putObject(this._bucketName, objectName, Buffer.from(content));
         console.log(`Uploaded to ${this._bucketName}/${objectName}`);
     };
+
+    /** (Optional) ensure a “directory marker” so prefix shows up in some UIs */
+    async ensurePrefix(prefix: string): Promise<void> {
+        // e.g. write zero-byte object at prefix + '.keep'
+        await this.minioClient.putObject(this._bucketName, `${prefix}.keep`, Buffer.alloc(0));
+        console.log(`Prefix created at ${this._bucketName}/${prefix}.keep`);
+    }
+
+    /** Remove a single object */
+    async removeObject(prefix: string, key: string): Promise<void> {
+        const objectName = `${prefix}${key}`;
+        await this.minioClient.removeObject(this._bucketName, objectName);  // removeObject API :contentReference[oaicite:8]{index=8}
+    }
+
+    /** Remove all objects under a prefix */
+    async removePrefix(prefix: string): Promise<void> {
+        // list all matching objects recursively
+        const objects = this.minioClient.listObjectsV2(this._bucketName, prefix, true);
+        const toDelete = [];
+        for await (const obj of objects) {
+            toDelete.push(obj.name! as never);
+        }
+        // batch remove
+        await this.minioClient.removeObjects(this._bucketName, toDelete.map(n => n));  // removeObjects :contentReference[oaicite:9]{index=9}
+    }
+
+    /** Copy one object */
+    async copyObject(
+        srcPrefix: string, srcKey: string,
+        dstPrefix: string, dstKey: string
+    ): Promise<void> {
+        const src = `${srcPrefix}${srcKey}`;
+        const dst = `${dstPrefix}${dstKey}`;
+        await this.minioClient.copyObject(
+            this._bucketName,
+            dst,
+            `/${this._bucketName}/${src}`                              // copyObject API :contentReference[oaicite:10]{index=10}
+        );
+    }
+
+    /** Move all objects under one prefix to another */
+    async movePrefix(oldPrefix: string, newPrefix: string): Promise<void> {
+        // list & copy each, then delete old prefix :contentReference[oaicite:11]{index=11}
+        const objects = this.minioClient.listObjectsV2(this._bucketName, oldPrefix, true);
+        for await (const obj of objects) {
+            const rel = obj.name!.replace(oldPrefix, '');
+            await this.copyObject(oldPrefix, rel, newPrefix, rel);
+        }
+        await this.removePrefix(oldPrefix);
+    }
 }

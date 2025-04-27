@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { useSocket } from "@/hooks/use-socket";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { API_URL, cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -15,12 +14,13 @@ import { fetchDirAsync, findItem, onItemSelect, updateTree } from "./file-manage
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CodeEditor } from "./editor/editor";
 import { Badge } from "@/components/ui/badge";
-import { useCodingStates } from "@/context/coding-states-provider";
+import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
+import { SocketProvider, useSocket } from "@/context/socket-provider";
 
 export default function CodingPageClient() {
     const params = useParams();
-
+    
     const { mutateAsync, isPending } = useAppMutation();
 
     useEffect(() => {
@@ -39,7 +39,13 @@ export default function CodingPageClient() {
         return <div>Booting...</div>
     }
 
-    return <CodingPagePostPodCreation />
+    return (
+        <SocketProvider>
+            <CodingStatesProvider>
+                <CodingPagePostPodCreation />
+            </CodingStatesProvider>
+        </SocketProvider>
+    )
 }
 
 export const CodingPagePostPodCreation = () => {
@@ -49,13 +55,13 @@ export const CodingPagePostPodCreation = () => {
     const replId = params.replId ?? '';
     const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile } = useCodingStates();
 
-    const socket = useSocket("node-node"); // hardcoded for now
+    const { socket } = useSocket();
 
     const [showOutput, setShowOutput] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
-        if (!socket) return
+        if (!socket) return;
 
         socket.on('loaded', async ({ rootContent }) => {
             setLoaded(true)
@@ -96,7 +102,7 @@ export const CodingPagePostPodCreation = () => {
             const target = findItem(tree, path)
             if (target) {
                 // if it’s a file, fetch its content & mark selected
-                onItemSelect(target, setFileStructure, setSelectedFile, socket)
+                onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, socket)
                 // also push the same URL so router stays in sync
                 if (target.type === 'file') {
                     router.replace(`/code/${replId}?path=${target.path}`)
@@ -106,10 +112,8 @@ export const CodingPagePostPodCreation = () => {
     }, [socket])
 
     const onSelect = (file: TreeItem) => {
-        setSelectedItem(file); // can be a folder or file
-        
         if (socket) {
-            onItemSelect(file, setFileStructure, setSelectedFile, socket);
+            onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, socket);
         }
 
         if (file.type === 'file') {
@@ -117,7 +121,7 @@ export const CodingPagePostPodCreation = () => {
         }
     };
 
-    if (!loaded) return "Loading...";
+    if (!loaded) return "Loading your files...";
 
     if (!socket) return null;
 

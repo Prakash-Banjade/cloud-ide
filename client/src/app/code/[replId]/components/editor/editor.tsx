@@ -7,7 +7,11 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
     const { setIsSyncing, selectedFile } = useCodingStates();
 
-    if (!selectedFile) return null;
+    if (!selectedFile) return (
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+            Select a file and start coding
+        </div>
+    );
 
     return (
         <Editor

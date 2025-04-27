@@ -18,6 +18,8 @@ export class OrchestratorService {
   ) { }
 
   async startResource(dto: ResourceStartDto) {
+    console.log('request received');
+    
     const { replId } = dto;
 
     const manifests = this.readAndParseKubeYaml(
