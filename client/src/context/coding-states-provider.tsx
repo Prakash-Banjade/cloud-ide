@@ -105,7 +105,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setIsSyncing,
         refreshTree,
         editorInstance,
-        setEditorInstance
+        setEditorInstance,
     };
 
     return (

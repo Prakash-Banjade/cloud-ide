@@ -6,25 +6,26 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { sortFolderFirst } from "./file-manager-fns"
 import { getFileIcon } from "./file-icons"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { TreeItemContextMenu } from "./context-menu"
 
 export enum EItemType {
     FILE = 'file',
     DIR = 'dir'
 }
 
+interface ItemCommonProps {
+    name: string,
+    path: string,
+}
 
-export interface TFileItem {
-    name: string
+export interface TFileItem extends ItemCommonProps {
     type: EItemType.FILE
-    path: string
     content?: string
     language?: string
 }
 
-export interface TFolderItem {
-    name: string
+export interface TFolderItem extends ItemCommonProps {
     type: EItemType.DIR
-    path: string
     expanded?: boolean
     children: (TFileItem | TFolderItem)[]
 }
@@ -90,23 +91,25 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
 
     return (
         <div>
-            <div
-                className={cn("flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
-                style={{ paddingLeft }}
-                onClick={() => onSelectFile(item)}
-            >
-                <span className="mr-1">
-                    {item.expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </span>
-                <span className="mr-1">
-                    {item.expanded ? (
-                        <FolderOpen className="h-4 w-4 text-yellow-400" />
-                    ) : (
-                        <Folder className="h-4 w-4 text-yellow-400" />
-                    )}
-                </span>
-                <span>{item.name}</span>
-            </div>
+            <TreeItemContextMenu item={item}>
+                <div
+                    className={cn("flex items-center select-none py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
+                    style={{ paddingLeft }}
+                    onClick={() => onSelectFile(item)}
+                >
+                    <span className="mr-1">
+                        {item.expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </span>
+                    <span className="mr-1">
+                        {item.expanded ? (
+                            <FolderOpen className="h-4 w-4 text-yellow-400" />
+                        ) : (
+                            <Folder className="h-4 w-4 text-yellow-400" />
+                        )}
+                    </span>
+                    <span>{item.name}</span>
+                </div>
+            </TreeItemContextMenu>
             {item.expanded && item.children && (
                 <div>
                     {item.children.map((child) => {
@@ -143,13 +146,15 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
     const paddingLeft = `${level * 12 + 8}px`;
 
     return (
-        <div
-            className={cn("flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
-            style={{ paddingLeft }}
-            onClick={() => onSelectFile(item)}
-        >
-            <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
-            <span className={cn(isSelected && "text-shadow-2xs")}>{item.name}</span>
-        </div>
+        <TreeItemContextMenu item={item}>
+            <div
+                className={cn("select-none flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
+                style={{ paddingLeft }}
+                onClick={() => onSelectFile(item)}
+            >
+                <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
+                <span className={cn(isSelected && "text-shadow-2xs")}>{item.name}</span>
+            </div>
+        </TreeItemContextMenu>
     )
 }

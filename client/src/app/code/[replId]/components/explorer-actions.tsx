@@ -42,7 +42,7 @@ export default function ExplorerActions() {
                 setIsOpen={setIsOpen}
                 description={`Location: ${parentFolderPath}`}
             >
-                <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} refresh={refresh} setIsOpen={setIsOpen} />
+                <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} setIsOpen={setIsOpen} />
             </ResponsiveDialog>
 
             <TooltipWrapper label="New file" contentProps={{ side: "bottom" }}>

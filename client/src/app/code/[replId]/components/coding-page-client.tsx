@@ -115,7 +115,7 @@ export const CodingPagePostPodCreation = () => {
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
+                <ResizablePanel defaultSize={20} minSize={20} maxSize={30} className="bg-sidebar">
                     <section className="p-2 pl-4 flex justify-between items-center gap-4">
                         <div className="text-sm font-medium uppercase">Explorer</div>
                         <div className="flex items-center gap-0.5 text-muted-foreground">

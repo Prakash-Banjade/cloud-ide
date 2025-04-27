@@ -35,11 +35,10 @@ const formSchema = z.object({
 interface NewItemFormProps {
     parentFolderPath: string,
     itemType: EItemType,
-    refresh: () => void,
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function NewItemForm({ parentFolderPath, itemType, refresh, setIsOpen }: NewItemFormProps) {
+export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
     const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
     const { socket } = useSocket();
 

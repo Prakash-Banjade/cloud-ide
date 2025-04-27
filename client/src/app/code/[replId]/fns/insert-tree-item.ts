@@ -37,7 +37,10 @@ export function insertTreeItem(
         ) as TFolderItem | undefined
 
         const folder: TFolderItem = existing
-            ? existing
+            ? {
+                ...existing,
+                expanded: true
+            }
             : {
                 name: head,
                 type: EItemType.DIR,
@@ -63,4 +66,20 @@ export function insertTreeItem(
     }
 
     return helper(tree, segments, "")
+}
+
+export function removeItemFromTree(tree: TreeItem[], targetPath: string): TreeItem[] {
+    function recursiveRemove(items: TreeItem[]): TreeItem[] {
+        return items
+            ?.filter(item => item.path !== targetPath) // Remove if path matches
+            .map(item => {
+                if (item.type === 'dir') {
+                    const updatedChildren = recursiveRemove((item as TFolderItem).children);
+                    return { ...item, children: updatedChildren };
+                }
+                return item;
+            });
+    }
+
+    return recursiveRemove(tree);
 }

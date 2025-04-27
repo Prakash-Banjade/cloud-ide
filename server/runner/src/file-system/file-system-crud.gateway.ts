@@ -75,11 +75,11 @@ export class FileSystemCRUDGateway {
      */
     @SubscribeMessage('deleteItem')
     async onDeleteItem(
-        @MessageBody() payload: { path: string },
+        @MessageBody() payload: { path: string, type: 'file' | 'dir' },
         @ConnectedSocket() socket: Socket
     ): Promise<boolean> {
         try {
-            const { path } = payload;
+            const { path, type } = payload;
             const fullPath = `/workspace${path}`;
             const replId = this.getReplId(socket);
 
@@ -87,7 +87,7 @@ export class FileSystemCRUDGateway {
             await this.fileSystemService.deletePath(fullPath);
 
             // remove from Minio: if it's a folder, remove all objects under that prefix
-            if (path.endsWith('/')) {
+            if (type === 'dir') {
                 await this.minioService.removePrefix(`code/${replId}${path}`);
             } else {
                 await this.minioService.removeObject(`code/${replId}`, path);

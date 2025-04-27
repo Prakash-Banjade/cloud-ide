@@ -113,6 +113,7 @@ export class MinioService {
         }
         // batch remove
         await this.minioClient.removeObjects(this._bucketName, toDelete.map(n => n));  // removeObjects :contentReference[oaicite:9]{index=9}
+        console.log(`Prefix removed at ${this._bucketName}/${prefix}`);
     }
 
     /** Copy one object */

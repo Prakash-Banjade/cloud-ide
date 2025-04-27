@@ -38,6 +38,7 @@ export function updateTree(
     items: TreeItem[],
     targetPath: string,
     newChildren: TreeItem[] | null,
+    expand: boolean = true,
 ): TreeItem[] {
     return items.map(item => {
         // only folders can match
@@ -47,7 +48,7 @@ export function updateTree(
                 // either assign new children (if we just fetched them), or leave them alone
                 const children = newChildren ?? item.children
                 // toggle expanded
-                const expanded = item.expanded ? false : true
+                const expanded = expand && (item.expanded ? false : true)
                 return { ...item, children, expanded }
             }
             // otherwise, even if this isn't the folder, its children might contain it:
