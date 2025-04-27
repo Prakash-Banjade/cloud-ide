@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog"
 import { useCodingStates } from "@/context/coding-states-provider"
-import { updateTree } from "./file-manager-fns"
-import { removeItemFromTree } from "../fns/insert-tree-item"
+import { updateTree } from "../fns/file-manager-fns"
+import { removeItemFromTree } from "../fns/tree-mutation-fns"
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
+import { RenameItemForm } from "./rename-item-form"
 
 type Props = {
     children: React.ReactNode,
@@ -17,6 +19,7 @@ type Props = {
 export function TreeItemContextMenu({ children, item }: Props) {
     const { setFileStructure } = useCodingStates();
     const [isOpen, setIsOpen] = useState(false);
+    const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const { socket } = useSocket();
 
@@ -44,6 +47,15 @@ export function TreeItemContextMenu({ children, item }: Props) {
                     />
                 )
             }
+
+            <ResponsiveDialog
+                title={`Rename ${item.name}`}
+                isOpen={isRenameOpen}
+                setIsOpen={setIsRenameOpen}
+            >
+                <RenameItemForm item={item} setIsOpen={setIsRenameOpen} />
+            </ResponsiveDialog>
+
             <ContextMenu onOpenChange={setIsOpen}>
                 <ContextMenuTrigger>
                     <section
@@ -62,7 +74,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                     </section>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                    <ContextMenuItem>
+                    <ContextMenuItem onClick={() => setIsRenameOpen(true)}>
                         <Pencil />
                         Rename
                     </ContextMenuItem>

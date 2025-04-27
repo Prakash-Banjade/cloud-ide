@@ -1,6 +1,6 @@
 "use client";
 
-import { fetchDirAsync, findItem, onItemSelect, updateTree } from '@/app/code/[replId]/components/file-manager-fns';
+import { fetchDirAsync, findItem, onItemSelect, updateTree } from '@/app/code/[replId]/fns/file-manager-fns';
 import { TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';

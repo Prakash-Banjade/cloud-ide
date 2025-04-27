@@ -9,11 +9,12 @@ import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
 import { getFileIcon } from "./file-icons"
 import { EItemType, TreeItem } from "./file-tree"
-import { insertTreeItem } from "../fns/insert-tree-item"
+import { insertTreeItem, renameTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
-import { findItem } from "./file-manager-fns"
+import { findItem } from "../fns/file-manager-fns"
+import { Button } from "@/components/ui/button"
 
-const fileNameRgx = new RegExp(
+export const fileNameRgx = new RegExp(
     // 1) forbid reserved Windows device names (CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9)
     '^(?!^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$)' +
     // 2) allow an optional single leading dot (for dotfiles), but not multiple dots-only
@@ -26,11 +27,12 @@ const fileNameRgx = new RegExp(
     'i'
 );
 
-const formSchema = z.object({
-    itemName: z.string().min(1, { message: "Name must be at least 1 character" }).max(50).regex(fileNameRgx, "Invalid file name"),
+const newItemFormSchema = z.object({
+    itemName: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
     type: z.nativeEnum(EItemType),
 });
 
+type NewItemFormType = z.infer<typeof newItemFormSchema>;
 
 interface NewItemFormProps {
     parentFolderPath: string,
@@ -42,16 +44,15 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
     const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
     const { socket } = useSocket();
 
-    // 1. Define your form.
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+    const form = useForm<NewItemFormType>({
+        resolver: zodResolver(newItemFormSchema),
         defaultValues: {
             itemName: "",
             type: itemType || EItemType.FILE,
         },
     })
 
-    const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const onSubmit = (values: NewItemFormType) => {
         if (!parentFolderPath || !socket) return;
 
         const itemPath = (!!parentFolderPath && parentFolderPath !== "/") ? `${parentFolderPath}/${values.itemName}` : `/${values.itemName}`;
@@ -121,7 +122,9 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
                         </FormItem>
                     )}
                 />
+                <Button type="submit">Create</Button>
             </form>
         </Form>
     )
 }
+

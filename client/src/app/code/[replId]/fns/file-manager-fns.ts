@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { EItemType, TFileItem, TFolderItem, TreeItem } from "./file-tree";
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree";
 import { Dispatch, SetStateAction } from "react";
 
 export const onItemSelect = (

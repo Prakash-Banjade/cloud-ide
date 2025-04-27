@@ -2,11 +2,11 @@ import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
 import { CopyMinus, FilePlus2, FolderPlus, RotateCcw } from 'lucide-react'
 import React, { useState } from 'react'
-import { getParentFolder } from './file-manager-fns'
+import { getParentFolder } from '../fns/file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
 import { EItemType, TreeItem } from './file-tree'
-import { NewItemForm } from './new-item-form'
+import { NewItemForm } from './item-form'
 
 export default function ExplorerActions() {
     const { selectedItem, fileStructure, refreshTree, setFileStructure } = useCodingStates();

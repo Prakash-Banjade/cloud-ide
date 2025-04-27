@@ -108,7 +108,7 @@ export class FileSystemCRUDGateway {
     async onRenameItem(
         @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' },
         @ConnectedSocket() socket: Socket
-    ): Promise<boolean> {
+    ): Promise<{ success: boolean, error: string | null }> {
         const replId = this.getReplId(socket);
 
         try {
@@ -120,23 +120,21 @@ export class FileSystemCRUDGateway {
             await this.fileSystemService.renamePath(fullOld, fullNew);
 
             // mirror in Minio: move each object from old prefix to new prefix
+
             if (type === 'dir') {
-                await this.minioService.movePrefix(
-                    `code/${replId}${oldPath}`,
-                    `code/${replId}${newPath}`
-                );
+                // ensure trailing slash so listObjectsV2 will enumerate children :contentReference[oaicite:2]{index=2}
+                const srcPrefix = `code/${replId}${oldPath.endsWith('/') ? oldPath : oldPath + '/'}`;
+                const dstPrefix = `code/${replId}${newPath.endsWith('/') ? newPath : newPath + '/'}`;
+                await this.minioService.movePrefix(srcPrefix, dstPrefix);
             } else {
-                await this.minioService.copyObject(
-                    `code/${replId}`, oldPath,
-                    `code/${replId}`, newPath
-                );
+                await this.minioService.copyObject(`code/${replId}`, oldPath, `code/${replId}`, newPath);
                 await this.minioService.removeObject(`code/${replId}`, oldPath);
             }
 
-            return true;
+            return { success: true, error: null };
         } catch (err) {
             console.error('renameItem failed', err);
-            return false;
+            return { success: false, error: err.message };
         }
     }
 }

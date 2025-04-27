@@ -1,4 +1,4 @@
-import { EItemType, TFolderItem, TreeItem } from "../components/file-tree"
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree"
 
 /**
  * Insert `item` into `tree` at the correct nested spot based on its `.path`.
@@ -26,7 +26,7 @@ export function insertTreeItem(
         if (rest.length === 0) {
             // remove any existing entry with same path, then append the new item
             return [
-                ...nodes.filter(n => n.path !== item.path),
+                ...(Array.isArray(nodes) ? nodes.filter(n => n.path !== item.path) : []),
                 item
             ]
         }
@@ -82,4 +82,53 @@ export function removeItemFromTree(tree: TreeItem[], targetPath: string): TreeIt
     }
 
     return recursiveRemove(tree);
+}
+
+/**
+ * Rename a tree item at oldPath to newPath, updating that item and all its descendants.
+ * Returns a new tree (no mutation).
+ * 
+ * @param tree - the original tree
+ * @param oldPath - the exact path of the item to rename
+ * @param newPath - the new desired path
+ */
+export function renameTreeItem(
+    tree: TreeItem[],
+    oldPath: string,
+    newPath: string
+): TreeItem[] {
+    const renameRec = (items: TreeItem[]): TreeItem[] =>
+        items?.map(item => {
+            // Compute updated path: if item's path is under oldPath, replace prefix
+            const isAffected = item.path === oldPath || item.path.startsWith(oldPath + '/');
+            const updatedPath = isAffected
+                ? item.path.replace(oldPath, newPath)
+                : item.path;
+
+            // Compute updated name: last segment of updated path
+            const segments = updatedPath.split('/').filter(Boolean);
+            const updatedName = segments.length > 0 ? segments[segments.length - 1] : '';
+
+            if (item.type === 'dir') {
+                // Recurse into children
+                const folder = item as TFolderItem;
+                const newChildren = renameRec(folder.children);
+                return {
+                    ...folder,
+                    name: isAffected ? updatedName : folder.name,
+                    path: updatedPath,
+                    children: newChildren,
+                };
+            } else {
+                // File
+                const file = item as TFileItem;
+                return {
+                    ...file,
+                    name: isAffected ? updatedName : file.name,
+                    path: updatedPath,
+                };
+            }
+        });
+
+    return renameRec(tree);
 }
