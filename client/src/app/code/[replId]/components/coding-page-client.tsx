@@ -128,7 +128,7 @@ export const CodingPagePostPodCreation = () => {
                 <ResizableHandle withHandle />
 
                 {/* Code editor panel */}
-                <ResizablePanel defaultSize={50} minSize={30}>
+                <ResizablePanel defaultSize={60} minSize={30}>
                     <div className="h-full flex flex-col">
                         <div className="px-2 py-1 text-sm bg-secondary">
                             <SelectedFileBreadCrumb />

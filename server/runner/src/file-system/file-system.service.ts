@@ -18,7 +18,6 @@ export interface File {
 export class FileSystemService {
 
     fetchDir(dir: string, baseDir: string): Promise<File[]> {
-        // console.log({ dir, baseDir })
         return new Promise((resolve, reject) => {
             fs.readdir(dir, { withFileTypes: true }, (err, files) => {
                 if (err) {
@@ -71,8 +70,6 @@ export class FileSystemService {
     async createFile(file: string, content = ''): Promise<File> {
         await writeFile(file, content, 'utf8');
 
-        console.log({ type: 'file', name: file, path: file })
-        
         return { type: 'file', name: file, path: file };
     }
 

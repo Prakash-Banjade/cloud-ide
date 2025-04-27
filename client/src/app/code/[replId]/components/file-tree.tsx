@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { sortFolderFirst } from "./file-manager-fns"
 import { getFileIcon } from "./file-icons"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export enum EItemType {
     FILE = 'file',
@@ -73,7 +74,12 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
         })
     }
 
-    return <div className="text-sm overflow-auto h-full">{renderFileTree(fileStructure)}</div>
+    return <div className="text-sm overflow-auto h-full">
+        <ScrollArea className="h-full">
+            {renderFileTree(fileStructure)}
+            <div className="h-80"></div>
+        </ScrollArea>
+    </div>
 }
 
 function FolderItem({ item, level, onSelectFile }: FolderItemProps) {

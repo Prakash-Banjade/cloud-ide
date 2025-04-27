@@ -3,13 +3,15 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
 import { getFileIcon } from "./file-icons"
 import { EItemType, TreeItem } from "./file-tree"
+import { insertTreeItem } from "../fns/insert-tree-item"
+import { useCodingStates } from "@/context/coding-states-provider"
+import { findItem } from "./file-manager-fns"
 
 const fileNameRgx = new RegExp(
     // 1) forbid reserved Windows device names (CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9)
@@ -38,6 +40,7 @@ interface NewItemFormProps {
 }
 
 export function NewItemForm({ parentFolderPath, itemType, refresh, setIsOpen }: NewItemFormProps) {
+    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
     const { socket } = useSocket();
 
     // 1. Define your form.
@@ -54,16 +57,35 @@ export function NewItemForm({ parentFolderPath, itemType, refresh, setIsOpen }: 
 
         const itemPath = (!!parentFolderPath && parentFolderPath !== "/") ? `${parentFolderPath}/${values.itemName}` : `/${values.itemName}`;
 
+        const existing = findItem(fileStructure, itemPath);
+
+        if (existing) {
+            form.setError("itemName", { message: `A file or folder ${values.itemName} already exists at this location. Please choose a different name.` });
+            return;
+        }
+
         socket.emit("createItem", { path: itemPath, type: values.type }, ({ error, success }: { success: boolean, error: string | null }) => {
             if (success) {
                 const newTreeItem: TreeItem = {
                     name: values.itemName,
                     path: itemPath,
-                    language: values.itemName.split('.').pop(),
                     type: values.type,
+                    ...(values.type === EItemType.FILE ? {
+                        language: values.itemName.split('.').pop(),
+                        content: '',
+                    } : {}),
                 } as TreeItem;
 
-                refresh(); // TODO: refreshing the whole tree is expensive
+                setFileStructure(prev => insertTreeItem(prev, newTreeItem)); // insert the new item in the tree
+                setSelectedItem(newTreeItem);
+
+                if (newTreeItem.type === EItemType.FILE) {
+                    setSelectedFile(newTreeItem);
+                    window.requestAnimationFrame(() => {
+                        editorInstance?.focus();
+                    })
+                }
+
                 setIsOpen(false);
             } else {
                 form.setError("itemName", { message: typeof error === 'string' ? error : `Cannot create ${itemType}` });
@@ -73,7 +95,7 @@ export function NewItemForm({ parentFolderPath, itemType, refresh, setIsOpen }: 
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" autoComplete="off">
                 <FormField
                     control={form.control}
                     name="itemName"
@@ -91,6 +113,7 @@ export function NewItemForm({ parentFolderPath, itemType, refresh, setIsOpen }: 
                                     <Input
                                         className='pl-8 w-full'
                                         placeholder={itemType === EItemType.FILE ? 'filename.ext' : 'folder name'}
+                                        autoComplete="off"
                                         {...field}
                                     />
                                 </section>
@@ -99,7 +122,6 @@ export function NewItemForm({ parentFolderPath, itemType, refresh, setIsOpen }: 
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Create</Button>
             </form>
         </Form>
     )

@@ -1,11 +1,19 @@
 import Editor from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
 import { useTheme } from "next-themes";
-import { useCodingStates } from "@/context/coding-states-provider";
+import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
+
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
-    const { setIsSyncing, selectedFile } = useCodingStates();
+    const { setIsSyncing, selectedFile, setEditorInstance } = useCodingStates();
+
+    function handleEditorDidMount(editor: IStandaloneCodeEditor) {
+        setEditorInstance(editor);
+        window.requestAnimationFrame(() => {
+            editor.focus()
+        });
+    }
 
     if (!selectedFile) return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -18,6 +26,13 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             height="100vh"
             language={getLanguageFromName(selectedFile.name)}
             value={selectedFile.content}
+            options={{
+                "semanticHighlighting.enabled": true,
+                acceptSuggestionOnEnter: "on",
+                autoClosingBrackets: "always",
+                autoClosingComments: "always",
+            }}
+            onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}
             onChange={debounce((value: string | undefined) => {
                 if (value !== undefined) {
