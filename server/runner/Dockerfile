@@ -27,10 +27,6 @@ RUN npm install --only=production && npm cache clean --force
 # Remove package json files
 RUN rm -rf package*.json
 
-# Set NODE_ENV to production
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
 # Expose port and set the start command
 EXPOSE 3003
 CMD ["node", "dist/main.js"]

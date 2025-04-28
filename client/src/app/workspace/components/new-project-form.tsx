@@ -38,6 +38,8 @@ export function NewProjectForm() {
     const { mutateAsync, isPending } = useAppMutation();
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        console.log(values)
+        
         const res = await mutateAsync({
             endpoint: `${API_URL}/projects`,
             method: 'post',
@@ -80,6 +82,14 @@ export function NewProjectForm() {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
+                                        <SelectItem value={ELanguage.REACT_JS}>
+                                            <Icons.javascript />
+                                            React + JS
+                                        </SelectItem>
+                                        <SelectItem value={ELanguage.REACT_TS}>
+                                            <Icons.tsx />
+                                            React + TS
+                                        </SelectItem>
                                         <SelectItem value={ELanguage.NODE_JS}>
                                             <Icons.node />
                                             Node JS
@@ -87,6 +97,14 @@ export function NewProjectForm() {
                                         <SelectItem value={ELanguage.PYTHON}>
                                             <Icons.python />
                                             Python
+                                        </SelectItem>
+                                        <SelectItem value={ELanguage.C}>
+                                            <Icons.c />
+                                            C Language
+                                        </SelectItem>
+                                        <SelectItem value={ELanguage.CPP}>
+                                            <Icons.cpp />
+                                            C++
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>

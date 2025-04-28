@@ -35,7 +35,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     const host = socket.handshake.headers.host;
     const replId = host?.split('.')[0];
 
-    return "node-node"; // hardcoded for now
+    return "my-react-project"; // hardcoded for now
 
     if (!replId) {
       socket.disconnect();

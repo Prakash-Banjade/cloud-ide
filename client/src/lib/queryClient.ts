@@ -7,7 +7,8 @@ export const queryClient = new QueryClient({
         queries: {
             staleTime: parseInt(process.env.NEXT_PUBLIC_QUERY_STALE_TIME!),
             gcTime: parseInt(process.env.NEXT_PUBLIC_QUERY_GC_TIME!),
-            retry: parseInt(process.env.NEXT_PUBLIC_QUERY_RETRY!),
+            // retry: parseInt(process.env.NEXT_PUBLIC_QUERY_RETRY!),
+            retry: false,
             refetchOnWindowFocus: false,
         },
     },

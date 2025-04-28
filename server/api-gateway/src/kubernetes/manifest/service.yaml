@@ -121,4 +121,4 @@ spec:
               service:
                 name: service_name
                 port:
-                  number: 3000
+                  number: LANG_PORT

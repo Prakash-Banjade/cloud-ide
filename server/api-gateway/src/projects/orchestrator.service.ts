@@ -4,6 +4,8 @@ import * as fs from 'fs';
 import * as yaml from 'yaml';
 import * as path from 'path';
 import { ResourceStartDto } from './dto/create-project.dto';
+import { ELanguage } from 'src/types';
+import { LANG_PORT } from 'src/utils';
 
 const namespace = "qubide" as const;
 
@@ -23,6 +25,7 @@ export class OrchestratorService {
         const manifests = this.readAndParseKubeYaml(
             path.join(__dirname, '../kubernetes/manifest/service.yaml'),
             replId,
+            ELanguage.REACT_JS, // TODO: fetch language using replid from db then use the correct language
         );
 
         for (const m of manifests) {
@@ -116,12 +119,13 @@ export class OrchestratorService {
         }
     }
 
-    private readAndParseKubeYaml = (filePath: string, replId: string): Array<any> => {
+    private readAndParseKubeYaml = (filePath: string, replId: string, language: ELanguage): Array<any> => {
         const fileContent = fs.readFileSync(filePath, 'utf8');
         const docs = yaml.parseAllDocuments(fileContent).map((doc) => {
             let docString = doc.toString();
-            const regex = new RegExp(`service_name`, 'g');
-            docString = docString.replace(regex, replId);
+            docString = docString
+                .replace(new RegExp(`service_name`, 'g'), replId)
+                .replace(new RegExp(`LANG_PORT`, 'g'), LANG_PORT[language] ?? 3000);
             return yaml.parse(docString);
         });
         return docs;
