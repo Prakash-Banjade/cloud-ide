@@ -9,12 +9,13 @@ export class TerminalManagerService {
 
     createPty(id: string, replId: string, onData: (data: string, id: number) => void) {
         let term = spawn(this.SHELL, [], {
-            cols: 200,
+            cols: 300,
             name: 'xterm',
             cwd: `/workspace`
         });
 
         term.onData((data: string) => onData(data, term.pid));
+
         this.sessions[id] = {
             terminal: term,
             replId

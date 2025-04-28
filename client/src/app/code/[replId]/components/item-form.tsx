@@ -9,28 +9,16 @@ import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
 import { getFileIcon } from "./file-icons"
 import { EItemType, TreeItem } from "./file-tree"
-import { insertTreeItem, renameTreeItem } from "../fns/tree-mutation-fns"
+import { insertTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
-import { Button } from "@/components/ui/button"
-
-export const fileNameRgx = new RegExp(
-    // 1) forbid reserved Windows device names (CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9)
-    '^(?!^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$)' +
-    // 2) allow an optional single leading dot (for dotfiles), but not multiple dots-only
-    '(?!\\.+$)' +
-    // 3) forbid leading or trailing space or dot (except that leading dot IS allowed by the previous line)
-    '(?!.*[ .]$)' +
-    // 4) actual name characters: anything except control, slash, backslash, or these: <>:"|?*
-    '[^<>:"/\\\\|?*\\r\\n]+' +
-    '$',
-    'i'
-);
+import { fileNameRgx } from "@/lib/utils"
+import { useParams, useRouter } from "next/navigation"
 
 const newItemFormSchema = z.object({
-    itemName: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
+    name: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
     type: z.nativeEnum(EItemType),
-});
+}); 
 
 type NewItemFormType = z.infer<typeof newItemFormSchema>;
 
@@ -43,11 +31,13 @@ interface NewItemFormProps {
 export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
     const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
     const { socket } = useSocket();
+    const router = useRouter();
+    const params = useParams();
 
     const form = useForm<NewItemFormType>({
         resolver: zodResolver(newItemFormSchema),
         defaultValues: {
-            itemName: "",
+            name: "",
             type: itemType || EItemType.FILE,
         },
     })
@@ -55,23 +45,23 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
     const onSubmit = (values: NewItemFormType) => {
         if (!parentFolderPath || !socket) return;
 
-        const itemPath = (!!parentFolderPath && parentFolderPath !== "/") ? `${parentFolderPath}/${values.itemName}` : `/${values.itemName}`;
+        const itemPath = (!!parentFolderPath && parentFolderPath !== "/") ? `${parentFolderPath}/${values.name}` : `/${values.name}`;
 
         const existing = findItem(fileStructure, itemPath);
 
         if (existing) {
-            form.setError("itemName", { message: `A file or folder ${values.itemName} already exists at this location. Please choose a different name.` });
+            form.setError("name", { message: `A file or folder ${values.name} already exists at this location. Please choose a different name.` });
             return;
         }
 
         socket.emit("createItem", { path: itemPath, type: values.type }, ({ error, success }: { success: boolean, error: string | null }) => {
             if (success) {
                 const newTreeItem: TreeItem = {
-                    name: values.itemName,
+                    name: values.name,
                     path: itemPath,
                     type: values.type,
                     ...(values.type === EItemType.FILE ? {
-                        language: values.itemName.split('.').pop(),
+                        language: values.name.split('.').pop(),
                         content: '',
                     } : {}),
                 } as TreeItem;
@@ -81,6 +71,7 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
 
                 if (newTreeItem.type === EItemType.FILE) {
                     setSelectedFile(newTreeItem);
+                    router.push(`/code/${params.replId}?path=${newTreeItem.path}`);
                     window.requestAnimationFrame(() => {
                         editorInstance?.focus();
                     })
@@ -88,17 +79,17 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
 
                 setIsOpen(false);
             } else {
-                form.setError("itemName", { message: typeof error === 'string' ? error : `Cannot create ${itemType}` });
+                form.setError("name", { message: typeof error === 'string' ? error : `Cannot create ${itemType}` });
             }
         });
     }
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" autoComplete="off">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <FormField
                     control={form.control}
-                    name="itemName"
+                    name="name"
                     render={({ field }) => (
                         <FormItem>
                             <FormControl>
@@ -106,7 +97,7 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
                                     <div className='absolute left-2'>
                                         {
                                             itemType === EItemType.FILE
-                                                ? getFileIcon(form.watch('itemName'))
+                                                ? getFileIcon(form.watch('name'))
                                                 : <Folder size={16} />
                                         }
                                     </div>
@@ -122,7 +113,6 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Create</Button>
             </form>
         </Form>
     )

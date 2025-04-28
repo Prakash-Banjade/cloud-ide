@@ -23,7 +23,7 @@ export class FileSystemService {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(files.map(file => {
+                    resolve(files.filter(f => !f.name.endsWith('.keep')).map(file => {
                         const isDir = file.isDirectory();
 
                         return {

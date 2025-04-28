@@ -1,3 +1,5 @@
+"use client"
+
 import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
 import { CopyMinus, FilePlus2, FolderPlus, RotateCcw } from 'lucide-react'
@@ -43,6 +45,7 @@ export default function ExplorerActions() {
                 description={`Location: ${parentFolderPath}`}
             >
                 <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} setIsOpen={setIsOpen} />
+                {/* <NewItemForm /> */}
             </ResponsiveDialog>
 
             <TooltipWrapper label="New file" contentProps={{ side: "bottom" }}>

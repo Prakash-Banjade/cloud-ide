@@ -128,7 +128,7 @@ export const CodingPagePostPodCreation = () => {
                 <ResizableHandle withHandle />
 
                 {/* Code editor panel */}
-                <ResizablePanel defaultSize={60} minSize={30}>
+                <ResizablePanel defaultSize={50} minSize={30}>
                     <div className="h-full flex flex-col">
                         <div className="px-2 py-1 text-sm bg-secondary">
                             <SelectedFileBreadCrumb />
@@ -140,14 +140,14 @@ export const CodingPagePostPodCreation = () => {
                 <ResizableHandle withHandle />
 
                 {/* Terminal and preview panel */}
-                <ResizablePanel defaultSize={20} minSize={20}>
+                <ResizablePanel defaultSize={30} minSize={20}>
                     <Tabs defaultValue="terminal" className="h-full flex flex-col">
                         <TabsList className="mx-2 mt-1">
                             <TabsTrigger value="terminal">Terminal</TabsTrigger>
                             <TabsTrigger value="preview">Preview</TabsTrigger>
                         </TabsList>
                         <TabsContent value="terminal" className="flex-1 p-0 m-0">
-                            {/* <TerminalComponent socket={socket} /> */}
+                            <TerminalComponent socket={socket} />
                         </TabsContent>
                         <TabsContent value="preview" className="flex-1 p-0 m-0">
                             {/* <Preview /> */}

@@ -12,7 +12,8 @@ import { EItemType, TreeItem } from "./file-tree"
 import { renameTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
-import { fileNameRgx } from "./item-form"
+import { useParams, useRouter } from "next/navigation"
+import { fileNameRgx } from "@/lib/utils"
 
 
 interface RenameItemFormProps {
@@ -28,8 +29,10 @@ const renameformSchema = z.object({
 type RenameItemFormValues = z.infer<typeof renameformSchema>;
 
 export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "parentFolderPath">) {
-    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem } = useCodingStates();
+    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, selectedFile } = useCodingStates();
     const { socket } = useSocket();
+    const router = useRouter();
+    const params = useParams();
 
     const form = useForm<RenameItemFormValues>({
         resolver: zodResolver(renameformSchema),
@@ -52,7 +55,25 @@ export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "p
 
         socket.emit("renameItem", { newPath, oldPath: item.path, type: item.type }, ({ error, success }: { success: boolean, error: string | null }) => {
             if (success) {
+                const newTreeItem: TreeItem = {
+                    name: values.itemName,
+                    path: newPath,
+                    type: item.type,
+                    ...(item.type === EItemType.FILE ? {
+                        language: values.itemName.split('.').pop(),
+                        content: item.content,
+                    } : {}),
+                } as TreeItem;
+
                 setFileStructure(prev => renameTreeItem(prev, item.path, newPath));
+
+                setSelectedItem(newTreeItem);
+
+                if (newTreeItem.type === EItemType.FILE && selectedFile?.path === item.path) {
+                    setSelectedFile(newTreeItem);
+                    router.push(`/code/${params.replId}?path=${newTreeItem.path}`);
+                }
+
                 setIsOpen(false);
             } else {
                 form.setError("itemName", { message: typeof error === 'string' ? error : `Cannot rename ${item.name}` });
