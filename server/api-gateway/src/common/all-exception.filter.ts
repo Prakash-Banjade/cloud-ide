@@ -2,7 +2,8 @@ import { Catch, ArgumentsHost, HttpStatus, HttpException } from "@nestjs/common"
 import { BaseExceptionFilter } from "@nestjs/core";
 import { QueryFailedError } from "typeorm";
 import { ValidationError } from 'class-validator'
-import { Request, Response } from "express";
+import { FastifyReply } from "fastify/types/reply";
+import { FastifyRequest } from "fastify/types/request";
 
 type ErrorResponse = {
     statusCode: number,
@@ -17,8 +18,8 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
 
     catch(exception: unknown, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
-        const response = ctx.getResponse<Response>()
-        const request = ctx.getRequest<Request>()
+        const response = ctx.getResponse<FastifyReply>()
+        const request = ctx.getRequest<FastifyRequest>()
 
         const errResponse: ErrorResponse = {
             statusCode: 500,

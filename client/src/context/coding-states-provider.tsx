@@ -5,7 +5,6 @@ import { TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
 import { useSocket } from './socket-provider';
-import { Monaco } from '@monaco-editor/react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 interface CodingStatesContextType {

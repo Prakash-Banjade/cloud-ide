@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid' // only works as version 3.3.4
 import { ELanguage } from './types'
+import * as crypto from 'node:crypto'
 
 export function generateSlug(title: string, id: boolean = false) {
     const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')
@@ -12,3 +13,10 @@ export const LANG_PORT: Partial<Record<ELanguage, number>> = {
     [ELanguage.REACT_JS]: 5173,
     [ELanguage.REACT_TS]: 5173,
 }
+
+
+export function generateOtp() {
+    const min = 100000;
+    const max = 999999;
+    return crypto.randomInt(min, max + 1);
+  }
