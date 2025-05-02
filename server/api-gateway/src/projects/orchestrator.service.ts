@@ -4,8 +4,8 @@ import * as fs from 'fs';
 import * as yaml from 'yaml';
 import * as path from 'path';
 import { ResourceStartDto } from './dto/create-project.dto';
-import { ELanguage } from 'src/types';
-import { LANG_PORT } from 'src/utils';
+import { ELanguage } from 'src/common/global.types';
+import { LANG_PORT } from 'src/common/utils';
 
 const namespace = "qubide" as const;
 

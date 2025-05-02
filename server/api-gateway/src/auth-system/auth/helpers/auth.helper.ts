@@ -15,8 +15,8 @@ import { JwtService } from "src/auth-system/jwt/jwt.service";
 import { EOptVerificationType, OtpVerificationPending } from "../entities/otp-verification-pending.entity";
 import { OtpVerificationDto } from "../dto/auth.dtos";
 import { BaseRepository } from "src/common/base.repository";
-import { generateOtp } from "src/utils";
 import { AuthMessage, Tokens } from "src/common/CONSTANTS";
+import { generateOtp } from "src/common/utils";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {

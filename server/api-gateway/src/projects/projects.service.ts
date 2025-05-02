@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { MinioService } from '../minio/minio.service';
-import { generateSlug } from 'src/utils';
+import { generateSlug } from 'src/common/utils';
 
 @Injectable()
 export class ProjectsService {

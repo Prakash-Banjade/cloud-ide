@@ -1,7 +1,7 @@
 import { Transform } from "class-transformer";
-import { ELanguage } from "../../types";
 import { IsEnum, IsNotEmpty, IsString, MaxLength } from "class-validator";
-import { generateSlug } from "src/utils";
+import { ELanguage } from "src/common/global.types";
+import { generateSlug } from "src/common/utils";
 
 export class CreateProjectDto {
     @IsString()

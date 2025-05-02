@@ -1,4 +1,5 @@
 import * as crypto from 'node:crypto'
+import { ELanguage } from './global.types';
 
 export function generateSlug(title: string, id: boolean = false) {
     const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')
@@ -20,4 +21,17 @@ export function generateDeviceId(userAgent: string | undefined, ipAddress: strin
  */
 export function getArrayQueryParam(value: string | string[] | undefined): string[] {
     return Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
+}
+
+export const LANG_PORT: Partial<Record<ELanguage, number>> = {
+    [ELanguage.NODE_JS]: 3000,
+    [ELanguage.REACT_JS]: 5173,
+    [ELanguage.REACT_TS]: 5173,
+}
+
+
+export function generateOtp() {
+    const min = 100000;
+    const max = 999999;
+    return crypto.randomInt(min, max + 1);
 }
