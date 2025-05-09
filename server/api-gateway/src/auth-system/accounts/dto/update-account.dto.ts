@@ -21,13 +21,7 @@ export class UpdateAccountDto {
     @IsOptional()
     lastName?: string;
 
-    @ApiPropertyOptional({ type: "string", description: 'Email' })
-    @IsEmail()
-    @IsOptional()
-    email?: string;
-
     constructor(obj: UpdateAccountDto) {
-        obj.email && (this.email = obj.email);
         obj.firstName && (this.firstName = obj.firstName)
         obj.lastName && (this.lastName = obj.lastName)
     }

@@ -3,9 +3,18 @@ import { ProjectsService } from './projects.service';
 import { ProjectsController } from './projects.controller';
 import { MinioModule } from '../minio/minio.module';
 import { OrchestratorService } from './orchestrator.service';
+import { UsersModule } from 'src/auth-system/users/users.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Project } from './entities/project.entity';
 
 @Module({
-  imports: [MinioModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      Project,
+    ]),
+    MinioModule,
+    UsersModule,
+  ],
   controllers: [ProjectsController],
   providers: [ProjectsService, OrchestratorService],
 })

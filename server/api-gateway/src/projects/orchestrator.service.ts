@@ -1,11 +1,14 @@
 import { AppsV1Api, CoreV1Api, NetworkingV1Api } from '@kubernetes/client-node';
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as yaml from 'yaml';
 import * as path from 'path';
 import { ResourceStartDto } from './dto/create-project.dto';
-import { ELanguage } from 'src/common/global.types';
+import { AuthUser, ELanguage } from 'src/common/global.types';
 import { LANG_PORT } from 'src/common/utils';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Project } from './entities/project.entity';
+import { Repository } from 'typeorm';
 
 const namespace = "qubide" as const;
 
@@ -14,19 +17,28 @@ export class OrchestratorService {
     private readonly logger = new Logger(OrchestratorService.name);
 
     constructor(
+        @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
         private readonly coreV1Api: CoreV1Api,
         private readonly appsV1Api: AppsV1Api,
         private readonly networkingV1Api: NetworkingV1Api
     ) { }
 
-    async startResource(dto: ResourceStartDto) {
-        const { replId } = dto;
+    async startResource(dto: ResourceStartDto, currentUser: AuthUser) {
+        const project = await this.projectRepo.findOne({
+            where: {
+                replId: dto.replId,
+                createdBy: { id: currentUser.userId }
+            },
+            select: { id: true, language: true }
+        });
 
-        const manifests = this.readAndParseKubeYaml(
-            path.join(__dirname, '../kubernetes/manifest/service.yaml'),
-            replId,
-            ELanguage.REACT_JS, // TODO: fetch language using replid from db then use the correct language
-        );
+        if (!project) throw new ForbiddenException('Access denied.');
+
+        const manifests = this.readAndParseKubeYaml({
+            filePath: path.join(__dirname, '../kubernetes/manifest/service.yaml'),
+            replId: dto.replId,
+            language: project.language
+        });
 
         for (const m of manifests) {
             switch (m.kind) {
@@ -119,7 +131,11 @@ export class OrchestratorService {
         }
     }
 
-    private readAndParseKubeYaml = (filePath: string, replId: string, language: ELanguage): Array<any> => {
+    private readAndParseKubeYaml = ({
+        filePath, replId, language
+    }: {
+        filePath: string, replId: string, language: ELanguage
+    }): Array<any> => {
         const fileContent = fs.readFileSync(filePath, 'utf8');
         const docs = yaml.parseAllDocuments(fileContent).map((doc) => {
             let docString = doc.toString();

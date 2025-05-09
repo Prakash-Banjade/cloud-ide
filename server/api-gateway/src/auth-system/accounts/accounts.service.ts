@@ -18,12 +18,10 @@ export class AccountsService extends BaseRepository {
     private readonly utilitiesService: UtilitiesService
   ) { super(dataSource, req) }
 
-  async createAccount() { }
-
   async update(id: string, dto: UpdateAccountDto) {
     const account = await this.getRepository(Account).findOne({
       where: { id },
-      select: { id: true, firstName: true, lastName: true, verifiedAt: true }
+      select: { id: true, verifiedAt: true }
     });
 
     if (!account) throw new NotFoundException('No associated account found');
