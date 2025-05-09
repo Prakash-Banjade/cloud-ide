@@ -4,7 +4,7 @@ import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCr
 import { LoginDevice } from "./login-devices.entity";
 import { BaseEntity } from "src/common/base.entity";
 import { BCRYPT_HASH, EMAIL_REGEX, PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { BadRequestException } from "@nestjs/common";
 
 
@@ -26,7 +26,7 @@ export class Account extends BaseEntity {
     @Column({ type: 'timestamp', nullable: true })
     verifiedAt: Date | null = null;
 
-    @Column({ type: 'simple-array' })
+    @Column({ type: 'text', array: true })
     prevPasswords: string[];
 
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -34,7 +34,10 @@ export class Account extends BaseEntity {
 
     @BeforeInsert()
     hashPassword() {
-        if (this.password && !BCRYPT_HASH.test(this.password)) this.password = bcrypt.hashSync(this.password, PASSWORD_SALT_COUNT);
+        if (this.password && !BCRYPT_HASH.test(this.password)) {
+            console.log(BCRYPT_HASH.test(this.password))
+            this.password = bcrypt.hashSync(this.password, PASSWORD_SALT_COUNT);
+        }
     }
 
     @BeforeInsert()

@@ -4,7 +4,7 @@ services:
   db:
     image: postgres:16-alpine
     restart: always
-    container_name: enterprise_database
+    container_name: qubide_db
     ports:
       - "5432:5432"
     env_file:
@@ -20,7 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    container_name: enterprise_redis
+    container_name: qubide_redis
     ports:
       - '6379:6379'
     env_file:

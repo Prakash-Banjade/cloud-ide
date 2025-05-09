@@ -1,14 +1,14 @@
-import { BadRequestException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
 import { DataSource, IsNull, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
 import { REQUEST } from '@nestjs/core';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Account } from '../accounts/entities/account.entity';
-import { SignInDto } from './dto/signIn.dto';
+import { RegisterDto, SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
 import { CookieSerializeOptions } from '@fastify/cookie';
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TokenExpiredError } from '@nestjs/jwt';
 import { IVerifyEncryptedHashTokenPairReturn } from './helpers/interface';
@@ -22,6 +22,7 @@ import { BaseRepository } from '../../common/base.repository';
 import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from '../../common/CONSTANTS';
 import { generateDeviceId } from '../../common/utils';
 import { AuthUser } from '../../common/global.types';
+import { User } from '../users/entities/user.entity';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -138,6 +139,31 @@ export class AuthService extends BaseRepository {
     }
   }
 
+  async register(dto: RegisterDto) {
+    const existingWithSameEmail = await this.getRepository(Account).findOne({ where: { email: dto.email }, select: { id: true } });
+    if (existingWithSameEmail) throw new ConflictException({ message: 'Duplicate email. This email is already in use', field: 'email' });
+
+    const pwdHash = await bcrypt.hash(dto.password, PASSWORD_SALT_COUNT);
+
+    const account = this.getRepository(Account).create({
+      email: dto.email,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      password: pwdHash,
+      prevPasswords: [pwdHash],
+      user: this.getRepository(User).create({})
+    });
+
+    await this.getRepository(Account).save(account);
+
+    return this.authHelper.sendEmailConfirmation({
+      id: account.id,
+      email: account.email,
+      firstName: account.firstName,
+      lastName: account.lastName,
+    } as Account);
+  }
+
   async verifyEmail(otpVerificationDto: OtpVerificationDto, req: FastifyRequest) {
     const foundRequest = await this.authHelper.verifyPendingOtp({
       otpVerificationDto,
@@ -157,7 +183,7 @@ export class AuthService extends BaseRepository {
 
     await this.getRepository(OtpVerificationPending).remove(foundRequest); // remove from db
 
-    // add login device // TODO: might need to check for existing with same deviceId
+    // add login device
     await this.getRepository(LoginDevice).save({
       account: foundAccount,
       deviceId: generateDeviceId(req.headers['user-agent'], req.ip),
@@ -167,13 +193,6 @@ export class AuthService extends BaseRepository {
       ua: req.headers['user-agent'],
       isTrusted: true
     });
-
-    // TODO: send user credentials mail
-    // this.eventEmitter.emit(MailEvents.USER_CREDENTIALS, new UserCredentialsEventDto({
-    //   email: foundAccount.email,
-    //   password: newPassword,
-    //   username: foundAccount.firstName + ' ' + foundAccount.lastName,
-    // }));
 
     return { message: 'Account verified successfully' };
   }
@@ -401,7 +420,7 @@ export class AuthService extends BaseRepository {
     // Return success response
     return { message: 'Password reset successful' };
   }
-
+  
   async updateEmail(updateEmailDto: UpdateEmailDto, currentUser: AuthUser) {
     const account = await this.getRepository(Account).findOne({
       where: { id: currentUser.accountId },

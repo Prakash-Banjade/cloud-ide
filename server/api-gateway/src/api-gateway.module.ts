@@ -10,8 +10,11 @@ import { createKeyv } from '@keyv/redis';
 import { AuthSystemModule } from './auth-system/auth-system.module';
 import { EnvModule } from './env/env.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from './datasource/typeorm.module';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './common/guards/auth.guard';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -21,7 +24,6 @@ import { TypeOrmModule } from './datasource/typeorm.module';
     }]),
     EventEmitterModule.forRoot(),
     EnvModule,
-    ProjectsModule,
     MinioModule,
     KubernetesModule,
     UtilitiesModule,
@@ -38,6 +40,18 @@ import { TypeOrmModule } from './datasource/typeorm.module';
     }),
     TypeOrmModule,
     AuthSystemModule,
+    ProjectsModule,
+    MailModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard, // global rate limiting, but can be overriden in route level
+    },
   ],
 })
 export class ApiGatewayModule { }

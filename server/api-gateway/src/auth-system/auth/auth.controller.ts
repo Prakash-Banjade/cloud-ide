@@ -1,8 +1,8 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConflictResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { SignInDto } from './dto/signIn.dto';
+import { RegisterDto, SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { Auth2faHelper } from './helpers/auth-2fa.helper';
 import { TransformInstanceToInstance } from 'class-transformer';
@@ -22,6 +22,16 @@ export class AuthController {
         private readonly authHelper: AuthHelper,
         private readonly auth2faHelper: Auth2faHelper,
     ) { }
+
+    @ApiOperation({ summary: 'Register a user' })
+    @ApiConflictResponse({ description: 'User with email already exists.' })
+    @UseInterceptors(TransactionInterceptor)
+    @HttpCode(HttpStatus.OK)
+    @Public()
+    @Post('register')
+    register(@Body() registerDto: RegisterDto) {
+        return this.authService.register(registerDto);
+    }
 
     @ApiOperation({ summary: 'Login a user' })
     @ApiResponse({ status: 200, description: 'User successfully logged in.' })
@@ -91,7 +101,6 @@ export class AuthController {
     changePassword(@Body() changePasswordDto: ChangePasswordDto, @CurrentUser() currentUser: AuthUser) {
         return this.authService.changePassword(changePasswordDto, currentUser);
     }
-
 
     @ApiOperation({ summary: 'Request password reset' })
     @ApiResponse({ status: 200, description: 'Password reset request sent successfully.' })

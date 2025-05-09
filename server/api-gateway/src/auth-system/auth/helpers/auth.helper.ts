@@ -5,7 +5,7 @@ import { DataSource, IsNull, Not } from "typeorm";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { REQUEST } from "@nestjs/core";
 import { JwtService as JwtSer, TokenExpiredError } from "@nestjs/jwt";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { EncryptionService } from "src/auth-system/encryption/encryption.service";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { IVerifyEncryptedHashTokenPairReturn } from "./interface";
@@ -17,6 +17,8 @@ import { OtpVerificationDto } from "../dto/auth.dtos";
 import { BaseRepository } from "src/common/base.repository";
 import { AuthMessage, Tokens } from "src/common/CONSTANTS";
 import { generateOtp } from "src/common/utils";
+import { MailEvents } from "src/mail/mail.service";
+import { ConfirmationMailEventDto } from "src/mail/dto/events.dto";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -82,14 +84,13 @@ export class AuthHelper extends BaseRepository {
     async sendEmailConfirmation(account: Account) {
         const { otp, encryptedVerificationToken } = await this.generateOtp(account, EOptVerificationType.EMAIL_VERIFICATION);
 
-        // TODO: send mail
-        // this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto({
-        //     otp,
-        //     expirationMin: this.envService.EMAIL_VERIFICATION_EXPIRATION_SEC / 60,
-        //     receiverEmail: account.email,
-        //     receiverName: account.firstName + ' ' + account.lastName,
-        //     token: encryptedVerificationToken
-        // }));
+        this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto({
+            otp,
+            expirationMin: this.envService.EMAIL_VERIFICATION_EXPIRATION_SEC / 60,
+            receiverEmail: account.email,
+            receiverName: account.firstName + ' ' + account.lastName,
+            token: encryptedVerificationToken
+        }));
 
         return {
             message: "An OTP has been sent to your email. Please use the OTP to verify your account."
@@ -109,8 +110,10 @@ export class AuthHelper extends BaseRepository {
         const otpSecret = this.getOtpSecrets(type);
 
         let payload: { email: string };
+
         try {
             const decryptedToken = this.encryptionService.decrypt(verificationToken);
+
             // verify jwt token
             payload = await this.jwtService.verifyAsync(decryptedToken, {
                 secret: otpSecret.secret, // get the secret based on type
@@ -126,7 +129,7 @@ export class AuthHelper extends BaseRepository {
         const foundRequest = await this.otpVerificationPendingRepo.findOneBy({
             email: payload.email,
             type,
-            deviceId: deviceId ?? "" // TODO: fix this, empty search shouldn't happen
+            ...(!!deviceId ? { deviceId } : {})
         });
 
         if (!foundRequest) throw new BadRequestException('Invalid token received');
@@ -135,6 +138,8 @@ export class AuthHelper extends BaseRepository {
             .createHash('sha256')
             .update(verificationToken) // this is supposed to be encrypted token, if not, it's invalid
             .digest('hex')
+
+        console.log(verificationTokenHash)
 
         // comapre the token has with found request hash
         if (verificationTokenHash !== foundRequest.hashedVerificationToken) throw new BadRequestException('Invalid token received');
@@ -168,23 +173,32 @@ export class AuthHelper extends BaseRepository {
     async validateAccount(email: string, password: string): Promise<Account | { message: string }> {
         const foundAccount = await this.accountsRepo.findOne({
             where: { email },
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                twoFaEnabledAt: true,
+                password: true,
+                verifiedAt: true
+            }
         });
 
         if (!foundAccount) throw new UnauthorizedException(AuthMessage.INVALID_AUTH_CREDENTIALS);
 
+        if (!foundAccount.password) throw new BadRequestException(AuthMessage.PASSWORD_NOT_SET_YET);
+
         // if account is not verified, send confirmation email
         if (!foundAccount.verifiedAt) return await this.sendEmailConfirmation(foundAccount);
 
-        // TODO: fix
-        // const isPasswordValid = bcrypt.compare(
-        //     password,
-        //     foundAccount.password,
-        // );
+        const isPasswordValid = bcrypt.compare(
+            password,
+            foundAccount.password,
+        );
 
-        // if (!isPasswordValid) throw new UnauthorizedException(AuthMessage.INVALID_AUTH_CREDENTIALS)
+        if (!isPasswordValid) throw new UnauthorizedException(AuthMessage.INVALID_AUTH_CREDENTIALS)
 
-        // return foundAccount;
-        return { message: "fix this" };
+        return foundAccount;
     }
 
     /**

@@ -5,7 +5,9 @@
   "compilerOptions": {
     "assets": [
       "kubernetes/manifest/**/*",
-      "/kubernetes/manifest/**/*"
+      "/kubernetes/manifest/**/*",
+      "mail/templates/**/*",
+      "/mail/templates/**/*"
     ],
     "deleteOutDir": true
   }

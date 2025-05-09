@@ -1,5 +1,5 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-import bcrypt from "bcryptjs";
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import * as bcrypt from "bcryptjs";
 import { PASSWORD_SALT_COUNT } from "src/common/CONSTANTS";
 
 export enum EOptVerificationType {
@@ -12,6 +12,7 @@ export class OtpVerificationPending {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    @Index({ unique: true })
     @Column('varchar')
     email: string;
 

@@ -41,7 +41,7 @@ export class WebAuthnService extends BaseRepository {
 
         const challengePayload = await generateRegistrationOptions({
             rpID: this.envService.CLIENT_DOMAIN,
-            rpName: 'Abhyam SMS', // Todo: udpate this value
+            rpName: 'Qubide',
             userName: account.email,
             timeout: 30 * 1000,
             excludeCredentials: account.webAuthnCredentials?.map(c => ({
