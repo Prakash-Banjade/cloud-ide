@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <section>
       <Button asChild>
-        <Link href={'/workspace'}>Login</Link>
+        <Link href={'/auth/login'}>Login</Link>
       </Button>
     </section>
   );

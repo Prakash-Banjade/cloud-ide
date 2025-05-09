@@ -5,5 +5,11 @@ export enum ELanguage {
     CPP = "cpp",
     REACT_JS = "react-js",
     REACT_TS = "react-ts"
-
 }
+
+export type TCurrentUser = {
+    firstName: string,
+    lastName: string,
+    profileImageUrl: string | null,
+    branchName: string | null,
+} | undefined
