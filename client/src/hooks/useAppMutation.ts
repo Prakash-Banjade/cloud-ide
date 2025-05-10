@@ -1,6 +1,6 @@
-import { useAxios } from '@/lib/axios';
+import axios from '@/lib/axios';
 import { useMutation, UseMutationResult, useQueryClient } from '@tanstack/react-query';
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import toast from 'react-hot-toast';
 
 interface MutationParams<TData> {
@@ -19,7 +19,6 @@ export const useAppMutation = <TData, TResponse>(): UseMutationResult<
     MutationParams<TData>
 > => {
     const queryClient = useQueryClient();
-    const axios = useAxios();
 
     return useMutation({
         mutationFn: async ({ endpoint, method, data, config }) => {

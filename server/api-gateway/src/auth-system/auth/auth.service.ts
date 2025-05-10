@@ -37,6 +37,7 @@ export class AuthService extends BaseRepository {
   ) { super(datasource, req) }
 
   async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
+    console.log(signInDto)
     const data = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
 
     if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user
@@ -218,11 +219,13 @@ export class AuthService extends BaseRepository {
 
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
+      relations: { user: true },
       select: {
         id: true,
         email: true,
         firstName: true,
         lastName: true,
+        user: { id: true }
       },
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
@@ -420,7 +423,7 @@ export class AuthService extends BaseRepository {
     // Return success response
     return { message: 'Password reset successful' };
   }
-  
+
   async updateEmail(updateEmailDto: UpdateEmailDto, currentUser: AuthUser) {
     const account = await this.getRepository(Account).findOne({
       where: { id: currentUser.accountId },

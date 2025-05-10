@@ -7,9 +7,15 @@ export enum ELanguage {
     REACT_TS = "react-ts"
 }
 
-export type TCurrentUser = {
+export type TUser = {
+    id: string,
+    userId: string,
+    email: string,
     firstName: string,
     lastName: string,
-    profileImageUrl: string | null,
-    branchName: string | null,
-} | undefined
+}
+
+export interface TLoginResponse {
+    access_token: string,
+    user: Pick<TUser, "firstName" | "lastName">;
+}

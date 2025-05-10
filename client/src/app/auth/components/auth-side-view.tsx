@@ -24,7 +24,7 @@ export default function AuthSideView() {
                 <span className='text-background'>Qubide</span>
             </Link>
             <div
-                className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex"
+                className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex"
                 style={{
                     backgroundImage: "linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0)), linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0)), url('/auth-bg.jpg')",
                     backgroundRepeat: "no-repeat",

@@ -5,16 +5,17 @@ import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useAppMutation } from "@/hooks/useAppMutation"
 import toast from "react-hot-toast"
 import { buttonVariants } from "@/components/ui/button"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { TCurrentUser } from "@/types"
+import { TUser } from "@/types"
 import RememberMe from "./remember-me"
 import LoadingButton from "@/components/loading-button"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
     setIsFormSubmitting: React.Dispatch<React.SetStateAction<boolean>>
@@ -28,6 +29,7 @@ const loginFormSchema = z.object({
 export type loginFormSchemaType = z.infer<typeof loginFormSchema>;
 
 export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFormProps) {
+    const router = useRouter();
 
     const form = useForm<loginFormSchemaType>({
         resolver: zodResolver(loginFormSchema),
@@ -37,36 +39,25 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
         },
     })
 
-    const { mutateAsync } = useAppMutation<loginFormSchemaType, { access_token: string, user: TCurrentUser } | { message: string }>();
-
     async function onSubmit(values: loginFormSchemaType) {
-        const response = await mutateAsync({
-            method: "post",
-            endpoint: "auth/login",
-            data: values,
-            toastOnSuccess: false,
-        });
+        try {
+            const result = await signIn("credentials", {
+                email: values.email,
+                password: values.password,
+                redirect: false,
+            });
 
-        if (!response.data) return;
+            if (result?.error) {
+                toast.error(result.error);
+                return;
+            }
 
-        // if ('access_token' in response.data) {
-        //     setAuth({
-        //         accessToken: response.data.access_token,
-        //         user: response.data.user,
-        //     });
-        //     const payload: TAuthPayload = jwtDecode(response.data.access_token);
-
-        //     navigate(location.state?.from?.pathname || `/${payload.role}/dashboard`, { replace: true });
-        // }
-
-        // if ('message' in response.data && 'hasPasskey' in response.data && response.data.message === AuthMessage.DEVICE_NOT_FOUND) {
-        //     return navigate("challenge", { replace: true, state: { email: form.getValues('email'), hasPasskey: !!response.data.hasPasskey } });
-        // }
-
-        // if ('message' in response.data) {
-        //     toast(response.data.message);
-        //     form.reset();
-        // }
+            // Successful login
+            router.push("/workspace"); // or wherever you want to redirect after login
+            router.refresh();
+        } catch (error) {
+            toast.error("An error occurred during sign in");
+        }
     };
 
     React.useEffect(() => {

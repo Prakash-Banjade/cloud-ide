@@ -173,6 +173,7 @@ export class AuthHelper extends BaseRepository {
     async validateAccount(email: string, password: string): Promise<Account | { message: string }> {
         const foundAccount = await this.accountsRepo.findOne({
             where: { email },
+            relations: { user: true },
             select: {
                 id: true,
                 email: true,
@@ -180,7 +181,8 @@ export class AuthHelper extends BaseRepository {
                 lastName: true,
                 twoFaEnabledAt: true,
                 password: true,
-                verifiedAt: true
+                verifiedAt: true,
+                user: { id: true }
             }
         });
 

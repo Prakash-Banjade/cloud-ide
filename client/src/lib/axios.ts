@@ -102,12 +102,8 @@ import toast from "react-hot-toast";
 // };
 
 
-export const useAxios = (): AxiosInstance => {
-    const axiosInstance = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_API_URL,
-        withCredentials: true,
-        timeout: 10000, // Optional: 10 seconds timeout
-    });
-
-    return axiosInstance;
-}
+export default axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    withCredentials: true,
+    timeout: 10000, // Optional: 10 seconds timeout
+});

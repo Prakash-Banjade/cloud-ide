@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/context/session-provider";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -37,7 +38,9 @@ export default function RootLayout({
               position="bottom-right"
               reverseOrder={false}
             />
-            {children}
+            <AuthProvider>
+              {children}
+            </AuthProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </body>
