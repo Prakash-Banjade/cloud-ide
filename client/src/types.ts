@@ -11,11 +11,12 @@ export type TUser = {
     id: string,
     userId: string,
     email: string,
+    deviceId: string,
     firstName: string,
     lastName: string,
 }
 
 export interface TLoginResponse {
     access_token: string,
-    user: Pick<TUser, "firstName" | "lastName">;
+    refresh_token: string,
 }

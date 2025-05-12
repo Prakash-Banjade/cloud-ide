@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne } from "typeorm";
+import { Column, Entity, Index, ManyToOne } from "typeorm";
 import { Account } from "./account.entity";
 import { BaseEntity } from "src/common/base.entity";
 
@@ -7,6 +7,7 @@ export class LoginDevice extends BaseEntity {
     @ManyToOne(() => Account, account => account.loginDevices, { onDelete: 'CASCADE', nullable: false })
     account: Account;
 
+    @Index({ unique: true })
     @Column({ type: 'varchar', nullable: false })
     deviceId: string;
 

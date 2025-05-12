@@ -39,7 +39,7 @@ export class ProjectsService {
 
     await this.projectRepo.save(newProject);
 
-    return { message: "Project created", slug: replId };
+    return { message: "Project created", slug: replId }; // slug is used in frontend to redirect user
   }
 
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {

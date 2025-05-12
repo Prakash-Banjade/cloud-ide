@@ -51,8 +51,10 @@ export class JwtService {
         const payload = {
             accountId: account.id,
             email: account.email,
+            userId: account.user?.id,
             deviceId,
-            userId: account.user?.id
+            firstName: account.firstName,
+            lastName: account.lastName,
         };
 
         const access_token = await this.createAccessToken(payload);

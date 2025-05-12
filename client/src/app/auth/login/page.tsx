@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     const { success, data } = loginMethodSchema.safeParse(method ?? "password");
 
     return (
-        <div className="lg:p-8 h-screen mx-auto flex flex-col justify-center space-y-6 w-[90%] max-w-[600px]">
+        <div className="lg:p-8 h-screen mx-auto flex flex-col justify-center space-y-10 w-[90%] max-w-[600px]">
             <div className="flex flex-col space-y-2 text-center">
                 <h1 className="text-2xl font-semibold tracking-tight">
                     Welcome back!

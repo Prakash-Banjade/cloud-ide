@@ -1,10 +1,11 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { LoginForm as LoginByPasswordForm } from "./login-by-pwd-form"
 import { KeyRound, SquareAsterisk } from "lucide-react"
 import { useState } from "react"
 import { useCustomSearchParams } from "@/hooks/useCustomSearchParams"
+import Link from "next/link"
 
 type Props = {
     method: "password" | "passkey";
@@ -25,7 +26,18 @@ export default function LoginFormOptions({ method }: Props) {
                 )
             }
 
-            <div className="relative my-4">
+            <p className="text-sm text-muted-foreground mt-5 text-center">
+                Don&apos;t have an account?&nbsp;
+
+                <Link
+                    href="/auth/register"
+                    className={buttonVariants({ variant: 'link', className: '!p-0 h-fit' })}
+                >
+                    Create new
+                </Link>
+            </p>
+
+            <div className="relative my-5">
                 <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
                 </div>

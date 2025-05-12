@@ -22,17 +22,28 @@ export const fileNameRgx = new RegExp(
   'i'
 );
 
-export function getUserFromLoginResponse(res: TLoginResponse): TUser {
-  const payload: {
-    accountId: string,
-    email: string,
-    userId: string
-  } = jwtDecode(res.access_token);
+type AccessTokenDecoded = {
+  accountId: string,
+  email: string,
+  userId: string,
+  deviceId: string,
+  firstName: string,
+  lastName: string,
+  exp: number,
+}
+
+export function getUserFromLoginResponse(res: TLoginResponse): { user: TUser, exp: number } {
+  const payload: AccessTokenDecoded = jwtDecode(res.access_token);
 
   return {
-    id: payload.accountId,
-    email: payload.email,
-    userId: payload.userId,
-    ...res.user,
+    user: {
+      id: payload.accountId,
+      email: payload.email,
+      userId: payload.userId,
+      deviceId: payload.deviceId,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+    },
+    exp: payload.exp
   };
 }

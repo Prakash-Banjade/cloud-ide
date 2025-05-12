@@ -1,105 +1,115 @@
 import axios, { AxiosInstance } from "axios";
 import toast from "react-hot-toast";
+import { API_URL } from "./utils";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { AuthMessage } from "./CONSTANTS";
 
-// export const useAxiosPrivate = (): AxiosInstance => {
-//     const { access_token, setAuth } = useAuth();
+export const useAxiosPrivate = (): AxiosInstance => {
+    const { data } = useSession();
+    const router = useRouter();
 
-//     const axiosInstance = axios.create({
-//         baseURL: process.env.NEXT_PUBLIC_API_URL,
-//         headers: {
-//             Authorization: `Bearer ${access_token}`,
-//         },
-//         withCredentials: true,
-//         timeout: 10000, // Optional: 10 seconds timeout
-//     });
+    const access_token = data?.backendTokens?.access_token;
+    const refresh_token = data?.backendTokens?.refresh_token;
 
-//     const MAX_RETRIES = 3;
+    const axiosInstance = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL,
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+        withCredentials: true,
+        timeout: 10000, // Optional: 10 seconds timeout
+    });
 
-//     // Token Refresh Lock: Prevents parallel refresh token requests.
-//     let isRefreshing = false;
-//     let refreshSubscribers: Array<(token: string) => void> = [];
+    const MAX_RETRIES = 3;
 
-//     const subscribeTokenRefresh = (cb: (token: string) => void) => {
-//         refreshSubscribers.push(cb);
-//     };
+    // Token Refresh Lock: Prevents parallel refresh token requests.
+    let isRefreshing = false;
+    let refreshSubscribers: Array<(token: string) => void> = [];
 
-//     const onRefreshed = (token: string) => {
-//         refreshSubscribers.forEach((cb) => cb(token));
-//         refreshSubscribers = [];
-//     };
+    const subscribeTokenRefresh = (cb: (token: string) => void) => {
+        refreshSubscribers.push(cb);
+    };
 
-//     // axiosInstance.interceptors.response.use(
-//     //     (response) => response,
-//     //     async (error) => {
-//     //         if (error?.response?.data?.message?.message === AuthMessage.INVALID_AUTH_CREDENTIALS_MSG) {
-//     //             return toast.error(AuthMessage.INVALID_AUTH_CREDENTIALS_MSG);
-//     //         }
+    const onRefreshed = (token: string) => {
+        refreshSubscribers.forEach((cb) => cb(token));
+        refreshSubscribers = [];
+    };
 
-//     //         const originalRequest = error.config;
+    axiosInstance.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+            if (error?.response?.data?.message?.message === AuthMessage.INVALID_AUTH_CREDENTIALS_MSG) {
+                return toast.error(AuthMessage.INVALID_AUTH_CREDENTIALS_MSG);
+            }
 
-//     //         if (error.response?.status === 401 && !originalRequest._retry) {
-//     //             if (isRefreshing) {
-//     //                 return new Promise((resolve) => {
-//     //                     subscribeTokenRefresh((newToken) => {
-//     //                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-//     //                         resolve(axiosInstance(originalRequest));
-//     //                     });
-//     //                 });
-//     //             }
+            const originalRequest = error.config;
 
-//     //             originalRequest._retry = true;
-//     //             isRefreshing = true;
+            if (error.response?.status === 401 && !originalRequest._retry) {
+                if (isRefreshing) {
+                    return new Promise((resolve) => {
+                        subscribeTokenRefresh((newToken) => {
+                            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                            resolve(axiosInstance(originalRequest));
+                        });
+                    });
+                }
 
-//     //             try {
-//     //                 const response = await axios.post(
-//     //                     `${import.meta.env.VITE_API_URL}/${QueryKey.AUTH_REFRESH}`,
-//     //                     {},
-//     //                     { withCredentials: true }
-//     //                 );
+                originalRequest._retry = true;
+                isRefreshing = true;
 
-//     //                 if (response?.status === 200) {
-//     //                     const newAccessToken = response.data.access_token;
-//     //                     setAuth({ accessToken: newAccessToken, user: response.data.user });
+                try {
+                    const response = await axios.post(
+                        `${API_URL}/auth/refresh`,
+                        {},
+                        {
+                            headers: {
+                                Authorization: `Refresh ${refresh_token}`,
+                            }
+                        }
+                    );
 
-//     //                     axiosInstance.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
-//     //                     originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                    if (response?.status === 200) {
+                        const newAccessToken = response.data.access_token;
 
-//     //                     onRefreshed(newAccessToken);
-//     //                     isRefreshing = false;
+                        axiosInstance.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
+                        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-//     //                     return axiosInstance(originalRequest);
-//     //                 }
-//     //             } catch (err) {
-//     //                 isRefreshing = false;
-//     //                 setAuth(null); // Clear auth state if refresh fails
-//     //                 navigate('/', { replace: true, state: { from: location } });
-//     //                 return Promise.reject(err);
-//     //             }
-//     //         }
+                        onRefreshed(newAccessToken);
+                        isRefreshing = false;
 
-//     //         if (error.response?.status === 429 && !originalRequest._retryCount) {
-//     //             originalRequest._retryCount = originalRequest._retryCount || 0;
+                        return axiosInstance(originalRequest);
+                    }
+                } catch (err) {
+                    isRefreshing = false;
+                    router.push('/auth/login');
+                    return Promise.reject(err);
+                }
+            }
 
-//     //             if (originalRequest._retryCount < MAX_RETRIES) {
-//     //                 originalRequest._retryCount += 1;
+            if (error.response?.status === 429 && !originalRequest._retryCount) {
+                originalRequest._retryCount = originalRequest._retryCount || 0;
 
-//     //                 const retryAfter = error.response.headers["retry-after"];
-//     //                 const delay = retryAfter
-//     //                     ? parseInt(retryAfter) * 1000
-//     //                     : Math.min(1000 * 2 ** originalRequest._retryCount, 10000);
+                if (originalRequest._retryCount < MAX_RETRIES) {
+                    originalRequest._retryCount += 1;
 
-//     //                 await new Promise((resolve) => setTimeout(resolve, delay));
+                    const retryAfter = error.response.headers["retry-after"];
+                    const delay = retryAfter
+                        ? parseInt(retryAfter) * 1000
+                        : Math.min(1000 * 2 ** originalRequest._retryCount, 10000);
 
-//     //                 return axiosInstance(originalRequest);
-//     //             }
-//     //         }
+                    await new Promise((resolve) => setTimeout(resolve, delay));
 
-//     //         return Promise.reject(error);
-//     //     }
-//     // );
+                    return axiosInstance(originalRequest);
+                }
+            }
 
-//     return axiosInstance;
-// };
+            return Promise.reject(error);
+        }
+    );
+
+    return axiosInstance;
+};
 
 
 export default axios.create({

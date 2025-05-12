@@ -18,7 +18,7 @@ import { BaseRepository } from "src/common/base.repository";
 import { AuthMessage, Tokens } from "src/common/CONSTANTS";
 import { generateOtp } from "src/common/utils";
 import { MailEvents } from "src/mail/mail.service";
-import { ConfirmationMailEventDto } from "src/mail/dto/events.dto";
+import { EmailVerificationMailDto } from "src/mail/dto/events.dto";
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthHelper extends BaseRepository {
@@ -84,7 +84,7 @@ export class AuthHelper extends BaseRepository {
     async sendEmailConfirmation(account: Account) {
         const { otp, encryptedVerificationToken } = await this.generateOtp(account, EOptVerificationType.EMAIL_VERIFICATION);
 
-        this.eventEmitter.emit(MailEvents.CONFIRMATION, new ConfirmationMailEventDto({
+        this.eventEmitter.emit(MailEvents.EMAIL_VERIFICATION, new EmailVerificationMailDto({
             otp,
             expirationMin: this.envService.EMAIL_VERIFICATION_EXPIRATION_SEC / 60,
             receiverEmail: account.email,

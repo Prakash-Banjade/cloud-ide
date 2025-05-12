@@ -26,7 +26,6 @@ export class AuthController {
     @ApiOperation({ summary: 'Register a user' })
     @ApiConflictResponse({ description: 'User with email already exists.' })
     @UseInterceptors(TransactionInterceptor)
-    @HttpCode(HttpStatus.OK)
     @Public()
     @Post('register')
     register(@Body() registerDto: RegisterDto) {
@@ -86,8 +85,8 @@ export class AuthController {
     @UseGuards(RefreshTokenGuard)
     @ApiBearerAuth()
     @Post('logout')
-    logout(@Res({ passthrough: true }) res: FastifyReply) {
-        return this.authService.logout(res);
+    logout() {
+        return this.authService.logout();
     }
 
     @ApiOperation({ summary: 'Change the password of the authenticated user' })

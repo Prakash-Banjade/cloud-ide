@@ -1,11 +1,11 @@
-export class ConfirmationMailEventDto {
+export class EmailVerificationMailDto {
     receiverEmail: string;
     receiverName: string;
     token: string;
     otp: number;
     expirationMin: number;
 
-    constructor(dto: ConfirmationMailEventDto) {
+    constructor(dto: EmailVerificationMailDto) {
         Object.assign(this, dto);
     }
 }

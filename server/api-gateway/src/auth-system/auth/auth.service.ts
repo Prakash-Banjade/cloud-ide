@@ -7,7 +7,6 @@ import { Account } from '../accounts/entities/account.entity';
 import { RegisterDto, SignInDto } from './dto/signIn.dto';
 import { AuthHelper } from './helpers/auth.helper';
 import { JwtService } from '../jwt/jwt.service';
-import { CookieSerializeOptions } from '@fastify/cookie';
 import * as bcrypt from "bcryptjs";
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TokenExpiredError } from '@nestjs/jwt';
@@ -23,6 +22,9 @@ import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from '..
 import { generateDeviceId } from '../../common/utils';
 import { AuthUser } from '../../common/global.types';
 import { User } from '../users/entities/user.entity';
+import { EAuthEvents } from './helpers/auth-events.service';
+import { MailEvents } from 'src/mail/mail.service';
+import { ResetPasswordMailEventDto } from 'src/mail/dto/events.dto';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -37,7 +39,6 @@ export class AuthService extends BaseRepository {
   ) { super(datasource, req) }
 
   async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
-    console.log(signInDto)
     const data = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
 
     if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user
@@ -57,28 +58,14 @@ export class AuthService extends BaseRepository {
       if (message && 'message' in message) return message; // this can be first time login message
     }
 
-    const existingRefreshCookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
-
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);
-
-    // remove old refresh token from cookie
-    if (existingRefreshCookie) {
-      const { value: existingRefreshToken, valid } = req.unsignCookie(existingRefreshCookie);
-      if (existingRefreshToken && valid) reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // CLEAR COOKIE, BCZ A NEW ONE IS TO BE GENERATED
-    }
 
     await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache
 
-    return reply
-      .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
-      .header('Content-Type', 'application/json')
-      .send({
-        access_token,
-        user: {
-          firstName: account.firstName,
-          lastName: account.lastName,
-        }
-      })
+    return {
+      access_token,
+      refresh_token,
+    }
   }
 
   async handleDevice(account: Account, req: FastifyRequest, method: 'password' | 'passkey' = 'password') {
@@ -126,18 +113,6 @@ export class AuthService extends BaseRepository {
     }
 
     this.refreshTokenService.init({ email: account.email, deviceId }); // initialize the refresh token instance from here to provide the email and device
-  }
-
-  getRefreshCookieOptions(): CookieSerializeOptions {
-    return {
-      secure: this.envService.NODE_ENV === 'production',
-      httpOnly: true,
-      priority: 'high',
-      signed: true,
-      sameSite: this.envService.NODE_ENV === 'production' ? 'none' : 'lax',
-      expires: new Date(Date.now() + (this.envService.REFRESH_TOKEN_EXPIRATION_SEC * 1000)),
-      path: '/', // necessary to be able to access cookie from out of this route path context, like auth.guard.ts
-    }
   }
 
   async register(dto: RegisterDto) {
@@ -209,14 +184,6 @@ export class AuthService extends BaseRepository {
   }
 
   async refresh(req: FastifyRequest, reply: FastifyReply) {
-    const cookie = req.cookies?.[Tokens.REFRESH_TOKEN_COOKIE_NAME];
-    if (!cookie) throw new UnauthorizedException('Missing refresh token');
-
-    const { value: existingCookie, valid } = req.unsignCookie(cookie);
-    if (!valid) throw new UnauthorizedException('Invalid refresh token');
-
-    reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()); // a new refresh token is to be generated
-
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
       relations: { user: true },
@@ -230,43 +197,31 @@ export class AuthService extends BaseRepository {
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
+    const [_, refreshToken] = req.headers.authorization?.split(' ') ?? [];
+
     const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
     this.refreshTokenService.init({ email: account.email, deviceId });
 
     // check if refreshtoken exists
     const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
-    if (!rtPayload || (rtPayload && rtPayload.refreshToken !== existingCookie)) throw new UnauthorizedException('Invalid refresh token');
-
-    // update the last activity record of the device
-    const device = await this.getRepository(LoginDevice).findOne({
-      where: { deviceId, account: { id: account.id } },
-      select: { id: true },
-    });
-    if (!device) throw new UnauthorizedException('Unrecognized device'); // TODO: better to send mail to the user about unrecognized login or take some other action
-
-    await this.getRepository(LoginDevice).update(device.id, { lastActivityRecord: new Date() });
+    if (!rtPayload || (rtPayload && rtPayload.refreshToken !== refreshToken)) throw new UnauthorizedException('Invalid refresh token');
 
     // set new refresh_token
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);
     await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache for the current device
 
-    return reply
-      .setCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, refresh_token, this.getRefreshCookieOptions())
-      .header('Content-Type', 'application/json')
-      .send({
-        access_token,
-        user: {
-          firstName: account.firstName,
-          lastName: account.lastName,
-        }
-      })
+    // emit the event to update device activity
+    this.eventEmitter.emit(EAuthEvents.DEVICE_ACTIVITY_UPDATE, { deviceId });
+
+    return {
+      access_token,
+      refresh_token
+    }
   }
 
-  async logout(reply: FastifyReply) {
+  async logout() {
     this.refreshTokenService.init({});
     this.refreshTokenService.remove(); // remove the current token from redis cache
-
-    return reply.clearCookie(Tokens.REFRESH_TOKEN_COOKIE_NAME, this.getRefreshCookieOptions()).status(HttpStatus.NO_CONTENT).send();
   }
 
   async changePassword(changePasswordDto: ChangePasswordDto, currentUser: AuthUser) {
@@ -345,12 +300,11 @@ export class AuthService extends BaseRepository {
 
     await this.getRepository(PasswordChangeRequest).save(changeRequest);
 
-    // TODO: send reset password link mail
-    // this.eventEmitter.emit(MailEvents.RESET_PASSWORD, new ResetPasswordMailEventDto({
-    //   receiverEmail: foundAccount.email,
-    //   receiverName: `${foundAccount.firstName} ${foundAccount.lastName}`,
-    //   token: resetToken
-    // }));
+    this.eventEmitter.emit(MailEvents.RESET_PASSWORD, new ResetPasswordMailEventDto({
+      receiverEmail: foundAccount.email,
+      receiverName: `${foundAccount.firstName} ${foundAccount.lastName}`,
+      token: resetToken
+    }));
 
     return {
       message: `Link is valid for ${this.envService.FORGOT_PASSWORD_EXPIRATION_SEC / 60} minutes`,

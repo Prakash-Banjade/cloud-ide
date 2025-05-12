@@ -7,11 +7,9 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import toast from "react-hot-toast"
 import { buttonVariants } from "@/components/ui/button"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { TUser } from "@/types"
 import RememberMe from "./remember-me"
 import LoadingButton from "@/components/loading-button"
 import { signIn } from "next-auth/react"
@@ -52,8 +50,7 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                 return;
             }
 
-            // Successful login
-            router.push("/workspace"); // or wherever you want to redirect after login
+            router.push("/workspace");
             router.refresh();
         } catch (error) {
             toast.error("An error occurred during sign in");
@@ -76,7 +73,7 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
-                                    <Input type="email" placeholder="name@example.com" autoFocus {...field} />
+                                    <Input type="email" placeholder="name@example.com" autoFocus {...field} required />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -91,7 +88,7 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                                 <FormItem>
                                     <FormLabel>Password</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="********" {...field} />
+                                        <Input type="password" placeholder="********" {...field} required />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

@@ -5,9 +5,34 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { TLoginResponse } from "@/types";
 import { JWT } from "next-auth/jwt";
 
+async function refreshToken(token: JWT): Promise<JWT> {
+    const res = await axios.post<TLoginResponse>(`${API_URL}/auth/refresh`, {}, {
+        headers: {
+            'Authorization': `Refresh ${token.backendTokens.refresh_token}`
+        }
+    });
+
+    const data = res.data;
+
+    if (!data) throw new Error("Invalid credentials");
+
+    const { user, exp } = getUserFromLoginResponse(data);
+
+    return {
+        ...token,
+        user,
+        backendTokens: {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expiresIn: exp
+        }
+    }
+}
+
 export const authOptions: AuthOptions = {
     pages: {
         signIn: '/auth/login',
+        signOut: '/workspace',
     },
     session: {
         strategy: "jwt",
@@ -30,11 +55,15 @@ export const authOptions: AuthOptions = {
 
                     if (!data) throw new Error("Invalid credentials");
 
-                    const user = getUserFromLoginResponse(data);
+                    const { user, exp } = getUserFromLoginResponse(data);
                     return {
-                        ...user,
-                        access_token: data.access_token
-                    };
+                        user,
+                        backendTokens: {
+                            access_token: data.access_token,
+                            refresh_token: data.refresh_token,
+                            expiresIn: exp
+                        }
+                    } as any;
 
                 } catch (e) {
                     console.log(e)
@@ -44,31 +73,19 @@ export const authOptions: AuthOptions = {
         })
     ],
     callbacks: {
-        async jwt({ token, user }): Promise<JWT> {
-            if (user) {
-                // When signing in, use the backend's access token as the JWT
-                return {
-                    id: user.id!,
-                    userId: user.userId!,
-                    email: user.email!,
-                    firstName: user.firstName!,
-                    lastName: user.lastName!,
-                    access_token: user.access_token!
-                };
-            }
+        async jwt({ token, user }) {
+            console.log({ token, user })
 
-            return token;
+            if (user) return { ...token, ...user };
+
+            if ((Date.now() / 1000) < token.backendTokens.expiresIn) return token;
+
+            return await refreshToken(token);
         },
 
         async session({ token, session }) {
-            session.user = {
-                id: token.id,
-                userId: token.userId,
-                email: token.email,
-                firstName: token.firstName,
-                lastName: token.lastName,
-            };
-            session.access_token = token.access_token;
+            session.user = token.user;
+            session.backendTokens = token.backendTokens;
 
             return session;
         }

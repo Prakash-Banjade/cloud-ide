@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useAppMutation } from "@/hooks/useAppMutation";
-import { API_URL, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,7 +26,7 @@ export default function CodingPageClient() {
     useEffect(() => {
         const startResources = async () => {
             await mutateAsync({
-                endpoint: `${API_URL}/projects/start`,
+                endpoint: `/projects/start`,
                 method: 'post',
                 data: { replId: params.replId }
             });

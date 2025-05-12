@@ -8,14 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ELanguage } from "@/types"
 import { Icons } from "@/components/icons"
-import { API_URL } from "@/lib/utils"
 import LoadingButton from "@/components/loading-button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAppMutation } from "@/hooks/useAppMutation"
 
 const formSchema = z.object({
-    replId: z
+    projectName: z
         .string()
         .min(3, { message: "Project name must be at least 3 characters." })
         .max(50, { message: "Project name must be less than 50 characters." })
@@ -25,29 +24,31 @@ const formSchema = z.object({
     language: z.nativeEnum(ELanguage, { errorMap: () => ({ message: "Please select a programming language." }) }),
 })
 
+type formSchemaType = z.infer<typeof formSchema>;
+
 export function NewProjectForm() {
     const router = useRouter();
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<formSchemaType>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            replId: "",
+            projectName: "",
         },
     });
 
-    const { mutateAsync, isPending } = useAppMutation();
+    const { mutateAsync, isPending } = useAppMutation<formSchemaType, { message: string, replId: string }>();
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
-        
+    async function onSubmit(values: formSchemaType) {
         const res = await mutateAsync({
-            endpoint: `${API_URL}/projects`,
+            endpoint: `/projects`,
             method: 'post',
             data: values
         });
 
         if (res.status === 201) {
-            router.push(`/code/${values.replId}`);
+            const replId = res.data.replId;
+
+            router.push(`/code/${replId}`);
         }
     }
 
@@ -57,7 +58,7 @@ export function NewProjectForm() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                         control={form.control}
-                        name="replId"
+                        name="projectName"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Project Name</FormLabel>

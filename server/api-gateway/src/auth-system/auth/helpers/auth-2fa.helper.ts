@@ -14,6 +14,8 @@ import { RefreshTokenService } from "./refresh-tokens.service";
 import { OtpVerificationDto } from "../dto/auth.dtos";
 import { BaseRepository } from "src/common/base.repository";
 import { generateDeviceId } from "src/common/utils";
+import { MailEvents } from "src/mail/mail.service";
+import { TwoFAMailEventDto } from "src/mail/dto/events.dto";
 
 @Injectable({ scope: Scope.REQUEST })
 export class Auth2faHelper extends BaseRepository {
@@ -37,13 +39,12 @@ export class Auth2faHelper extends BaseRepository {
 
         const { otp, encryptedVerificationToken } = await this.authHelper.generateOtp(account, EOptVerificationType.TWOFACTOR_VERIFICATION, deviceId);
 
-        // TODO: send mail
-        // this.eventEmitter.emit(MailEvents.TWOFA_OTP, new TwoFAMailEventDto({
-        //     otp,
-        //     expirationMin: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC / 60,
-        //     receiverEmail: account.email,
-        //     receiverName: account.firstName + ' ' + account.lastName,
-        // }));
+        this.eventEmitter.emit(MailEvents.TWOFA_OTP, new TwoFAMailEventDto({
+            otp,
+            expirationMin: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC / 60,
+            receiverEmail: account.email,
+            receiverName: account.firstName + ' ' + account.lastName,
+        }));
 
         return {
             message: "OTP sent",
@@ -127,13 +128,12 @@ export class Auth2faHelper extends BaseRepository {
 
         const { otp, encryptedVerificationToken } = await this.authHelper.generateOtp(account, EOptVerificationType.TWOFACTOR_VERIFICATION, deviceId);
 
-        // TODO: send mail
-        // this.eventEmitter.emit(MailEvents.TWOFA_OTP, new TwoFAMailEventDto({
-        //     otp,
-        //     expirationMin: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC / 60,
-        //     receiverEmail: account.email,
-        //     receiverName: account.firstName + ' ' + account.lastName,
-        // }));
+        this.eventEmitter.emit(MailEvents.TWOFA_OTP, new TwoFAMailEventDto({
+            otp,
+            expirationMin: this.envService.TWOFACTOR_VERIFICATION_EXPIRATION_SEC / 60,
+            receiverEmail: account.email,
+            receiverName: account.firstName + ' ' + account.lastName,
+        }));
 
         return {
             message: "OTP sent",

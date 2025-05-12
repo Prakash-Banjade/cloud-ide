@@ -7,13 +7,12 @@ import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { ConfirmationMailEventDto, ResetPasswordMailEventDto, TwoFAMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
+import { EmailVerificationMailDto, ResetPasswordMailEventDto, TwoFAMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
 import Mail from 'nodemailer/lib/mailer';
 import { ConfigService } from '@nestjs/config';
 
 export enum MailEvents {
-    CONFIRMATION = 'mail.confirmation',
-    USER_CREDENTIALS = 'mail.user-credentials',
+    EMAIL_VERIFICATION = 'mail.email-verification',
     RESET_PASSWORD = 'mail.reset-password',
     TWOFA_OTP = 'twofa.otp',
 }
@@ -35,7 +34,6 @@ export class MailService {
         this.templates = {
             confirmation: MailService.parseTemplate('email-verification-otp.hbs'),
             resetPassword: MailService.parseTemplate('reset-password.hbs'),
-            userCredentials: MailService.parseTemplate('sendUserCredentials.hbs'),
             twoFaOtp: MailService.parseTemplate('two-fa-otp.hbs'),
         };
     }
@@ -71,27 +69,16 @@ export class MailService {
         return result;
     }
 
-    @OnEvent(MailEvents.CONFIRMATION)
-    public async sendEmailConfirmation(dto: ConfirmationMailEventDto) {
-        const subject = 'Confirm your email';
+    @OnEvent(MailEvents.EMAIL_VERIFICATION)
+    public async sendEmailVerification(dto: EmailVerificationMailDto) {
+        const subject = 'Verify your email';
         const html = this.templates.confirmation({
             ...dto,
-            link: `${this.domain}/auth/confirm-email/${dto.token}`,
+            link: `${this.domain}/auth/verify-email/${dto.token}`,
             clientUrl: this.domain,
             logo: LOGO_URL
         });
         this.sendEmail(dto.receiverEmail, subject, html);
-    }
-
-    @OnEvent(MailEvents.USER_CREDENTIALS)
-    public async sendUserCredentials(dto: UserCredentialsEventDto) {
-        const subject = 'Login Credentials';
-        const html = this.templates.userCredentials({
-            ...dto,
-            clientUrl: this.domain,
-            logo: LOGO_URL
-        });
-        this.sendEmail(dto.email, subject, html);
     }
 
     @OnEvent(MailEvents.RESET_PASSWORD)
