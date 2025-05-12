@@ -5,6 +5,8 @@ export const enum AuthMessage {
     REPORT_NOT_PUBLISHED = "Report not published yet",
 };
 
+export const REFRESH_TOKEN_HEADER = 'x-refresh-token' as const;
+
 export const NAME_REGEX = /^[A-Za-z]+$/;
 
 export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;

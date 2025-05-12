@@ -3,28 +3,43 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ProfileAvatar } from '../ui/avatar'
 import { Button } from '../ui/button'
 import { signOut, useSession } from 'next-auth/react'
+import axiosClient from '@/lib/axios-client'
+import { useMutation } from '@tanstack/react-query'
+import { REFRESH_TOKEN_HEADER } from '@/lib/CONSTANTS'
 
 export default function ProfileDropdown() {
     const { data } = useSession();
 
-    if (!data) {
-        return null;
-    }
+    const { mutateAsync, isPending } = useMutation<any, any>({
+        mutationFn: async () => {
+            await axiosClient.post(`/auth/logout`, {}, {
+                headers: {
+                    Authorization: `Bearer ${data?.backendTokens.access_token}`,
+                    [REFRESH_TOKEN_HEADER]: data?.backendTokens.refresh_token
+                }
+            });
+        },
+    });
 
-    async function handleLogout() {
-        signOut()
+    const handleLogout = async () => {
+        await mutateAsync();
+        signOut();
     }
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant='ghost' className='rounded-full size-12' size={"icon"}>
-                    <ProfileAvatar
-                        name={data?.user.firstName + " " + data?.user.lastName}
-                        src=''
-                        className='size-10'
-                    />
-                </Button>
+                {
+                    data && (
+                        <Button variant='ghost' className='rounded-full size-12' size={"icon"}>
+                            <ProfileAvatar
+                                name={data?.user.firstName + " " + data?.user.lastName}
+                                src=''
+                                className='size-10'
+                            />
+                        </Button>
+                    )
+                }
             </DropdownMenuTrigger>
             <DropdownMenuContent side='bottom' align='end'>
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -32,7 +47,9 @@ export default function ProfileDropdown() {
                 <DropdownMenuItem>Profile</DropdownMenuItem>
                 <DropdownMenuItem>Subscription</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                    {isPending ? 'Logging out...' : 'Log out'}
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
 

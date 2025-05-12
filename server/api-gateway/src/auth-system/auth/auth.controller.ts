@@ -74,9 +74,9 @@ export class AuthController {
     @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
     @HttpCode(HttpStatus.OK)
     @Public()
-    @Post('verify-email-confirm-token')
-    verifyEmailResetToken(@Body() { token }: VerifyTokenDto) {
-        return this.authService.verifyEmailResetToken(token);
+    @Post('check-email-verification-token')
+    checkEmailVerificationToken(@Body() { token }: VerifyTokenDto) {
+        return this.authService.checkEmailVerificationToken(token);
     }
 
     @ApiOperation({ summary: 'Logout a user' })

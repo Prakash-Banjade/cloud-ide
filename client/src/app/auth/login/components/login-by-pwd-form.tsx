@@ -10,7 +10,6 @@ import { buttonVariants } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import RememberMe from "./remember-me"
 import LoadingButton from "@/components/loading-button"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
@@ -108,7 +107,6 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                     </section>
 
                     <section className="space-y-3">
-                        <RememberMe />
                         <LoadingButton
                             type="submit"
                             className="w-full"

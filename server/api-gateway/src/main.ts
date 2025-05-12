@@ -10,6 +10,7 @@ import { setupSwagger } from './config/swagger-setup';
 import fastifyCookie from '@fastify/cookie';
 import { ApiGatewayModule } from './api-gateway.module';
 import { AllExceptionsFilter } from './common/all-exception.filter';
+import { REFRESH_TOKEN_HEADER } from './common/CONSTANTS';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -38,7 +39,7 @@ async function bootstrap() {
       }
       return callback(new BadRequestException('Wrong Step'), false);
     },
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+    allowedHeaders: ['Content-Type', 'Authorization', REFRESH_TOKEN_HEADER],
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
   });

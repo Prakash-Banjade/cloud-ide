@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Unauthor
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
 import { EnvService } from "src/env/env.service";
+import { REFRESH_TOKEN_HEADER } from "../CONSTANTS";
 
 @Injectable()
 export class RefreshTokenGuard implements CanActivate {
@@ -30,7 +31,10 @@ export class RefreshTokenGuard implements CanActivate {
     }
 
     private extractRefreshTokenFromHeader(request: FastifyRequest): string | undefined {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
-        return type === 'Refresh' ? token : undefined;
+        const token = request.headers[REFRESH_TOKEN_HEADER];
+
+        if (!token) return undefined;
+
+        return typeof token === 'string' ? token : undefined;
     }
 }

@@ -3,14 +3,14 @@ export const enum Tokens {
     SUDO_ACCESS_TOKEN_COOKIE_NAME = 'sudo_access_token',
 }
 
+export const REFRESH_TOKEN_HEADER = 'x-refresh-token' as const;
+
 export const NAME_REGEX = /^[A-Za-z]+$/;
 export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;
 
 export const BCRYPT_HASH = /^\$2[aby]?\$[0-9]{2}\$[./A-Za-z0-9]{53}$/;
 
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export const PHONE_NUMBER_REGEX = /^\+?(\d{1,3})?[-.\s]?(\(?\d{1,4}\)?)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
 
 export const enum AuthMessage {
     INVALID_AUTH_CREDENTIALS = 'Invalid email or password',

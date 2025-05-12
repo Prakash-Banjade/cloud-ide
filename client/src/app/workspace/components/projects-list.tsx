@@ -1,4 +1,4 @@
-import { serverFetch } from "@/lib/axios-server"
+import { serverFetch } from "@/lib/axios-server";
 import { redirect } from "next/navigation";
 
 type Props = {}

@@ -13,7 +13,7 @@ export default function Navbar({ }: Props) {
     const pathname = usePathname();
 
     return (
-        <section className='border-b h-20'>
+        <section className='border-b h-20 flex items-center'>
             <section className='container py-4 mx-auto flex items-center gap-6'>
                 <section>
                     <Image

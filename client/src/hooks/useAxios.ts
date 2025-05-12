@@ -1,9 +1,9 @@
 import axios, { AxiosInstance } from "axios";
 import toast from "react-hot-toast";
-import { API_URL } from "./utils";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { AuthMessage } from "./CONSTANTS";
+import { AuthMessage } from "@/lib/CONSTANTS";
+import { API_URL } from "@/lib/utils";
 
 export const useAxiosPrivate = (): AxiosInstance => {
     const { data } = useSession();
@@ -13,7 +13,7 @@ export const useAxiosPrivate = (): AxiosInstance => {
     const refresh_token = data?.backendTokens?.refresh_token;
 
     const axiosInstance = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_API_URL,
+        baseURL: API_URL,
         headers: {
             Authorization: `Bearer ${access_token}`,
         },
@@ -110,10 +110,3 @@ export const useAxiosPrivate = (): AxiosInstance => {
 
     return axiosInstance;
 };
-
-
-export default axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
-    withCredentials: true,
-    timeout: 10000, // Optional: 10 seconds timeout
-});

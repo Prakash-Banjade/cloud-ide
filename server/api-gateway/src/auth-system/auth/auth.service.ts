@@ -173,7 +173,7 @@ export class AuthService extends BaseRepository {
     return { message: 'Account verified successfully' };
   }
 
-  async verifyEmailResetToken(verificationToken: string) {
+  async checkEmailVerificationToken(verificationToken: string) {
     const result = await this.authHelper.verifyEncryptedHashTokenPair<{ email: string }>(verificationToken, this.envService.EMAIL_VERIFICATION_SECRET);
     if (result?.error || !result?.payload?.email) {
       if (result.error instanceof TokenExpiredError) throw new BadRequestException('OTP has been expired');

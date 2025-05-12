@@ -1,14 +1,20 @@
-import { API_URL, getUserFromLoginResponse } from "@/lib/utils";
-import axios from "axios";
+import { getUserFromLoginResponse } from "@/lib/utils";
 import NextAuth, { AuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials";
 import { TLoginResponse } from "@/types";
 import { JWT } from "next-auth/jwt";
+import axiosServer from "@/lib/axios-server";
+import { REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
+import { signOut } from "next-auth/react";
 
 async function refreshToken(token: JWT): Promise<JWT> {
-    const res = await axios.post<TLoginResponse>(`${API_URL}/auth/refresh`, {}, {
+    const refreshToken = token.backendTokens.refresh_token;
+
+    if (!refreshToken) signOut();
+
+    const res = await axiosServer.post<TLoginResponse>(`/auth/refresh`, {}, {
         headers: {
-            'Authorization': `Refresh ${token.backendTokens.refresh_token}`
+            [REFRESH_TOKEN_HEADER]: token.backendTokens.refresh_token
         }
     });
 
@@ -46,7 +52,7 @@ export const authOptions: AuthOptions = {
             },
             async authorize(credentials) {
                 try {
-                    const res = await axios.post<TLoginResponse>(`${API_URL}/auth/login`, {
+                    const res = await axiosServer.post<TLoginResponse>(`/auth/login`, {
                         email: credentials?.email,
                         password: credentials?.password,
                     });
@@ -74,8 +80,6 @@ export const authOptions: AuthOptions = {
     ],
     callbacks: {
         async jwt({ token, user }) {
-            console.log({ token, user })
-
             if (user) return { ...token, ...user };
 
             if ((Date.now() / 1000) < token.backendTokens.expiresIn) return token;
