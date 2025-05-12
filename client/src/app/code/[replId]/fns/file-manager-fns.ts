@@ -1,0 +1,164 @@
+import { Socket } from "socket.io-client";
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree";
+import { Dispatch, SetStateAction } from "react";
+
+export const onItemSelect = (
+    file: TreeItem,
+    setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
+    setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
+    setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
+    socket: Socket
+) => {
+    setSelectedItem(file); // just select what they clicked
+
+    if (file.type === EItemType.DIR) {
+        // if we already loaded children, just toggle expanded
+        if (Array.isArray(file.children)) {
+            setFileStructure(prev =>
+                updateTree(prev, file.path, null)
+            )
+        }
+        // otherwise fetch children, then insert & expand
+        else {
+            socket?.emit("fetchDir", file.path, (data: TreeItem[]) => {
+                setFileStructure(prev =>
+                    updateTree(prev, file.path, data)
+                )
+            })
+        }
+    } else {
+        socket?.emit("fetchContent", { path: file.path }, (data: string) => {
+            setSelectedFile(file);
+            file.content = data;
+        });
+    }
+};
+
+export function updateTree(
+    items: TreeItem[],
+    targetPath: string,
+    newChildren: TreeItem[] | null,
+    expand: boolean = true,
+): TreeItem[] {
+    return items.map(item => {
+        // only folders can match
+        if (item.type === EItemType.DIR) {
+            // did we hit the folder the user clicked?
+            if (item.path === targetPath) {
+                // either assign new children (if we just fetched them), or leave them alone
+                const children = newChildren ?? item.children
+                // toggle expanded
+                const expanded = expand && (item.expanded ? false : true)
+                return { ...item, children, expanded }
+            }
+            // otherwise, even if this isn't the folder, its children might contain it:
+            const children = item.children
+                ? updateTree(item.children, targetPath, newChildren)
+                : item.children
+            return { ...item, children }
+        }
+        // files are untouched
+        return item
+    })
+}
+
+// helper to recursively find any item by path
+export function findItem(items: TreeItem[], targetPath: string): TreeItem | undefined {
+    for (const item of items) {
+        if (item.path === targetPath) return item
+        if (item.type === EItemType.DIR && Array.isArray(item.children)) {
+            const found = findItem(item.children, targetPath)
+            if (found) return found
+        }
+    }
+}
+
+// helper to wrap socket.emit dir-fetch in a Promise
+export function fetchDirAsync(socket: Socket, path: string): Promise<TreeItem[]> {
+    return new Promise(resolve => {
+        socket.emit('fetchDir', path, (data: TreeItem[]) => resolve(data))
+    })
+}
+
+/**
+ * Find the folder within `tree` whose `children` array directly contains
+ * an item with path === target.path.  If none is found, returns a virtual root.
+ */
+export function getParentFolder(
+    target: (TFileItem | TFolderItem) | undefined,
+    tree: TreeItem[]
+): TFolderItem {
+    if (!target) return { // if no target, return a virtual root
+        name: "",
+        type: EItemType.DIR,
+        path: "/",
+        expanded: true,
+        children: tree,
+    }
+
+    // 1) compute the parent-path string (everything up to the last "/")
+    const idx = target.path.lastIndexOf("/")
+    const parentPath = idx > 0 ? target.path.slice(0, idx) : "/"
+
+    // 2) walk the tree looking for a folder whose path === parentPath
+    function dfs(items: TreeItem[] | undefined): TFolderItem | null {
+        if (!items) return null;
+
+        for (const item of items) {
+            if (item.type === EItemType.DIR) {
+                if (item.path === parentPath) {
+                    return item
+                }
+                // recurse into children
+                const found = dfs(item.children)
+                if (found) return found
+            }
+        }
+
+        return null
+    }
+
+    const found = dfs(tree)
+
+    if (found) {
+        return found
+    }
+
+    // 3) if nothing matched, return a “virtual” root folder
+    return {
+        name: "",
+        type: EItemType.DIR,
+        path: "/",
+        expanded: true,
+        children: tree,
+    }
+}
+
+/**
+ * Return a new TreeItem[] sorted so that:
+ *  - all folders come before files
+ *  - names are alphabetical within each group
+ *  - folders’ children are sorted recursively
+ */
+export function sortFolderFirst(tree: TreeItem[]): TreeItem[] {
+    // first, shallow‐sort this array: dirs before files, then by name
+    if (!Array.isArray(tree)) return tree;
+
+    const sorted = [...tree].sort((a, b) => {
+        if (a.type !== b.type) {
+            return a.type === EItemType.DIR ? -1 : 1
+        }
+        return a.name.localeCompare(b.name)
+    })
+
+    // then, for every folder, recurse into children
+    return sorted.map(item => {
+        if (item.type === EItemType.DIR) {
+            return {
+                ...item,
+                children: sortFolderFirst(item.children)
+            }
+        }
+        return item
+    })
+}

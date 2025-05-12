@@ -1,20 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { IPty, spawn } from 'node-pty';
+import { IPty, spawn } from 'node-pty-prebuilt-multiarch';
 import * as os from 'os';
 
 @Injectable()
 export class TerminalManagerService {
     private sessions: { [id: string]: { terminal: IPty, replId: string; } } = {};
-    private SHELL = os.platform() === 'win32' ? 'powershell.exe' : 'bash';;
+    private SHELL = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
     createPty(id: string, replId: string, onData: (data: string, id: number) => void) {
         let term = spawn(this.SHELL, [], {
-            cols: 100,
+            cols: 300,
             name: 'xterm',
             cwd: `/workspace`
         });
 
         term.onData((data: string) => onData(data, term.pid));
+
         this.sessions[id] = {
             terminal: term,
             replId
@@ -30,7 +31,7 @@ export class TerminalManagerService {
     }
 
     clear(terminalId: string) {
-        this.sessions[terminalId].terminal.kill();
+        this.sessions[terminalId]?.terminal.kill();
         delete this.sessions[terminalId];
     }
 

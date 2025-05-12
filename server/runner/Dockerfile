@@ -1,5 +1,5 @@
 # Base image with build dependencies, no alpine because to include Python, make needed by 'node-pty' as build dependency
-FROM node:20 AS build
+FROM node:latest AS build
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:20 AS production
+FROM node:latest AS production
 
 WORKDIR /usr/src/app
 
@@ -27,10 +27,6 @@ RUN npm install --only=production && npm cache clean --force
 # Remove package json files
 RUN rm -rf package*.json
 
-# Set NODE_ENV to production
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
 # Expose port and set the start command
-EXPOSE 3001
+EXPOSE 3003
 CMD ["node", "dist/main.js"]
