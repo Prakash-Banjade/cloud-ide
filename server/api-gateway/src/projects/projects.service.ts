@@ -20,10 +20,7 @@ export class ProjectsService {
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
-    const replId = generateSlug(createProjectDto.projectName);
-
-    const existingProject = await this.projectRepo.findOne({ where: { replId }, select: { id: true } });
-    if (existingProject) throw new ConflictException("The replId is already in use.");
+    const replId = await this.getReplId(createProjectDto.projectName);
 
     const user = await this.usersService.findOne(currentUser.userId);
 
@@ -39,7 +36,17 @@ export class ProjectsService {
 
     await this.projectRepo.save(newProject);
 
-    return { message: "Project created", slug: replId }; // slug is used in frontend to redirect user
+    return { message: "Project created", replId }; // replId is used in frontend to redirect user
+  }
+
+  async getReplId(projectName: string): Promise<string> {
+    const replId = generateSlug(projectName, true);
+
+    const existingProject = await this.projectRepo.findOne({ where: { replId }, select: { id: true } });
+
+    if (existingProject) return await this.getReplId(projectName);
+
+    return replId;
   }
 
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {
@@ -59,6 +66,9 @@ export class ProjectsService {
       'project.id',
       'project.name',
       'project.language',
+      'project.createdAt',
+      'project.replId',
+      'project.updatedAt',
     ]);
 
     return paginatedData(queryDto, querybuilder);

@@ -1,12 +1,17 @@
 import * as crypto from 'node:crypto'
 import { ELanguage } from './global.types';
+import { nanoid } from 'nanoid';
 
 export function generateSlug(title: string, id: boolean = false) {
     const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')
 
-    const uniqueId = crypto.randomBytes(8).toString('hex').toUpperCase()
-
-    return id ? `${slug}-${uniqueId}` : slug
+    return (id ? `${slug}-${nanoid(10)}` : slug)
+        // Replace any character that’s not a–z, 0–9 or hyphen with a hyphen
+        .replace(/[^a-z0-9-]/g, '-')
+        // Collapse multiple hyphens into one
+        .replace(/-+/g, '-')
+        // Remove leading or trailing hyphens
+        .replace(/^-+|-+$/g, '');
 }
 
 export function generateDeviceId(userAgent: string | undefined, ipAddress: string): string {

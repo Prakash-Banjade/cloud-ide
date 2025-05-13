@@ -6,6 +6,7 @@ import React from 'react'
 import { Button } from '../ui/button'
 import { usePathname } from 'next/navigation'
 import ProfileDropdown from './profile-dropdown'
+import { ThemeToggle } from '../theme-toggle'
 
 type Props = {}
 
@@ -40,7 +41,8 @@ export default function Navbar({ }: Props) {
                     </ul>
                 </nav>
 
-                <section className='ml-auto'>
+                <section className='ml-auto flex items-center gap-4'>
+                    <ThemeToggle />
                     <ProfileDropdown />
                 </section>
             </section>

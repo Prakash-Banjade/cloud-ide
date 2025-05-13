@@ -2,12 +2,14 @@ import axios, { AxiosInstance } from "axios";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { AuthMessage } from "@/lib/CONSTANTS";
+import { AuthMessage, REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
 import { API_URL } from "@/lib/utils";
 
 export const useAxiosPrivate = (): AxiosInstance => {
     const { data } = useSession();
     const router = useRouter();
+
+    console.log(data?.backendTokens)
 
     const access_token = data?.backendTokens?.access_token;
     const refresh_token = data?.backendTokens?.refresh_token;
@@ -64,7 +66,7 @@ export const useAxiosPrivate = (): AxiosInstance => {
                         {},
                         {
                             headers: {
-                                Authorization: `Refresh ${refresh_token}`,
+                                [REFRESH_TOKEN_HEADER]: refresh_token
                             }
                         }
                     );

@@ -17,11 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
+import { useSession } from "next-auth/react";
 
 export default function CodingPageClient() {
     const params = useParams();
+    const { status } = useSession()
 
-    const { mutateAsync, isPending } = useAppMutation();
+    const { mutateAsync, isPending, error } = useAppMutation();
 
     useEffect(() => {
         const startResources = async () => {
@@ -32,11 +34,19 @@ export default function CodingPageClient() {
             });
         }
 
-        startResources();
+        if (status === "authenticated") startResources();
     }, []);
+
+    if (status === "loading") {
+        return <div>Loading User...</div>
+    }
 
     if (isPending) {
         return <div>Booting...</div>
+    }
+
+    if (error) {
+        return <div>Unable to start repl</div>
     }
 
     return (
