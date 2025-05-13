@@ -2,33 +2,21 @@ import { formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import { Code, Calendar, Clock, MoreVertical, ExternalLink, Copy, Trash, Edit } from "lucide-react"
 import { TProject } from "@/types"
 import Link from "next/link"
+import { languageFields } from "@/lib/utils"
 
 interface ProjectCardProps {
     project: TProject
 }
 
+const formatDate = (dateString: string) => {
+    return formatDistanceToNow(dateString, { addSuffix: true })
+}
+
 export default function ProjectCard({ project }: ProjectCardProps) {
-    const getLanguageColor = (language: string) => {
-        const colors: Record<string, string> = {
-            JavaScript: "bg-yellow-100 text-yellow-800 border-yellow-200",
-            TypeScript: "bg-blue-100 text-blue-800 border-blue-200",
-            Python: "bg-green-100 text-green-800 border-green-200",
-            "C++": "bg-purple-100 text-purple-800 border-purple-200",
-            Java: "bg-orange-100 text-orange-800 border-orange-200",
-            Ruby: "bg-red-100 text-red-800 border-red-200",
-            Go: "bg-cyan-100 text-cyan-800 border-cyan-200",
-        }
-
-        return colors[language] || "bg-gray-100 text-gray-800 border-gray-200"
-    }
-
-    const formatDate = (dateString: string) => {
-        return formatDistanceToNow(dateString, { addSuffix: true })
-    }
+    const language = languageFields.find((field) => field.value === project.language);
 
     return (
         <Card className="overflow-hidden transition-all hover:shadow-md">
@@ -64,9 +52,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Code className="mr-2 h-4 w-4" />
                         <span className="mr-2">Language:</span>
-                        <Badge variant="outline" className={`${getLanguageColor(project.language)}`}>
-                            {project.language}
-                        </Badge>
+                        {
+                            language?.label
+                        }
                     </div>
 
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -90,10 +78,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             </CardContent>
 
             <CardFooter className="flex justify-between">
-                <Button variant="outline" size="sm">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Clone
-                </Button>
+                {language?.icon && <language.icon className="size-8" />}
+
                 <Button size="sm" asChild>
                     <Link href={`/code/${project.replId}`}>
                         <ExternalLink className="mr-2 h-4 w-4" />

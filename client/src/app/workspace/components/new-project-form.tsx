@@ -7,49 +7,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ELanguage } from "@/types"
-import { Icons } from "@/components/icons"
 import LoadingButton from "@/components/loading-button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAppMutation } from "@/hooks/useAppMutation"
-
-export const languageFields = [
-    {
-        value: ELanguage.REACT_JS,
-        label: "React + JS",
-        icon: Icons.javascript
-    },
-    {
-        value: ELanguage.REACT_TS,
-        label: "React + TS",
-        icon: Icons.tsx
-    },
-    {
-        value: ELanguage.NEXT_TS,
-        label: "Next + TS",
-        icon: Icons.nextjs
-    },
-    {
-        value: ELanguage.NODE_JS,
-        label: "Node JS",
-        icon: Icons.node
-    },
-    {
-        value: ELanguage.PYTHON,
-        label: "Python",
-        icon: Icons.python
-    },
-    {
-        value: ELanguage.C,
-        label: "C Language",
-        icon: Icons.c
-    },
-    {
-        value: ELanguage.CPP,
-        label: "C++",
-        icon: Icons.cpp
-    },
-]
+import { languageFields } from "@/lib/utils"
 
 const formSchema = z.object({
     projectName: z

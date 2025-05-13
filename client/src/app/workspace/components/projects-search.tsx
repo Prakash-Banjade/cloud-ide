@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
 import React, { useState } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { languageFields } from './new-project-form'
+import { languageFields } from '@/lib/utils'
 
 type Props = {}
 
