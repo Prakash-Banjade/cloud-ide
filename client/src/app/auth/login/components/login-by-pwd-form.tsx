@@ -44,8 +44,8 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                 redirect: false,
             });
 
-            if (result?.error) {
-                toast.error(result.error);
+            if (result?.status === 401) {
+                toast.error("Invalid email or password");
                 return;
             }
 

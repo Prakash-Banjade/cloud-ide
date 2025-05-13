@@ -9,8 +9,6 @@ export const useAxiosPrivate = (): AxiosInstance => {
     const { data } = useSession();
     const router = useRouter();
 
-    console.log(data?.backendTokens)
-
     const access_token = data?.backendTokens?.access_token;
     const refresh_token = data?.backendTokens?.refresh_token;
 

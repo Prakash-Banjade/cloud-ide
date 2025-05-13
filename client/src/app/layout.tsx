@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${montserrat.className} antialiased`}
+        className={`${montserrat.className} antialiased min-h-screen`}
       >
         <QueryClientProvider client={queryClient}>
           <ThemeProvider

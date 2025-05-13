@@ -1,4 +1,4 @@
-import { formatDistanceToNow } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -22,7 +22,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         <Card className="overflow-hidden transition-all hover:shadow-md">
             <CardContent>
                 <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-lg line-clamp-1">{project.name}</h3>
+                    <Link href={`/code/${project.replId}`}>
+                        <h3 className="font-semibold text-lg line-clamp-1 hover:underline">{project.name}</h3>
+                    </Link>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8">
@@ -32,17 +34,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem>
-                                <Edit className="mr-2 h-4 w-4" />
+                                <Edit />
                                 Rename
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Copy className="mr-2 h-4 w-4" />
-                                Duplicate
-                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                                <Trash className="mr-2 h-4 w-4" />
-                                Delete
+                            <DropdownMenuItem>
+                                <Trash className="text-destructive" />
+                                <span className="text-destructive">Delete</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -60,12 +58,12 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />
                         <span className="mr-2">Created:</span>
-                        {formatDate(project.createdAt)}
+                        {format(project.createdAt, "MMM dd, yyyy")}
                     </div>
 
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Clock className="mr-2 h-4 w-4" />
-                        <span className="mr-2">Last opened:</span>
+                        <span className="mr-2">Last Updated:</span>
                         {formatDate(project.updatedAt)}
                     </div>
 
@@ -82,7 +80,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
                 <Button size="sm" asChild>
                     <Link href={`/code/${project.replId}`}>
-                        <ExternalLink className="mr-2 h-4 w-4" />
+                        <ExternalLink />
                         Open
                     </Link>
                 </Button>

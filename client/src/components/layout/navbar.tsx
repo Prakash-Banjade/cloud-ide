@@ -1,12 +1,12 @@
 "use client"
 
-import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 import { Button } from '../ui/button'
 import { usePathname } from 'next/navigation'
 import ProfileDropdown from './profile-dropdown'
 import { ThemeToggle } from '../theme-toggle'
+import Logo from '../logo'
 
 type Props = {}
 
@@ -14,17 +14,9 @@ export default function Navbar({ }: Props) {
     const pathname = usePathname();
 
     return (
-        <section className='border-b h-20 flex items-center'>
+        <section className='border-b h-20 flex items-center bg-card/50'>
             <section className='container py-4 mx-auto flex items-center gap-6'>
-                <section>
-                    <Image
-                        src="/logo.png"
-                        alt="Logo"
-                        width={40}
-                        height={40}
-                        className='rounded-md'
-                    />
-                </section>
+                <Logo className='rounded-full' />
 
                 <nav>
                     <ul className='flex items-center gap-2'>
