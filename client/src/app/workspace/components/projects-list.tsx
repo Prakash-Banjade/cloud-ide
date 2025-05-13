@@ -17,6 +17,7 @@ export default async function MyProjectsList(props: Promise<Props>) {
         q: searchParams.q,
         language: searchParams.language,
         sort: searchParams.sort,
+        order: searchParams.order
     });
 
     const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects");

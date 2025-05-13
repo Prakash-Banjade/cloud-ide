@@ -51,11 +51,13 @@ export class ProjectsService {
 
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {
     const querybuilder = this.projectRepo.createQueryBuilder('project')
-      .orderBy('project.createdAt', queryDto.order)
+      .orderBy(queryDto.sortBy, queryDto.order)
       .where('project.createdById = :userId', { userId: currentUser.userId });
 
-    if (queryDto.search) {
-      querybuilder.andWhere('project.name ILIKE :search', { search: `%${queryDto.search}%` });
+    console.log(queryDto)
+
+    if (queryDto.q) {
+      querybuilder.andWhere('project.name ILIKE :q', { q: `%${queryDto.q}%` });
     }
 
     if (queryDto.language) {

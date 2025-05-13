@@ -36,8 +36,6 @@ export default function ProjectsSearch() {
             sortBy: searchParams.get("sortBy") ?? defaultValues.sortBy,
             view: searchParams.get("view") ?? defaultValues.view
         });
-        console.log(data)
-
 
         if (success) {
             setSearchState(data);
@@ -45,7 +43,20 @@ export default function ProjectsSearch() {
     }, []);
 
     function handleChange(name: string, value: string) {
-        setSearchParams(name, value);
+        if (name === 'language' && value === 'all') {
+            setSearchParams("language", undefined);
+        } else {
+            setSearchParams(name, value);
+        }
+
+        // order is needed only when sorting by name
+        if (name === 'sortBy' && value === 'name') {
+            setSearchParams("order", 'ASC');
+            setSearchParams("sortBy", value);
+        } else {
+            setSearchParams("order", undefined);
+        }
+
         setSearchState(prev => ({
             ...prev, [name]: value
         }));

@@ -9,7 +9,7 @@ type Props = {
     className?: string;
 }
 
-export default function SearchInput({ placeholder, searchKey = "search", className }: Props) {
+export default function SearchInput({ placeholder, searchKey = "q", className }: Props) {
     const { searchParams, setSearchParams } = useCustomSearchParams();
     const [searchTerm, setSearchTerm] = useState<string>(searchParams.get(searchKey) || '');
 

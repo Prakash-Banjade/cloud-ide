@@ -10,7 +10,8 @@ export type WorkspacePageProps = {
         q?: string,
         language?: ELanguage,
         sort?: string
-        view: 'grid' | 'list'
+        view: 'grid' | 'list',
+        order?: 'ASC' | 'DESC'
     }
 }
 
