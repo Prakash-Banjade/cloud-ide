@@ -5,13 +5,14 @@ import { nanoid } from 'nanoid';
 export function generateSlug(title: string, id: boolean = false) {
     const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')
 
-    return (id ? `${slug}-${nanoid(10)}` : slug)
+    const uniqueK8sNameCompatibleId = nanoid(20)
         // Replace any character that’s not a–z, 0–9 or hyphen with a hyphen
-        .replace(/[^a-z0-9-]/g, '-')
-        // Collapse multiple hyphens into one
-        .replace(/-+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
         // Remove leading or trailing hyphens
         .replace(/^-+|-+$/g, '');
+
+    return (id ? `${slug}-${uniqueK8sNameCompatibleId}` : slug)
+
 }
 
 export function generateDeviceId(userAgent: string | undefined, ipAddress: string): string {
