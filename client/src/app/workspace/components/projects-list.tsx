@@ -5,18 +5,20 @@ import ProjectCard from "./project-card-item";
 import ProjectListItem from "./project-list-item";
 import { WorkspacePageProps } from "../page";
 import { createQueryString } from "@/lib/utils";
+import { FolderPlus, Search } from "lucide-react";
+import CreateProjectButton from "./create-project-button";
 
 type Props = {
     searchParams: WorkspacePageProps["searchParams"]
 }
 
-export default async function MyProjectsList(props: Promise<Props>) {
-    const { searchParams } = await props;
+export default async function MyProjectsList(props: { searchParams: Promise<Props["searchParams"]> }) {
+    const searchParams = await props.searchParams;
 
     const queryString = createQueryString({
         q: searchParams.q,
         language: searchParams.language,
-        sort: searchParams.sort,
+        sortBy: searchParams.sortBy,
         order: searchParams.order
     });
 
@@ -27,6 +29,10 @@ export default async function MyProjectsList(props: Promise<Props>) {
     const projects: TProjectsResponse = await res.json();
 
     const view = searchParams.view || "grid";
+
+    if (projects.data.length === 0 && queryString.length > 0) return <NoProjectsFound />;
+
+    if (projects.data.length === 0) return <NoProjectsCreated />
 
     return (
         <section>
@@ -63,6 +69,38 @@ function ListView({ projects }: { projects: TProjectsResponse }) {
                     )
                 })
             }
+        </div>
+    )
+}
+
+function NoProjectsFound() {
+    return (
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div className="rounded-full bg-muted p-4 mb-6">
+                <Search className="size-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No matching projects found</h3>
+            <p className="text-muted-foreground max-w-md mb-6 text-sm">
+                We couldn't find any projects matching your current filters. Please try again with different filters
+            </p>
+        </div>
+    )
+}
+
+function NoProjectsCreated() {
+    return (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-card border rounded-lg">
+            <div className="bg-primary/10 rounded-full p-6 mb-6">
+                <FolderPlus className="size-8 text-primary" />
+            </div>
+
+            <h3 className="text-lg font-semibold mb-3">You haven't created any project yet</h3>
+
+            <p className="text-muted-foreground mb-8 max-w-md text-sm">
+                Create your first project to start coding in the cloud with Qubide
+            </p>
+
+            <CreateProjectButton />
         </div>
     )
 }

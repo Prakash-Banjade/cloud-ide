@@ -8,6 +8,8 @@ import { useSocket } from './socket-provider';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 
 interface CodingStatesContextType {
+    loaded: boolean;
+    setLoaded: React.Dispatch<React.SetStateAction<boolean>>;
     fileStructure: TreeItem[];
     setFileStructure: React.Dispatch<React.SetStateAction<TreeItem[]>>;
     selectedFile: TFileItem | undefined;
@@ -33,6 +35,7 @@ interface CodingStatesProviderProps {
 export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const searchParams = useSearchParams();
     const params = useParams();
+    const [loaded, setLoaded] = useState(false);
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
@@ -94,6 +97,8 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
 
 
     const value = {
+        loaded,
+        setLoaded,
         fileStructure,
         setFileStructure,
         selectedFile,

@@ -21,6 +21,10 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         </div>
     );
 
+    const lang = getLanguageFromName(selectedFile.name);
+
+    console.log(lang)
+    
     return (
         <Editor
             height="100vh"
@@ -62,7 +66,7 @@ const langObj = {
     "js": "javascript",
     "jsx": "javascript",
     "ts": "typescript",
-    "tsx": "typescript",
+    "tsx": "javascript",
     "py": "python",
     "html": "html",
     "htm": "html",

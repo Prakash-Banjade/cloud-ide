@@ -6,8 +6,8 @@ import { ELanguage } from "src/common/global.types";
 
 const sortByObj = {
     "createdAt": "project.createdAt",
-    "lastUpdated": "project.updatedAt",
-    "name": "project.name",
+    "lastOpened": "project.updatedAt",
+    "name": "LOWER(project.name)",
 }
 
 export class ProjectsQueryDto extends QueryDto {
@@ -17,9 +17,9 @@ export class ProjectsQueryDto extends QueryDto {
     language?: ELanguage;
 
 
-    @ApiPropertyOptional({ enum: Object.keys(sortByObj), example: sortByObj.lastUpdated })
+    @ApiPropertyOptional({ enum: Object.keys(sortByObj), example: sortByObj.lastOpened })
     @IsOptional()
     @IsString()
-    @Transform(({ value }) => sortByObj[value] ?? sortByObj.lastUpdated)
-    sortBy: string = sortByObj.lastUpdated;
+    @Transform(({ value }) => sortByObj[value] ?? sortByObj.lastOpened)
+    sortBy: string = sortByObj.lastOpened;
 }

@@ -21,7 +21,7 @@ const searchSchema = z.object({
 const defaultValues: z.infer<typeof searchSchema> = {
     q: "",
     language: "all",
-    sortBy: "lastUpdated",
+    sortBy: "lastOpened",
     view: "grid"
 }
 
@@ -47,14 +47,6 @@ export default function ProjectsSearch() {
             setSearchParams("language", undefined);
         } else {
             setSearchParams(name, value);
-        }
-
-        // order is needed only when sorting by name
-        if (name === 'sortBy' && value === 'name') {
-            setSearchParams("order", 'ASC');
-            setSearchParams("sortBy", value);
-        } else {
-            setSearchParams("order", undefined);
         }
 
         setSearchState(prev => ({
@@ -96,7 +88,7 @@ export default function ProjectsSearch() {
                         <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="lastUpdated">Last Updated</SelectItem>
+                        <SelectItem value="lastOpened">Last Opened</SelectItem>
                         <SelectItem value="createdAt">Creation Date</SelectItem>
                         <SelectItem value="name">Name</SelectItem>
                     </SelectContent>

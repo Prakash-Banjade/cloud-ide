@@ -16,7 +16,7 @@ export default function CreateProjectButton() {
                 setIsOpen={setIsOpen}
                 title="New project"
                 description="Create a new project"
-                className="w-full !max-w-[400px]"
+                className="w-full !max-w-[500px]"
             >
                 <NewProjectForm />
             </ResponsiveSheet>

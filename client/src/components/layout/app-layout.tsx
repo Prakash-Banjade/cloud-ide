@@ -8,12 +8,14 @@ type Props = {
 
 export default function AppLayout({ children }: Props) {
     return (
-        <div>
+        <div className='min-h-screen flex flex-col'>
             <Navbar />
-            <main className='container mx-auto my-10 mb-32'>
+            <main className='container mx-auto my-10 mb-40'>
                 {children}
             </main>
-            <Footer />
+            <section className='mt-auto'>
+                <Footer />
+            </section>
         </div>
     )
 }

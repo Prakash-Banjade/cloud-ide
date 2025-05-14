@@ -51,10 +51,8 @@ export class ProjectsService {
 
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {
     const querybuilder = this.projectRepo.createQueryBuilder('project')
-      .orderBy(queryDto.sortBy, queryDto.order)
+      .orderBy(queryDto.sortBy, queryDto.sortBy.includes('name') ? 'ASC' : queryDto.order) // sort by ASC for name
       .where('project.createdById = :userId', { userId: currentUser.userId });
-
-    console.log(queryDto)
 
     if (queryDto.q) {
       querybuilder.andWhere('project.name ILIKE :q', { q: `%${queryDto.q}%` });

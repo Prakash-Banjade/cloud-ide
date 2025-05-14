@@ -9,13 +9,13 @@ export type WorkspacePageProps = {
     searchParams: {
         q?: string,
         language?: ELanguage,
-        sort?: string
+        sortBy?: string
         view: 'grid' | 'list',
         order?: 'ASC' | 'DESC'
     }
 }
 
-export default async function WorkspacePage(props: Promise<WorkspacePageProps>) {
+export default async function WorkspacePage(props: { searchParams: Promise<WorkspacePageProps["searchParams"]> }) {
     return (
         <div className="space-y-6">
             <header className="flex items-center justify-between">
@@ -26,7 +26,7 @@ export default async function WorkspacePage(props: Promise<WorkspacePageProps>) 
             <ProjectsSearch />
 
             <Suspense fallback={<CardsSkeleton />}>
-                <MyProjectsList {...props} />
+                <MyProjectsList searchParams={props.searchParams} />
             </Suspense>
         </div>
     )
