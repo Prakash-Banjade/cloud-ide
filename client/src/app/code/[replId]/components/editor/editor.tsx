@@ -2,16 +2,11 @@ import Editor, { Monaco } from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
 import { useTheme } from "next-themes";
 import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
+import { useEffect } from "react";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
     const { setIsSyncing, selectedFile, setEditorInstance } = useCodingStates();
-
-    if (!selectedFile) return (
-        <div className="h-full flex items-center justify-center text-muted-foreground">
-            Select a file and start coding
-        </div>
-    );
 
     async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
         setEditorInstance(editor);
@@ -20,11 +15,11 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         });
 
         if (selectedFile && getLanguageFromName(selectedFile.name) === 'typescript') {
-            const modelUri = monaco.Uri.file(selectedFile?.name ?? "");
+            const modelUri = monaco.Uri.file(selectedFile.name ?? "");
 
 
             const codeModel = monaco.editor.createModel(
-                selectedFile?.content ?? "",
+                selectedFile.content ?? "",
                 "typescript",
                 modelUri
             );
@@ -42,10 +37,37 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         }
     }
 
+    const syncFileContent = debounce((value: string | undefined) => {
+        if (value !== undefined && selectedFile) {
+            // TODO: Should send diffs, for now sending the whole file
+            setIsSyncing(true);
+            socket.emit("updateContent", { path: selectedFile.path, content: value }, (data: boolean) => {
+                setIsSyncing(false);
+            });
+        }
+    }, 1000);
 
-    const lang = getLanguageFromName(selectedFile.name);
+    // Sync file content on ctrl+s
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const key = e.key.toLowerCase();
+            if ((e.ctrlKey || e.metaKey) && key === 's') {
+                e.preventDefault();
+                if (!selectedFile) return;
 
-    console.log(lang)
+                syncFileContent(selectedFile.content);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedFile]);
+
+    if (!selectedFile) return (
+        <div className="h-full flex items-center justify-center text-muted-foreground">
+            Select a file and start coding
+        </div>
+    );
 
     return (
         <Editor
@@ -60,15 +82,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             }}
             onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}
-            onChange={debounce((value: string | undefined) => {
-                if (value !== undefined) {
-                    // TODO: Should send diffs, for now sending the whole file
-                    setIsSyncing(true);
-                    socket.emit("updateContent", { path: selectedFile.path, content: value }, (data: boolean) => {
-                        setIsSyncing(false);
-                    });
-                }
-            }, 1000)}
+            onChange={syncFileContent}
         />
     )
 }
