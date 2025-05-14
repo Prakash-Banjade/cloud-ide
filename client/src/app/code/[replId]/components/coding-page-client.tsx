@@ -23,9 +23,9 @@ import FullPageLoader from "./full-page-loader";
 export default function CodingPageClient() {
     const params = useParams();
     const { status } = useSession()
-    const router = useRouter();
+    const [loaded, setLoaded] = useState(false);
 
-    const { mutateAsync, isPending, error } = useAppMutation();
+    const { mutateAsync, isPending } = useAppMutation();
 
     useEffect(() => {
         const startResources = async () => {
@@ -39,44 +39,28 @@ export default function CodingPageClient() {
         if (status === "authenticated") startResources();
     }, []);
 
-    if (status === "unauthenticated") {
-        router.push('/auth/login');
-        router.refresh();
-    }
-
-    if (error) {
-        return <div>Unable to start repl</div>
-    }
-
-    const isReady = !error && !isPending && status === "authenticated";
-
     return (
         <SocketProvider>
             <CodingStatesProvider>
-                <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} />
-                {
-                    isReady && (
-                        <CodingPagePostPodCreation />
-                    )
-                }
+                <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} isLoaded={loaded} />
+                <CodingPagePostPodCreation loaded={loaded} setLoaded={setLoaded} />
             </CodingStatesProvider>
         </SocketProvider>
     )
 }
 
-export const CodingPagePostPodCreation = () => {
+export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boolean, setLoaded: (loaded: boolean) => void }) => {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams(); // used to get path
     const replId = params.replId ?? '';
-    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile, refreshTree, loaded, setLoaded } = useCodingStates();
+    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile, refreshTree } = useCodingStates();
 
     const { socket } = useSocket();
 
     const [showOutput, setShowOutput] = useState(false);
 
     useEffect(() => {
-        console.log('trying to load...', socket)
         if (!socket) return;
 
         socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
@@ -95,7 +79,9 @@ export const CodingPagePostPodCreation = () => {
         }
     };
 
-    if (!loaded || !socket) return null;
+    if (!loaded) return "Loading your files...";
+
+    if (!socket) return null;
 
     return (
         <div className="h-screen flex flex-col bg-secondary">

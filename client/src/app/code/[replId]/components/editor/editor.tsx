@@ -1,19 +1,11 @@
-import Editor from "@monaco-editor/react";
+import Editor, { Monaco } from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
 import { useTheme } from "next-themes";
 import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
 
-
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
     const { setIsSyncing, selectedFile, setEditorInstance } = useCodingStates();
-
-    function handleEditorDidMount(editor: IStandaloneCodeEditor) {
-        setEditorInstance(editor);
-        window.requestAnimationFrame(() => {
-            editor.focus()
-        });
-    }
 
     if (!selectedFile) return (
         <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -21,10 +13,40 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         </div>
     );
 
+    async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
+        setEditorInstance(editor);
+        window.requestAnimationFrame(() => {
+            editor.focus()
+        });
+
+        if (selectedFile && getLanguageFromName(selectedFile.name) === 'typescript') {
+            const modelUri = monaco.Uri.file(selectedFile?.name ?? "");
+
+
+            const codeModel = monaco.editor.createModel(
+                selectedFile?.content ?? "",
+                "typescript",
+                modelUri
+            );
+
+            monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+                jsx: "react" as any
+            });
+
+            monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+                noSemanticValidation: false,
+                noSyntaxValidation: false
+            })
+
+            editor.setModel(codeModel);
+        }
+    }
+
+
     const lang = getLanguageFromName(selectedFile.name);
 
     console.log(lang)
-    
+
     return (
         <Editor
             height="100vh"
@@ -66,7 +88,7 @@ const langObj = {
     "js": "javascript",
     "jsx": "javascript",
     "ts": "typescript",
-    "tsx": "javascript",
+    "tsx": "typescript",
     "py": "python",
     "html": "html",
     "htm": "html",
