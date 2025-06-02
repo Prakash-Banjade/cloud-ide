@@ -183,7 +183,7 @@ export class AuthService extends BaseRepository {
     return { message: "VALID TOKEN" };
   }
 
-  async refresh(req: FastifyRequest, reply: FastifyReply) {
+  async refresh(req: FastifyRequest) {
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
       relations: { user: true },

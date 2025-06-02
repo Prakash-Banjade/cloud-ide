@@ -26,6 +26,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.0",
     "@nestjs/websockets": "^11.1.0",
+    "chokidar": "^4.0.3",
     "minio": "^8.0.5",
     "node-pty": "^1.0.0",
     "node-pty-prebuilt-multiarch": "0.10.1-pre.5",

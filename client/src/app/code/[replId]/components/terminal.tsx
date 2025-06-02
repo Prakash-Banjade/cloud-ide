@@ -7,11 +7,15 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useCodingStates } from "@/context/coding-states-provider";
+import { EItemType } from "./file-tree";
 
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
 
 export default function TerminalComponent({ socket }: { socket: Socket }) {
+    const { fileStructure } = useCodingStates();
+
     const terminalRef = useRef<HTMLDivElement | null>(null);
     const [term, setTerm] = useState<Terminal | null>(null);
     const { theme } = useTheme();
@@ -54,8 +58,12 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
             socket.emit("terminalData", { data: input });
         });
 
-        // Kickstart the shell
-        socket.emit("terminalData", { data: "\n" });
+        // execute the dependency install command, if there is one
+        const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
+
+        if (hasDependeiciesNotInstalled) {
+            socket.emit("terminalData", { data: "npm install\n" });
+        }
 
         return () => {
             if (term) term.dispose();
@@ -63,7 +71,7 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
         };
     }, [term]);
 
-  
+
 
     return (
         <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-black" : "bg-white")}>

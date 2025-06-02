@@ -19,6 +19,7 @@ import { SocketProvider, useSocket } from "@/context/socket-provider";
 import { useSession } from "next-auth/react";
 import FullPageLoader from "./full-page-loader";
 import dynamic from "next/dynamic";
+import useChokidar from "@/hooks/useChokidar";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -62,8 +63,6 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
     const { socket } = useSocket();
 
-    const [showOutput, setShowOutput] = useState(false);
-
     useEffect(() => {
         if (!socket) return;
 
@@ -71,7 +70,13 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
             setLoaded(true)
             await refreshTree(rootContent);
         })
-    }, [socket])
+
+        return () => {
+            socket.off('loaded');
+        };
+    }, [socket]);
+
+    useChokidar(socket);
 
     const onSelect = (file: TreeItem) => {
         if (socket) {
@@ -85,7 +90,10 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
     function onRun() {
         if (!socket || !project) return;
-        socket?.emit("terminalData", { lang: project.language, path: selectedFile?.path });
+
+        socket.emit("cmd-run", { lang: project.language, path: selectedFile?.path }, (res: { error: string, success: boolean } | undefined) => {
+            console.log(res)
+        });
     }
 
     if (!loaded) return "Loading your files...";

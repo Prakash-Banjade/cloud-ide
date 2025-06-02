@@ -1,8 +1,10 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayDisconnect, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
 import { getRunCommand } from './run-commands';
 import { ELanguage } from 'src/global-types';
+import { ChokidarService } from 'src/chokidar/chokidar.service';
+import { PROJECT_PATH } from 'src/CONSTANTS';
 
 @WebSocketGateway({
   cors: {
@@ -16,6 +18,7 @@ export class TerminalGateway implements OnGatewayDisconnect {
 
   constructor(
     private readonly terminalManager: TerminalManagerService,
+    private readonly chokidarService: ChokidarService,
   ) { }
 
   getReplId(socket: Socket) {
@@ -47,6 +50,7 @@ export class TerminalGateway implements OnGatewayDisconnect {
 
     this.terminalManager.createPty(socket.id, replId, (data) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
+      this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
     });
   }
 
@@ -55,14 +59,17 @@ export class TerminalGateway implements OnGatewayDisconnect {
     this.terminalManager.write(socket.id, payload.data);
   }
 
-  @SubscribeMessage('run')
+  @SubscribeMessage('cmd-run')
   onRun(@MessageBody() payload: { lang: ELanguage, path?: string }, @ConnectedSocket() socket: Socket) {
     console.log(payload)
-    
+
     const cmd = getRunCommand(payload.lang, payload.path);
 
-    console.log(cmd)
+    if (!cmd) return {
+      error: 'Language not supported',
+      success: false
+    }
 
-    // this.terminalManager.write(socket.id, payload.cmd);
+    this.terminalManager.write(socket.id, cmd + '\r'); // \r is to execute the command
   }
 }
