@@ -76,7 +76,7 @@ export class ProjectsService {
 
   async findOne(id: string, currentUser: AuthUser) {
     const project = await this.projectRepo.createQueryBuilder('project')
-      .where('project.id = :id', { id })
+      .where('project.replId = :id', { id })
       .andWhere('project.createdById = :userId', { userId: currentUser.userId })
       .select([
         'project.id',

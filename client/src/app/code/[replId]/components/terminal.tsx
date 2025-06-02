@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -11,16 +11,15 @@ import { cn } from "@/lib/utils";
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
 
-export const TerminalComponent = ({ socket }: { socket: Socket }) => {
+export default function TerminalComponent({ socket }: { socket: Socket }) {
     const terminalRef = useRef<HTMLDivElement | null>(null);
+    const [term, setTerm] = useState<Terminal | null>(null);
     const { theme } = useTheme();
 
     useEffect(() => {
-        if (!terminalRef.current || !socket) return;
-
-        const term = new Terminal({
+        const terminal = new Terminal({
             cursorBlink: true,
-            cols: 300,
+            cols: 200,
             theme: {
                 background: theme === "dark" ? "black" : "white",
                 foreground: theme === "dark" ? "white" : "black",
@@ -28,9 +27,22 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
             },
         });
 
+        setTerm(terminal);
+
+        return () => {
+            if (terminal) {
+                terminal.dispose();
+            }
+        };
+    }, [theme]);
+
+    useEffect(() => {
+        if (!term || !socket || !terminalRef.current) return;
+
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
+        setTerm(term);
 
         socket.emit("requestTerminal");
         socket.on("terminal", ({ data }: { data: string | ArrayBuffer }) => {
@@ -46,10 +58,12 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
         socket.emit("terminalData", { data: "\n" });
 
         return () => {
+            if (term) term.dispose();
             socket.off("terminal");
-            term.dispose();
         };
-    }, [socket, theme]);
+    }, [term]);
+
+  
 
     return (
         <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-black" : "bg-white")}>

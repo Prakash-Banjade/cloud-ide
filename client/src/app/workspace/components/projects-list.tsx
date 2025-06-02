@@ -81,7 +81,7 @@ function NoProjectsFound() {
             </div>
             <h3 className="text-lg font-semibold mb-2">No matching projects found</h3>
             <p className="text-muted-foreground max-w-md mb-6 text-sm">
-                We couldn't find any projects matching your current filters. Please try again with different filters
+                Cannot find any projects matching your current filters. Please try again with different filters
             </p>
         </div>
     )

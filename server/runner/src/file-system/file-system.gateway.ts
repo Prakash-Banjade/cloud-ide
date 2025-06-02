@@ -81,20 +81,4 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
     return true; // need to return something, used in frontend to handle syncing status
   }
-
-  @SubscribeMessage('requestTerminal')
-  onRequestTerminal(@ConnectedSocket() socket: Socket) {
-    const replId = this.getReplId(socket);
-
-    if (!replId) return;
-
-    this.terminalManager.createPty(socket.id, replId, (data) => {
-      socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
-    });
-  }
-
-  @SubscribeMessage('terminalData')
-  onTerminalData(@MessageBody() payload: { data: string }, @ConnectedSocket() socket: Socket) {
-    this.terminalManager.write(socket.id, payload.data);
-  }
 }

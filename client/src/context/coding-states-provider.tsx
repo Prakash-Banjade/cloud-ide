@@ -3,9 +3,12 @@
 import { fetchDirAsync, findItem, onItemSelect, updateTree } from '@/app/code/[replId]/fns/file-manager-fns';
 import { TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useSocket } from './socket-provider';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
+import { useAxiosPrivate } from '@/hooks/useAxios';
+import { useQuery } from '@tanstack/react-query';
+import { TProject } from '@/types';
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -19,6 +22,7 @@ interface CodingStatesContextType {
     refreshTree: (content: TreeItem[]) => Promise<void>;
     editorInstance: IStandaloneCodeEditor | null,
     setEditorInstance: React.Dispatch<React.SetStateAction<IStandaloneCodeEditor | null>>
+    project: TProject | undefined;
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -39,8 +43,14 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
     const { socket } = useSocket();
     const router = useRouter();
+    const axios = useAxiosPrivate();
 
     const replId = params.replId;
+
+    const { data } = useQuery({
+        queryKey: ['project'],
+        queryFn: async () => axios.get<TProject>(`/projects/${replId}`),
+    });
 
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -92,7 +102,6 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         }
     }
 
-
     const value = {
         fileStructure,
         setFileStructure,
@@ -105,6 +114,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         refreshTree,
         editorInstance,
         setEditorInstance,
+        project: data?.data
     };
 
     return (

@@ -7,7 +7,7 @@ export class TerminalManagerService {
     private sessions: { [id: string]: { terminal: IPty, replId: string; } } = {};
     private SHELL = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
 
-    createPty(id: string, replId: string, onData: (data: string, id: number) => void) {
+    createPty(socketId: string, replId: string, onData: (data: string, id: number) => void) {
         let term = spawn(this.SHELL, [], {
             cols: 300,
             name: 'xterm',
@@ -16,7 +16,7 @@ export class TerminalManagerService {
 
         term.onData((data: string) => onData(data, term.pid));
 
-        this.sessions[id] = {
+        this.sessions[socketId] = {
             terminal: term,
             replId
         };
@@ -26,8 +26,8 @@ export class TerminalManagerService {
         return term;
     }
 
-    write(terminalId: string, data: string) {
-        this.sessions[terminalId]?.terminal.write(data);
+    write(socketId: string, data: string) {
+        this.sessions[socketId]?.terminal.write(data);
     }
 
     clear(terminalId: string) {

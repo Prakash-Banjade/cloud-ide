@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ChevronRight, CircleCheck, LoaderCircle, Play } from "lucide-react";
 import { FileTree, TreeItem } from "./file-tree";
-import { TerminalComponent } from "./terminal";
 import { onItemSelect } from "../fns/file-manager-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CodeEditor } from "./editor/editor";
@@ -19,6 +18,11 @@ import ExplorerActions from "./explorer-actions";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
 import { useSession } from "next-auth/react";
 import FullPageLoader from "./full-page-loader";
+import dynamic from "next/dynamic";
+
+const XTerminalNoSSR = dynamic(() => import("./terminal"), {
+    ssr: false,
+});
 
 export default function CodingPageClient() {
     const params = useParams();
@@ -54,7 +58,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
     const router = useRouter();
     const searchParams = useSearchParams(); // used to get path
     const replId = params.replId ?? '';
-    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile, refreshTree } = useCodingStates();
+    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile, refreshTree, project, selectedFile } = useCodingStates();
 
     const { socket } = useSocket();
 
@@ -79,6 +83,11 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         }
     };
 
+    function onRun() {
+        if (!socket || !project) return;
+        socket?.emit("terminalData", { lang: project.language, path: selectedFile?.path });
+    }
+
     if (!loaded) return "Loading your files...";
 
     if (!socket) return null;
@@ -100,12 +109,12 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                                 : (<><CircleCheck size={16} /> Synced</>)
                         }
                     </Badge>
-                    <h1 className="font-semibold">{replId}</h1>
+                    <h1 className="font-semibold">{project?.name}</h1>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <ThemeToggle />
-                    <Button size="sm" variant="default" className="gap-1">
+                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
                         <Play size={16} />
                         Run
                     </Button>
@@ -147,7 +156,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                             <TabsTrigger value="preview">Preview</TabsTrigger>
                         </TabsList>
                         <TabsContent value="terminal" className="flex-1 p-0 m-0">
-                            <TerminalComponent socket={socket} />
+                            <XTerminalNoSSR socket={socket} />
                         </TabsContent>
                         <TabsContent value="preview" className="flex-1 p-0 m-0">
                             {/* <Preview /> */}

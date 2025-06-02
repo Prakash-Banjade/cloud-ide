@@ -2,7 +2,6 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { FastifyRequest } from "fastify";
-import { Tokens } from "../CONSTANTS";
 import { EnvService } from "src/env/env.service";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 
