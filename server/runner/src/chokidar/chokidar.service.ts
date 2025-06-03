@@ -10,7 +10,10 @@ export class ChokidarService {
 
         if (!this.fileWatchers.has(projectId)) {
             const watcher = chokidar.watch(projectPath, {
-                ignored: /(^|[\/\\])\../, // ignore dotfiles if you like
+                ignored: [
+                    /(^|[\/\\])\../,   // dotfiles
+                    /node_modules/
+                ],
                 persistent: true,
                 ignoreInitial: true,     // don’t fire events for existing files—only new changes
                 depth: 10,               // how deep into subfolders you want to watch

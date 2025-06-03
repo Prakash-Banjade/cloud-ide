@@ -8,7 +8,7 @@ import { PROJECT_PATH } from 'src/CONSTANTS';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
   },
 })
@@ -26,7 +26,7 @@ export class TerminalGateway implements OnGatewayDisconnect {
     const host = socket.handshake.headers.host;
     const replId = host?.split('.')[0];
 
-    return "my-react-project"; // hardcoded for now
+    // return "my-react-project"; // hardcoded for now
 
     if (!replId) {
       socket.disconnect();

@@ -1,12 +1,12 @@
 import { MinioService } from "src/minio/minio.service";
 import { TerminalManagerService } from "src/terminal-manager/terminal-manager.service";
-import { File, FileSystemService } from "./file-system.service";
+import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 
 @WebSocketGateway({
     cors: {
-        origin: '*',
+        origin: 'http://localhost:3000',
         methods: ['GET', 'POST'],
     },
 })
@@ -25,7 +25,7 @@ export class FileSystemCRUDGateway {
         const host = socket.handshake.headers.host;
         const replId = host?.split('.')[0];
 
-        return "my-react-project"; // hardcoded for now
+        // return "my-react-project"; // hardcoded for now
 
         if (!replId) {
             socket.disconnect();

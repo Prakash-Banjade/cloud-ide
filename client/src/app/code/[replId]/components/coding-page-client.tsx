@@ -158,18 +158,27 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
                 {/* Terminal and preview panel */}
                 <ResizablePanel defaultSize={30} minSize={20}>
-                    <Tabs defaultValue="terminal" className="h-full flex flex-col">
-                        <TabsList className="mx-2 mt-1">
-                            <TabsTrigger value="terminal">Terminal</TabsTrigger>
-                            <TabsTrigger value="preview">Preview</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="terminal" className="flex-1 p-0 m-0">
+                    <ResizablePanelGroup direction="vertical" className="flex-1">
+                        {
+                            false && (
+                                <>
+                                    <ResizablePanel defaultSize={50} minSize={50}>
+                                        <iframe width={"100%"} height={"100%"} src={`http://${replId}.qubide.cloud`} />
+                                    </ResizablePanel>
+
+                                    <ResizableHandle withHandle />
+                                </>
+                            )
+                        }
+
+                        <ResizablePanel defaultSize={100} minSize={30}>
                             <XTerminalNoSSR socket={socket} />
-                        </TabsContent>
-                        <TabsContent value="preview" className="flex-1 p-0 m-0">
-                            {/* <Preview /> */}
-                        </TabsContent>
-                    </Tabs>
+                        </ResizablePanel>
+
+
+
+                    </ResizablePanelGroup>
+
                 </ResizablePanel>
             </ResizablePanelGroup>
         </div>
