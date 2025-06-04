@@ -25,7 +25,7 @@ export class FileSystemCRUDGateway {
         const host = socket.handshake.headers.host;
         const replId = host?.split('.')[0];
 
-        // return "my-react-project"; // hardcoded for now
+        // return "node-node"; // hardcoded for now
 
         if (!replId) {
             socket.disconnect();
@@ -44,25 +44,18 @@ export class FileSystemCRUDGateway {
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
         @ConnectedSocket() socket: Socket
     ): Promise<{ success: boolean, error: string | null }> {
-        const replId = this.getReplId(socket);
-
         try {
             const { path, type } = payload;
             const fullPath = `/workspace${path}`;
 
             if (type === 'dir') {
-                // create an on-disk folder
                 await this.fileSystemService.createDir(fullPath);
-                // mirror into Minio under same prefix
-                await this.minioService.ensurePrefix(`code/${replId}${path}`);
             } else {
-                // create an empty file
                 await this.fileSystemService.createFile(fullPath, '');
-                // push empty content into Minio
-                await this.minioService.saveToMinio(`code/${replId}`, path, '');
             }
 
-            // broadcast to all clients that a change occurred
+            // update in MinIO is done by chokidar.service which is watching for any change in /workspace
+
             return { success: true, error: null };
         } catch (err) {
             console.error('createItem failed', err);
@@ -79,19 +72,13 @@ export class FileSystemCRUDGateway {
         @ConnectedSocket() socket: Socket
     ): Promise<boolean> {
         try {
-            const { path, type } = payload;
+            const { path } = payload;
             const fullPath = `/workspace${path}`;
-            const replId = this.getReplId(socket);
 
             // delete on disk (recursive for dirs)
             await this.fileSystemService.deletePath(fullPath);
 
-            // remove from Minio: if it's a folder, remove all objects under that prefix
-            if (type === 'dir') {
-                await this.minioService.removePrefix(`code/${replId}${path}`);
-            } else {
-                await this.minioService.removeObject(`code/${replId}`, path);
-            }
+            // update in MinIO is done by chokidar.service which is watching for any change in /workspace
 
             return true;
         } catch (err) {

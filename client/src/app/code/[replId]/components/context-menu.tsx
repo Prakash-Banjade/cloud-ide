@@ -27,9 +27,9 @@ export function TreeItemContextMenu({ children, item }: Props) {
         if (!socket) return;
 
         socket.emit('deleteItem', { path: item.path, type: item.type }, (data: boolean) => {
-            if (data) {
-                setFileStructure(prev => removeItemFromTree(prev, item.path));
-            }
+            // if (data) {
+            //     setFileStructure(prev => removeItemFromTree(prev, item.path));
+            // }
         });
     }
 

@@ -1,58 +1,82 @@
 import { Injectable } from '@nestjs/common';
 import chokidar, { FSWatcher } from 'chokidar';
 import { Socket } from 'socket.io';
+import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class ChokidarService {
+    constructor(
+        private readonly minioService: MinioService,
+    ) { }
+
     private fileWatchers = new Map<string, FSWatcher>();
-    startProjectSession(projectPath: string, projectId: string, socket: Socket) {
-        console.log('chokidar started....')
 
-        if (!this.fileWatchers.has(projectId)) {
-            const watcher = chokidar.watch(projectPath, {
-                ignored: [
-                    /(^|[\/\\])\../,   // dotfiles
-                    /node_modules/
-                ],
-                persistent: true,
-                ignoreInitial: true,     // don’t fire events for existing files—only new changes
-                depth: 10,               // how deep into subfolders you want to watch
-            });
+    startProjectSession(projectPath: string, replId: string, socket: Socket) {
+        console.log('chokidar started for socketId=', socket.id);
 
-            // When a file is added…
-            watcher.on('add', (filePath: string) => {
-                // Strip the project root prefix to get a relative path, e.g. 'src/newFile.js'
-                const rel = filePath.replace(projectPath + '/', '');
+        if (this.fileWatchers.has(replId)) {
+            this.stopProjectSession(replId);
+        }
 
-                console.log({ socketId: socket.id });
-                socket.emit('chokidar:file-added', { path: rel });
-            });
+        const watcher = chokidar.watch(projectPath, {
+            ignored: [
+                /(^|[\/\\])\../, // ignore dotfiles
+                /node_modules/,  // ignore node_modules
+                /dist/,
+                /build/,
+                /.next/
+            ],
+            persistent: true,
+            ignoreInitial: true, // don’t fire events for existing files
+            depth: 10,
+        });
 
-            // When a file is removed…
-            watcher.on('unlink', (filePath: string) => {
-                const rel = filePath.replace(projectPath + '/', '');
-                socket.emit('chokidar:file-removed', { path: rel });
-            });
+        watcher.on('add', async (filePath: string) => {
+            const relPath = filePath.replace(projectPath, '');
 
-            // When a directory is added…
-            watcher.on('addDir', (dirPath: string) => {
-                const rel = dirPath.replace(projectPath + '/', '');
-                socket.emit('chokidar:dir-added', { path: rel });
-            });
+            // emit event in frontend so that it can update it's tree
+            socket.emit('chokidar:file-added', { path: relPath });
 
-            // When a directory is removed…
-            watcher.on('unlinkDir', (dirPath: string) => {
-                const rel = dirPath.replace(projectPath + '/', '');
-                socket.emit('chokidar:dir-removed', { path: rel });
-            });
+            // save to minio
+            await this.minioService.saveToMinio(`code/${replId}`, relPath, '');
+        });
 
-            // When any file is changed (optional—useful if you show icons or modified-status)
-            watcher.on('change', (filePath: string) => {
-                const rel = filePath.replace(projectPath + '/', '');
-                socket.emit('chokidar:file-changed', { path: rel });
-            });
+        watcher.on('unlink', async (filePath: string) => {
+            const relPath = filePath.replace(projectPath, '');
+            socket.emit('chokidar:file-removed', { path: relPath });
 
-            this.fileWatchers.set(projectId, watcher);
+            await this.minioService.removeObject(`code/${replId}`, relPath);
+        });
+
+        watcher.on('addDir', async (dirPath: string) => {
+            const relPath = dirPath.replace(projectPath, '');
+            socket.emit('chokidar:dir-added', { path: relPath });
+
+            await this.minioService.ensurePrefix(`code/${replId}${relPath}`);
+        });
+
+        watcher.on('unlinkDir', async (dirPath: string) => {
+            const relPath = dirPath.replace(projectPath, '');
+            socket.emit('chokidar:dir-removed', { path: relPath });
+
+            await this.minioService.removePrefix(`code/${replId}${relPath}`);
+        });
+
+        watcher.on('change', (filePath: string) => {
+            const relPath = filePath.replace(projectPath, '');
+            socket.emit('chokidar:file-changed', { path: relPath });
+        });
+
+        // Store the watcher so we can close it later
+        this.fileWatchers.set(replId, watcher);
+    }
+
+    stopProjectSession(replId: string) {
+        const watcher = this.fileWatchers.get(replId);
+        if (watcher) {
+            watcher.close();          // stops Chokidar’s file watching
+            this.fileWatchers.delete(replId);
+            console.log(`chokidar stopped for replId=${replId}`);
         }
     }
 }

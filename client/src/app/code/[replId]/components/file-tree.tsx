@@ -49,7 +49,7 @@ interface FileItemProps {
 }
 
 export function FileTree({ onSelectFile }: FileTreeProps) {
-    const { fileStructure } = useCodingStates();
+    const { fileStructure, setSelectedItem } = useCodingStates();
 
     const renderFileTree = (items: (TFileItem | TFolderItem)[], level = 0) => {
         return sortFolderFirst(items).map((item) => {
@@ -75,10 +75,12 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
         })
     }
 
-    return <div className="text-sm overflow-auto h-full">
+    return <div className="file-tree text-sm overflow-auto h-full">
         <ScrollArea className="h-full">
-            {renderFileTree(fileStructure)}
-            <div className="h-80"></div>
+            <section>
+                {renderFileTree(fileStructure)}
+            </section>
+            <div className="min-h-80 grow" onClick={() => setSelectedItem(undefined)}></div>
         </ScrollArea>
     </div>
 }
@@ -107,7 +109,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
                             <Folder className="h-4 w-4 text-yellow-400" />
                         )}
                     </span>
-                    <span>{item.name}</span>
+                    <span className="truncate">{item.name}</span>
                 </div>
             </TreeItemContextMenu>
             {item.expanded && item.children && (
@@ -153,7 +155,7 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
                 onClick={() => onSelectFile(item)}
             >
                 <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
-                <span className={cn(isSelected && "text-shadow-2xs")}>{item.name}</span>
+                <span className={cn("truncate line-clamp-1", isSelected && "text-shadow-2xs")}>{item.name}</span>
             </div>
         </TreeItemContextMenu>
     )

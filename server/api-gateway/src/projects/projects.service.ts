@@ -40,7 +40,8 @@ export class ProjectsService {
   }
 
   async getReplId(projectName: string): Promise<string> {
-    const replId = generateSlug(projectName, true);
+    // const replId = generateSlug(projectName, true);
+    const replId = 'node-node';
 
     const existingProject = await this.projectRepo.findOne({ where: { replId }, select: { id: true } });
 
@@ -86,6 +87,10 @@ export class ProjectsService {
       ]).getOne();
 
     if (!project) throw new NotFoundException('Project not found');
+
+    // update last opened
+    project.updatedAt = new Date().toISOString();
+    this.projectRepo.save(project);
 
     return project;
   }

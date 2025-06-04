@@ -7,3 +7,8 @@ export enum ELanguage {
     REACT_TS = "react-ts",
     NEXT_TS = "next-ts"
 }
+
+export enum EItemType {
+    FILE = 'file',
+    DIR = 'dir'
+}

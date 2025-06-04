@@ -111,7 +111,8 @@ const langObj = {
     "md": "markdown",
     "c": "c",
     "cpp": "cpp",
-    "c++": "cpp"
+    "c++": "cpp",
+    "mjs": "javascript"
 }
 
 function getLanguageFromName(name: string) {

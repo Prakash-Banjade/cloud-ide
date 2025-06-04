@@ -27,38 +27,41 @@ export type loginFormSchemaType = z.infer<typeof loginFormSchema>;
 
 export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFormProps) {
     const router = useRouter();
+    const [isPending, startTransition] = React.useTransition();
 
     const form = useForm<loginFormSchemaType>({
         resolver: zodResolver(loginFormSchema),
         defaultValues: {
-            email: "",
-            password: "",
+            email: "prakash@gmail.com",
+            password: "Prakash@122",
         },
     })
 
-    async function onSubmit(values: loginFormSchemaType) {
-        try {
-            const result = await signIn("credentials", {
-                email: values.email,
-                password: values.password,
-                redirect: false,
-            });
+    function onSubmit(values: loginFormSchemaType) {
+        startTransition(async () => {
+            try {
+                const result = await signIn("credentials", {
+                    email: values.email,
+                    password: values.password,
+                    redirect: false,
+                });
 
-            if (result?.status === 401) {
-                toast.error("Invalid email or password");
-                return;
+                if (result?.status === 401) {
+                    toast.error("Invalid email or password");
+                    return;
+                }
+
+                router.push("/workspace");
+                router.refresh();
+            } catch (error) {
+                toast.error("An error occurred during sign in");
             }
-
-            router.push("/workspace");
-            router.refresh();
-        } catch (error) {
-            toast.error("An error occurred during sign in");
-        }
+        })
     };
 
     React.useEffect(() => {
-        setIsFormSubmitting(form.formState.isSubmitting);
-    }, [form.formState.isSubmitting]);
+        setIsFormSubmitting(isPending);
+    }, [isPending]);
 
     return (
         <div className={cn("grid gap-6", className)} {...props}>
@@ -110,7 +113,7 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                         <LoadingButton
                             type="submit"
                             className="w-full"
-                            isLoading={form.formState.isSubmitting}
+                            isLoading={isPending}
                             loadingText="Signing in..."
                         >
                             Sign In

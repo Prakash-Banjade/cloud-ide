@@ -18,7 +18,7 @@ import { useParams, useRouter } from "next/navigation"
 const newItemFormSchema = z.object({
     name: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
     type: z.nativeEnum(EItemType),
-}); 
+});
 
 type NewItemFormType = z.infer<typeof newItemFormSchema>;
 
@@ -29,7 +29,7 @@ interface NewItemFormProps {
 }
 
 export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
-    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
+    const { fileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
     const { socket } = useSocket();
     const router = useRouter();
     const params = useParams();
@@ -66,7 +66,7 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
                     } : {}),
                 } as TreeItem;
 
-                setFileStructure(prev => insertTreeItem(prev, newTreeItem)); // insert the new item in the tree
+                // insertion is handled in useChokidar
                 setSelectedItem(newTreeItem);
 
                 if (newTreeItem.type === EItemType.FILE) {

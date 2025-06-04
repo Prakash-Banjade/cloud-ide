@@ -26,7 +26,7 @@ export class TerminalGateway implements OnGatewayDisconnect {
     const host = socket.handshake.headers.host;
     const replId = host?.split('.')[0];
 
-    // return "my-react-project"; // hardcoded for now
+    // return "node-node"; // hardcoded for now
 
     if (!replId) {
       socket.disconnect();
@@ -40,6 +40,12 @@ export class TerminalGateway implements OnGatewayDisconnect {
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     console.log('user disconnected');
     this.terminalManager.clear(socket.id);
+
+    const replId = this.getReplId(socket);
+
+    if (replId) {
+      this.chokidarService.stopProjectSession(replId);
+    }
   }
 
   @SubscribeMessage('requestTerminal')
@@ -48,9 +54,10 @@ export class TerminalGateway implements OnGatewayDisconnect {
 
     if (!replId) return;
 
+    this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
+
     this.terminalManager.createPty(socket.id, replId, (data) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
-      this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
     });
   }
 
@@ -61,13 +68,10 @@ export class TerminalGateway implements OnGatewayDisconnect {
 
   @SubscribeMessage('cmd-run')
   onRun(@MessageBody() payload: { lang: ELanguage, path?: string }, @ConnectedSocket() socket: Socket) {
-    console.log(payload)
-
     const cmd = getRunCommand(payload.lang, payload.path);
 
     if (!cmd) return {
       error: 'Language not supported',
-      success: false
     }
 
     this.terminalManager.write(socket.id, cmd + '\r'); // \r is to execute the command

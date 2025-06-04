@@ -45,6 +45,7 @@ spec:
       containers:
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
+          imagePullPolicy: Always
           env:
             - name: MINIO_ACCESS_KEY
               valueFrom:
