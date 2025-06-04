@@ -62,10 +62,10 @@ export class ChokidarService {
             await this.minioService.removePrefix(`code/${replId}${relPath}`);
         });
 
-        watcher.on('change', (filePath: string) => {
-            const relPath = filePath.replace(projectPath, '');
-            socket.emit('chokidar:file-changed', { path: relPath });
-        });
+        // watcher.on('change', (filePath: string) => {
+        //     const relPath = filePath.replace(projectPath, '');
+        //     socket.emit('chokidar:file-changed', { path: relPath });
+        // });
 
         // Store the watcher so we can close it later
         this.fileWatchers.set(replId, watcher);

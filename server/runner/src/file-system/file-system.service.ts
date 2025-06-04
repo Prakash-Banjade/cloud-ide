@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import { promisify } from 'util';
 
-const rm = promisify(fs.rm);                    // fs.rm with recursive option :contentReference[oaicite:4]{index=4}
+const rm = promisify(fs.rm);
 const mkdir = promisify(fs.mkdir);
 const writeFile = promisify(fs.writeFile);
 const rename = promisify(fs.rename);

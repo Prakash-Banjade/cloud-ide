@@ -9,7 +9,7 @@ import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
 import { getFileIcon } from "./file-icons"
 import { EItemType, TreeItem } from "./file-tree"
-import { removeItemFromTree, renameTreeItem } from "../fns/tree-mutation-fns"
+import { renameTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
 import { useParams, useRouter } from "next/navigation"
@@ -65,12 +65,7 @@ export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "p
                     } : {}),
                 } as TreeItem;
 
-                /**
-                |--------------------------------------------------
-                | Here tree shuold be updated -> TREE IS UPDATE BY useChokidar: first it adds the new item and removes the old one
-                |--------------------------------------------------
-                */
-                setFileStructure(prev => removeItemFromTree(prev, item.path)); // eventually chokidar is listening to this but is a bit delay so, we remove the item here
+                setFileStructure(prev => renameTreeItem(prev, item.path, newPath));
 
                 setSelectedItem(newTreeItem);
 

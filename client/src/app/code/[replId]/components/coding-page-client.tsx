@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { cn } from "@/lib/utils";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ChevronRight, CircleCheck, LoaderCircle, Play } from "lucide-react";
@@ -18,7 +18,6 @@ import { SocketProvider, useSocket } from "@/context/socket-provider";
 import { useSession } from "next-auth/react";
 import FullPageLoader from "./full-page-loader";
 import dynamic from "next/dynamic";
-import useChokidar from "@/hooks/useChokidar";
 import toast from "react-hot-toast";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
@@ -75,7 +74,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         };
     }, [socket]);
 
-    useChokidar(socket);
+    // useChokidar(socket);
 
     const onSelect = (file: TreeItem) => {
         if (socket) {

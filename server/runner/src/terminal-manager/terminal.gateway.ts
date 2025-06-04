@@ -3,8 +3,6 @@ import { Server, Socket } from 'socket.io';
 import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
 import { getRunCommand } from './run-commands';
 import { ELanguage } from 'src/global-types';
-import { ChokidarService } from 'src/chokidar/chokidar.service';
-import { PROJECT_PATH } from 'src/CONSTANTS';
 
 @WebSocketGateway({
   cors: {
@@ -18,7 +16,7 @@ export class TerminalGateway implements OnGatewayDisconnect {
 
   constructor(
     private readonly terminalManager: TerminalManagerService,
-    private readonly chokidarService: ChokidarService,
+    // private readonly chokidarService: ChokidarService,
   ) { }
 
   getReplId(socket: Socket) {
@@ -41,11 +39,11 @@ export class TerminalGateway implements OnGatewayDisconnect {
     console.log('user disconnected');
     this.terminalManager.clear(socket.id);
 
-    const replId = this.getReplId(socket);
+    // const replId = this.getReplId(socket);
 
-    if (replId) {
-      this.chokidarService.stopProjectSession(replId);
-    }
+    // if (replId) {
+    //   this.chokidarService.stopProjectSession(replId);
+    // }
   }
 
   @SubscribeMessage('requestTerminal')
@@ -54,7 +52,7 @@ export class TerminalGateway implements OnGatewayDisconnect {
 
     if (!replId) return;
 
-    this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
+    // this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
 
     this.terminalManager.createPty(socket.id, replId, (data) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });

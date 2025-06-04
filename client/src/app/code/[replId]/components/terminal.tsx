@@ -42,8 +42,7 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
 
     useEffect(() => {
         if (!term || !socket || !terminalRef.current) return;
-        console.log('term changed...')
-
+        
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
