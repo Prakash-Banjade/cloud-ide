@@ -79,6 +79,9 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
                 acceptSuggestionOnEnter: "on",
                 autoClosingBrackets: "always",
                 autoClosingComments: "always",
+                padding: {
+                    top: 6
+                }
             }}
             onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}

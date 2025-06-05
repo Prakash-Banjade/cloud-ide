@@ -1,26 +1,23 @@
 "use client"
 
-import { Button } from "@/components/ui/button";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { CircleCheck, LoaderCircle, Play, X } from "lucide-react";
+import { X } from "lucide-react";
 import { FileTree, TFileItem, TreeItem } from "./file-tree";
 import { onItemSelect } from "../fns/file-manager-fns";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { CodeEditor } from "./editor/editor";
-import { Badge } from "@/components/ui/badge";
+import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
 import { useSession } from "next-auth/react";
 import FullPageLoader from "./full-page-loader";
 import dynamic from "next/dynamic";
-import toast from "react-hot-toast";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getFileIcon } from "./file-icons";
+import TopBar from "./top-bar";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -60,13 +57,10 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
     const router = useRouter();
     const replId = params.replId ?? '';
     const {
-        isSyncing,
         setSelectedItem,
         setFileStructure,
         setSelectedFile,
         refreshTree,
-        project,
-        selectedFile,
         setOpenedFiles
     } = useCodingStates();
 
@@ -97,14 +91,6 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         }
     };
 
-    function onRun() {
-        if (!socket || !project) return;
-
-        socket.emit("cmd-run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
-            if (res?.error) toast.error(res.error);
-        });
-    }
-
     if (!loaded) return "Loading your files...";
 
     if (!socket) return null;
@@ -112,36 +98,12 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
     return (
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
-            <div className="h-12 border-b-2 flex items-center justify-between px-4 bg-secondary">
-                <div className="flex items-center gap-2">
-                    <span className="font-semibold">Qubide</span>
-                    <span className="text-xs text-muted-foreground">v1.0.0</span>
-                </div>
-
-                <div className="flex gap-2 items-center -ml-10">
-                    <Badge variant={'outline'}>
-                        {
-                            isSyncing ?
-                                (<><LoaderCircle className="animate-spin" size={16} /> Syncing...</>)
-                                : (<><CircleCheck size={16} /> Synced</>)
-                        }
-                    </Badge>
-                    <h1 className="font-semibold">{project?.name}</h1>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <ThemeToggle />
-                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
-                        <Play size={16} />
-                        Run
-                    </Button>
-                </div>
-            </div>
+            <TopBar socket={socket} />
 
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={20} className="bg-sidebar">
+                <ResizablePanel defaultSize={15} minSize={15} maxSize={20} className="bg-sidebar">
                     <section className="p-2 pl-4 flex justify-between items-center gap-4">
                         <div className="text-sm font-medium uppercase">Explorer</div>
                         <div className="flex items-center gap-0.5 text-muted-foreground">
@@ -151,20 +113,20 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                     <FileTree onSelectFile={onSelect} />
                 </ResizablePanel>
 
-                <ResizableHandle withHandle />
+                <ResizableHandle />
 
                 {/* Code editor panel */}
-                <ResizablePanel defaultSize={60} minSize={30}>
+                <ResizablePanel defaultSize={65} minSize={30}>
                     <div className="h-full flex flex-col">
                         <OpenedFilesTab />
                         <CodeEditor socket={socket} />
                     </div>
                 </ResizablePanel>
 
-                <ResizableHandle withHandle />
+                <ResizableHandle />
 
                 {/* Terminal and preview panel */}
-                <ResizablePanel defaultSize={25} minSize={20} maxSize={30}>
+                <ResizablePanel defaultSize={20} minSize={20} maxSize={30}>
                     <ResizablePanelGroup direction="vertical" className="flex-1">
                         {
                             false && (
@@ -173,7 +135,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                                         <iframe width={"100%"} height={"100%"} src={`http://${replId}.qubide.cloud`} />
                                     </ResizablePanel>
 
-                                    <ResizableHandle withHandle />
+                                    <ResizableHandle />
                                 </>
                             )
                         }

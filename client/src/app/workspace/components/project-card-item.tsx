@@ -1,11 +1,11 @@
 import { format, formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Code, Calendar, Clock, MoreVertical, ExternalLink, Copy, Trash, Edit } from "lucide-react"
+import { Code, Calendar, Clock, ExternalLink } from "lucide-react"
 import { TProject } from "@/types"
 import Link from "next/link"
 import { languageFields } from "@/lib/utils"
+import ProjectCardActions from "./project-card-actions"
 
 interface ProjectCardProps {
     project: TProject
@@ -25,25 +25,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                     <Link href={`/code/${project.replId}`}>
                         <h3 className="font-semibold text-lg line-clamp-1 hover:underline">{project.name}</h3>
                     </Link>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8">
-                                <MoreVertical className="h-4 w-4" />
-                                <span className="sr-only">More options</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                                <Edit />
-                                Rename
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                                <Trash className="text-destructive" />
-                                <span className="text-destructive">Delete</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+
+                    <ProjectCardActions project={project} />
                 </div>
 
                 <div className="mt-4 space-y-2">

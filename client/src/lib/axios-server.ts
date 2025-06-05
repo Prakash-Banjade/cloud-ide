@@ -1,19 +1,28 @@
 "use server"
 
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { getServerSession } from "next-auth";
 import { API_URL } from "./utils";
 import axios from "axios";
+import auth from "./auth";
 
 export async function serverFetch(path: string, init?: RequestInit) {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
+
+    if (init) {
+        const { headers, ...rest } = init;
+
+        return fetch(`${API_URL}${path}`, {
+            headers: {
+                ...headers,
+                'Authorization': `Bearer ${session.backendTokens.access_token}`,
+            },
+            ...rest
+        });
+    }
 
     return fetch(`${API_URL}${path}`, {
         headers: {
-            'Authorization': `Bearer ${session?.backendTokens?.access_token}`
+            'Authorization': `Bearer ${session.backendTokens.access_token}`,
         },
-        credentials: 'include',
-        ...init,
     });
 }
 

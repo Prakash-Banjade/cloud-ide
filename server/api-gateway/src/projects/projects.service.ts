@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { MinioService } from '../minio/minio.service';
@@ -40,8 +40,7 @@ export class ProjectsService {
   }
 
   async getReplId(projectName: string): Promise<string> {
-    // const replId = generateSlug(projectName, true);
-    const replId = 'node-node';
+    const replId = generateSlug(projectName, true);
 
     const existingProject = await this.projectRepo.findOne({ where: { replId }, select: { id: true } });
 
@@ -95,16 +94,20 @@ export class ProjectsService {
     return project;
   }
 
-  update(id: string, dto: UpdateProjectDto, currentUser: AuthUser) {
-    return this.projectRepo.update({
+  async update(id: string, dto: UpdateProjectDto, currentUser: AuthUser) {
+    await this.projectRepo.update({
       id,
       createdBy: { id: currentUser.userId }
     }, {
       name: dto.projectName
     });
+
+    return { message: "Project updated" };
   }
 
-  remove(id: string, currentUser: AuthUser) {
-    return `This action removes a #${id} project`;
+  async remove(id: string, currentUser: AuthUser) {
+    await this.projectRepo.delete({ id, createdBy: { id: currentUser.userId } });
+
+    return { message: "Project deleted" };
   }
 }
