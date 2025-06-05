@@ -25,6 +25,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.0",
+    "@nestjs/schedule": "^6.0.0",
     "@nestjs/websockets": "^11.1.0",
     "chokidar": "^4.0.3",
     "minio": "^8.0.5",

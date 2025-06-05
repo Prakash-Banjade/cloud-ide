@@ -1,8 +1,9 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayDisconnect, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayDisconnect, MessageBody, ConnectedSocket, OnGatewayConnection } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
 import { getRunCommand } from './run-commands';
 import { ELanguage } from 'src/global-types';
+import { SchedulerRegistry } from '@nestjs/schedule';
 
 @WebSocketGateway({
   cors: {
@@ -10,14 +11,19 @@ import { ELanguage } from 'src/global-types';
     methods: ['GET', 'POST'],
   },
 })
-export class TerminalGateway implements OnGatewayDisconnect {
+export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   constructor(
     private readonly terminalManager: TerminalManagerService,
+    private readonly schedulerRegistry: SchedulerRegistry,
     // private readonly chokidarService: ChokidarService,
   ) { }
+
+  private activeSockets: string[] = []; // socket ids
+  private timeoutSockets: string[] = []; // socket ids
+  private INACTIVITY_TIMEOUT_MS = 1 * 1000;
 
   getReplId(socket: Socket) {
     // Split the host by '.' and take the first part as replId
@@ -35,11 +41,37 @@ export class TerminalGateway implements OnGatewayDisconnect {
     return replId;
   }
 
+  handleConnection(@ConnectedSocket() socket: Socket) {
+    console.log("user connected - from terminal.gateway");
+
+    this.activeSockets.push(socket.id);
+
+    // clear timeout because a new connection is established
+    try {
+      this.timeoutSockets.forEach(t => {
+        console.log(t)
+        this.schedulerRegistry.deleteTimeout(t);
+      })
+    } catch (e) { }
+  }
+
   handleDisconnect(@ConnectedSocket() socket: Socket) {
-    console.log('user disconnected');
+    console.log('user disconnected - from terminal.gateway');
     this.terminalManager.clear(socket.id);
 
-    // const replId = this.getReplId(socket);
+    this.activeSockets = this.activeSockets.filter((id) => id !== socket.id);
+
+    const replId = this.getReplId(socket);
+
+    if (this.activeSockets.length === 0 && replId) { // if no active sockets, set timeout
+      const timeout = setTimeout(() => {
+        // TODO: shutdown the resources
+        console.log('Inactivity timeout reached....')
+      }, this.INACTIVITY_TIMEOUT_MS);
+
+      this.schedulerRegistry.addTimeout(socket.id, timeout);
+      this.timeoutSockets.push(socket.id);
+    }
 
     // if (replId) {
     //   this.chokidarService.stopProjectSession(replId);

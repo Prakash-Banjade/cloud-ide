@@ -1,8 +1,7 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
-import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
 
 @WebSocketGateway({
   cors: {
@@ -10,20 +9,18 @@ import { TerminalManagerService } from '../terminal-manager/terminal-manager.ser
     methods: ['GET', 'POST'],
   },
 })
-export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class FileSystemGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
 
   constructor(
-    private readonly terminalManager: TerminalManagerService,
     private readonly minioService: MinioService,
     private readonly fileSystemService: FileSystemService,
   ) { }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-
     // TODO: Perform authentication
-    console.log("user connected")
+    console.log("user connected - from file-system.gateway v2");
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
@@ -39,16 +36,10 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
     if (!replId) {
       socket.disconnect();
-      this.terminalManager.clear(socket.id);
       return;
     }
 
     return replId;
-  }
-
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
-    console.log('user disconnected');
-    this.terminalManager.clear(socket.id);
   }
 
   @SubscribeMessage('fetchDir')
