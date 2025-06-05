@@ -17,6 +17,8 @@ interface CodingStatesContextType {
     setSelectedFile: React.Dispatch<React.SetStateAction<TFileItem | undefined>>;
     selectedItem: TreeItem | undefined;
     setSelectedItem: React.Dispatch<React.SetStateAction<TreeItem | undefined>>;
+    openedFiles: TFileItem[];
+    setOpenedFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
     isSyncing: boolean;
     setIsSyncing: (value: boolean) => void;
     refreshTree: (content: TreeItem[]) => Promise<void>;
@@ -41,6 +43,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
+    const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
     const { socket } = useSocket();
     const router = useRouter();
     const axios = useAxiosPrivate();
@@ -94,7 +97,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         const target = findItem(tree, path)
         if (target) {
             // if it’s a file, fetch its content & mark selected
-            onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, socket)
+            onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket)
             // also push the same URL so router stays in sync
             if (target.type === 'file') {
                 router.replace(`/code/${replId}?path=${target.path}`)
@@ -109,6 +112,8 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setSelectedFile,
         selectedItem,
         setSelectedItem,
+        openedFiles,
+        setOpenedFiles,
         isSyncing,
         setIsSyncing,
         refreshTree,

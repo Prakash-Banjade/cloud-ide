@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { ChevronRight, CircleCheck, LoaderCircle, Play } from "lucide-react";
-import { FileTree, TreeItem } from "./file-tree";
+import { CircleCheck, LoaderCircle, Play, X } from "lucide-react";
+import { FileTree, TFileItem, TreeItem } from "./file-tree";
 import { onItemSelect } from "../fns/file-manager-fns";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CodeEditor } from "./editor/editor";
@@ -19,6 +19,8 @@ import { useSession } from "next-auth/react";
 import FullPageLoader from "./full-page-loader";
 import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { getFileIcon } from "./file-icons";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -57,7 +59,16 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
     const params = useParams();
     const router = useRouter();
     const replId = params.replId ?? '';
-    const { isSyncing, setSelectedItem, setFileStructure, setSelectedFile, refreshTree, project, selectedFile } = useCodingStates();
+    const {
+        isSyncing,
+        setSelectedItem,
+        setFileStructure,
+        setSelectedFile,
+        refreshTree,
+        project,
+        selectedFile,
+        setOpenedFiles
+    } = useCodingStates();
 
     const { socket } = useSocket();
 
@@ -78,7 +89,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
     const onSelect = (file: TreeItem) => {
         if (socket) {
-            onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, socket);
+            onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
         }
 
         if (file.type === 'file') {
@@ -145,9 +156,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                 {/* Code editor panel */}
                 <ResizablePanel defaultSize={60} minSize={30}>
                     <div className="h-full flex flex-col">
-                        <div className="px-2 py-1 text-sm bg-secondary">
-                            <SelectedFileBreadCrumb />
-                        </div>
+                        <OpenedFilesTab />
                         <CodeEditor socket={socket} />
                     </div>
                 </ResizablePanel>
@@ -173,8 +182,6 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                             <XTerminalNoSSR socket={socket} />
                         </ResizablePanel>
 
-
-
                     </ResizablePanelGroup>
 
                 </ResizablePanel>
@@ -183,24 +190,80 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
     );
 }
 
-function SelectedFileBreadCrumb() {
-    const { selectedFile } = useCodingStates();
+function OpenedFilesTab() {
+    const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem } = useCodingStates();
+    // const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const selectedTabRef = useRef<HTMLDivElement>(null);
 
-    if (!selectedFile) return null;
+    useEffect(() => {
+        if (selectedTabRef.current) {
+            // scroll only the inline axis (horizontal) so it moves left/right
+            selectedTabRef.current.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",   // no vertical scroll change
+                inline: "nearest",  // move horizontally just enough to see it
+            });
+        }
+    }, [selectedFile]);
 
-    const parts = selectedFile.path.split("/");
-    parts.shift();
+    function handleRemoveOpenedFile(file: TFileItem) {
+        const newOpenedFiles = openedFiles.filter((f) => f.path !== file.path);
+        setOpenedFiles(newOpenedFiles);
+
+        if (file.path === selectedFile?.path) {
+            selectFile(newOpenedFiles.at(-1));
+        }
+    }
+
+    function selectFile(file: TFileItem | undefined) { // for file to be selected both has to be set
+        setSelectedFile(file);
+        setSelectedItem(file);
+    }
 
     return (
         <div className="flex items-center gap-2">
-            <div className="text-sm font-medium flex items-center">
-                {parts.map((part, index) => (
-                    <div key={index} className="flex items-center">
-                        <span className={cn(index < parts.length - 1 && "text-muted-foreground")}>{part}</span>
-                        {index < parts.length - 1 && <span className="text-muted-foreground"><ChevronRight size={18} /></span>}
-                    </div>
-                ))}
-            </div>
+            <ScrollArea
+                // ref={scrollContainerRef}
+                className="overflow-x-auto"
+            >
+                <div className="flex">
+                    {
+                        openedFiles.map((file) => {
+                            const isSelected = file.path === selectedFile?.path;
+
+                            return (
+                                <div
+                                    key={file.path}
+                                    ref={isSelected ? selectedTabRef : null}
+                                    role="button"
+                                    className={cn("group flex items-center gap-2 cursor-pointer border-r p-2 pl-3", isSelected ? "bg-sidebar font-medium" : "border-b")}
+                                    onClick={() => selectFile(file)}
+                                >
+                                    <span>
+                                        {getFileIcon(file.name)}
+                                    </span>
+
+                                    <span className="truncate line-clamp-1 text-xs">
+                                        {file.name}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        className={cn("hover:bg-white/10 p-1 rounded-sm hover:cursor-pointer", !isSelected && "invisible group-hover:visible pointer-events-none group-hover:pointer-events-auto")}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveOpenedFile(file)
+                                        }}
+                                    >
+                                        <X className="size-3" />
+                                    </button>
+                                </div>
+                            )
+                        })
+                    }
+                </div>
+                <ScrollBar orientation="horizontal" className="h-1" />
+            </ScrollArea>
         </div>
     );
 }

@@ -7,6 +7,7 @@ export const onItemSelect = (
     setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
     setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
     setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
+    setOpenedFiles: Dispatch<SetStateAction<TFileItem[]>>,
     socket: Socket
 ) => {
     setSelectedItem(file); // just select what they clicked
@@ -27,9 +28,15 @@ export const onItemSelect = (
             })
         }
     } else {
-        socket?.emit("fetchContent", { path: file.path }, (data: string) => {
-            setSelectedFile(file);
-            file.content = data;
+        if (!file.content?.length) { // if no content is loaded, fetch the content
+            socket?.emit("fetchContent", { path: file.path }, (data: string) => {
+                file.content = data;
+            });
+        }
+
+        setSelectedFile(file);
+        setOpenedFiles(prev => {
+            return prev.some(f => f.path === file.path) ? prev : [...prev, file];
         });
     }
 };
