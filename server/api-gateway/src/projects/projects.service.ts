@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { UsersService } from 'src/auth-system/users/users.service';
 import { ProjectsQueryDto } from './dto/projects-query.dto';
 import paginatedData from 'src/common/utilities/paginated-data';
+import { OrchestratorService } from './orchestrator.service';
 
 @Injectable()
 export class ProjectsService {
@@ -17,6 +18,7 @@ export class ProjectsService {
     @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
     private readonly minioService: MinioService,
     private readonly usersService: UsersService,
+    private readonly orchestratorService: OrchestratorService
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
@@ -106,7 +108,16 @@ export class ProjectsService {
   }
 
   async remove(id: string, currentUser: AuthUser) {
-    await this.projectRepo.delete({ id, createdBy: { id: currentUser.userId } });
+    const existingProject = await this.projectRepo.findOne({ where: { id, createdBy: { id: currentUser.userId } }, select: { id: true, replId: true } });
+
+    if (!existingProject) throw new NotFoundException('Project not found');
+
+    await this.orchestratorService.removeResources(existingProject.replId);
+
+    await this.projectRepo.delete({
+      id,
+      createdBy: { id: currentUser.userId }
+    });
 
     return { message: "Project deleted" };
   }
