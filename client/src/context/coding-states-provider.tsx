@@ -50,7 +50,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
 
     const replId = params.replId;
 
-    const { data, error } = useQuery({
+    const { data, error, isLoading } = useQuery({
         queryKey: ['project'],
         queryFn: async () => axios.get<TProject>(`/projects/${replId}`),
     });
@@ -121,6 +121,8 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setEditorInstance,
         project: data?.data
     };
+
+    if (isLoading) return <div>Loading project...</div>;
 
     if (error) router.push('/workspace');
 

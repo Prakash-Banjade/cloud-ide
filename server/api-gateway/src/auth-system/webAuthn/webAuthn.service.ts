@@ -226,7 +226,6 @@ export class WebAuthnService extends BaseRepository {
         // NOW IT IS CONFIRMED THE USER IS A VALID ONE
         return this.authService.proceedLogin({
             account,
-            reply,
             req,
             method: 'passkey'
         });
@@ -388,7 +387,7 @@ export class WebAuthnService extends BaseRepository {
         }
 
         // NOW IT IS CONFIRMED THE USER IS A VALID ONE and no need to check device
-        return this.authService.proceedLogin({ account, req, reply, checkDevice: false, method: 'passkey' });
+        return this.authService.proceedLogin({ account, req, checkDevice: false, method: 'passkey' });
     }
 
     async findAll() {

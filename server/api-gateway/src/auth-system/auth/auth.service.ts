@@ -18,7 +18,7 @@ import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.enti
 import { EOptVerificationType, OtpVerificationPending } from './entities/otp-verification-pending.entity';
 import { ChangePasswordDto, OtpVerificationDto, ResetPasswordDto, UpdateEmailDto } from './dto/auth.dtos';
 import { BaseRepository } from '../../common/base.repository';
-import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, Tokens } from '../../common/CONSTANTS';
+import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, REFRESH_TOKEN_HEADER, Tokens } from '../../common/CONSTANTS';
 import { generateDeviceId } from '../../common/utils';
 import { AuthUser } from '../../common/global.types';
 import { User } from '../users/entities/user.entity';
@@ -45,13 +45,13 @@ export class AuthService extends BaseRepository {
 
     const foundAccount = data;
 
-    return this.proceedLogin({ account: foundAccount, req, reply });
+    return this.proceedLogin({ account: foundAccount, req });
   }
 
   async proceedLogin({
-    account, req, reply, checkDevice = true, method = 'password'
+    account, req, checkDevice = true, method = 'password'
   }: {
-    account: Account, req: FastifyRequest, reply: FastifyReply, checkDevice?: boolean, method?: 'password' | 'passkey'
+    account: Account, req: FastifyRequest, checkDevice?: boolean, method?: 'password' | 'passkey'
   }) {
     if (checkDevice) {
       const message = await this.handleDevice(account, req, method); // refreshtoken instance initialized here
@@ -197,14 +197,15 @@ export class AuthService extends BaseRepository {
     }); // accountId is validated in the refresh token guard
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
-    const [_, refreshToken] = req.headers.authorization?.split(' ') ?? [];
+    // const refreshToken = req.headers[REFRESH_TOKEN_HEADER];
 
     const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
     this.refreshTokenService.init({ email: account.email, deviceId });
 
-    // check if refreshtoken exists
-    const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
-    if (!rtPayload || (rtPayload && rtPayload.refreshToken !== refreshToken)) throw new UnauthorizedException('Invalid refresh token');
+    // TODO: should check for existing, but not working when opening project after access token expired from frontend
+    // // check if refreshtoken exists
+    // const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
+    // if (!rtPayload || (rtPayload && rtPayload.refreshToken !== refreshToken)) throw new UnauthorizedException('Invalid refresh token');
 
     // set new refresh_token
     const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);

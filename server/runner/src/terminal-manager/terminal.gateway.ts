@@ -23,7 +23,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   private activeSockets: string[] = []; // socket ids
   private timeoutSockets: string[] = []; // socket ids
-  private INACTIVITY_TIMEOUT_MS = 1 * 1000;
+  private INACTIVITY_TIMEOUT_MS = 60 * 1000;
 
   getReplId(socket: Socket) {
     // Split the host by '.' and take the first part as replId
@@ -42,7 +42,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   handleConnection(@ConnectedSocket() socket: Socket) {
-    console.log("user connected - from terminal.gateway");
+    console.log("user connected - from terminal.gateway v2");
 
     this.activeSockets.push(socket.id);
 
