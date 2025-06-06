@@ -51,7 +51,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const replId = params.replId;
 
     const { data, error, isLoading } = useQuery({
-        queryKey: ['project'],
+        queryKey: ['project', replId],
         queryFn: async () => axios.get<TProject>(`/projects/${replId}`),
     });
 

@@ -24,12 +24,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     useEffect(() => {
         if (!replId || !data) return;
-        // const newSocket = io(`ws://${replId}.prakashbanjade.com`);
-        const newSocket = io(`ws://127.0.0.1:3003`, {
-            auth: {
-                access_token: data.backendTokens.access_token
+
+        const newSocket = io(
+            // `ws://127.0.0.1:3003`,
+            `ws://${replId}.prakashbanjade.com`,
+            {
+                auth: {
+                    access_token: data.backendTokens.access_token
+                }
             }
-        });
+        );
         setSocket(newSocket);
 
         return () => {

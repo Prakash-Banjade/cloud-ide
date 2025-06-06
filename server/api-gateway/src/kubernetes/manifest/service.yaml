@@ -26,22 +26,22 @@ spec:
           args:
             - |
               set -e
-              # Use service DNS, not localhost
               mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc cp --recursive minio/cloud-ide/code/service_name/ /workspace/
           env:
             - name: MINIO_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-creds
+                  name: runner-env
                   key: MINIO_ACCESS_KEY
             - name: MINIO_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-creds
+                  name: runner-env
                   key: MINIO_SECRET_KEY
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
+      serviceAccountName: runner-sa
       containers:
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
@@ -50,27 +50,29 @@ spec:
             - name: MINIO_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-creds
+                  name: runner-env
                   key: MINIO_ACCESS_KEY
             - name: MINIO_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-creds
+                  name: runner-env
                   key: MINIO_SECRET_KEY
             - name: ACCESS_TOKEN_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: jwt-options
+                  name: runner-env
                   key: ACCESS_TOKEN_SECRET
             - name: ACCESS_TOKEN_EXPIRATION_SEC
               valueFrom:
                 secretKeyRef:
-                  name: jwt-options
+                  name: runner-env
                   key: ACCESS_TOKEN_EXPIRATION_SEC
             - name: MINIO_ENDPOINT
               value: minio.minio-dev.svc.cluster.local
             - name: MINIO_PORT
               value: "9000"
+            - name: REPL_ID
+              value: "service_name"
           ports:
             - containerPort: 3003 # expose ws port
             - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
@@ -78,7 +80,7 @@ spec:
             - name: workspace-volume
               mountPath: /workspace
           resources:
-            # Bounty $25 Use ephemeral-storage to add space limits here
+            # Use ephemeral-storage to add space limits here
             requests:
               cpu: "0.5"
               memory: "1Gi"

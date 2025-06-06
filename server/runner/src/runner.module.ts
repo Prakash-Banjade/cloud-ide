@@ -6,6 +6,9 @@ import { MinioModule } from './minio/minio.module';
 import { ChokidarModule } from './chokidar/chokidar.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JwtModule } from '@nestjs/jwt';
+import { KubernetesModule } from './kubernetes/kubernetes.module';
+import { APP_GUARD } from '@nestjs/core';
+import { WsGuard } from './guard/ws.guard';
 
 @Module({
   imports: [
@@ -17,11 +20,18 @@ import { JwtModule } from '@nestjs/jwt';
       secret: process.env.ACCESS_TOKEN_SECRET!,
       signOptions: { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_SEC! },
     }),
+    KubernetesModule,
     ScheduleModule.forRoot(),
     TerminalManagerModule,
     MinioModule,
     FileSystemModule,
     ChokidarModule,
   ],
+  // providers: [
+  //   {
+  //     provide: APP_GUARD,
+  //     useClass: WsGuard,
+  //   }
+  // ],
 })
 export class RunnerModule { }

@@ -14,6 +14,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import ProjectRenameForm from '@/app/workspace/components/project-rename-form';
+import { useState } from 'react';
 
 type Props = {
     socket: Socket
@@ -21,6 +22,7 @@ type Props = {
 
 export default function TopBar({ socket }: Props) {
     const router = useRouter();
+    const [open, setOpen] = useState(false);
     const { isSyncing, project, selectedFile } = useCodingStates();
 
     function onRun() {
@@ -47,18 +49,19 @@ export default function TopBar({ socket }: Props) {
                         <Home />
                     </Button>
 
-                    <Popover>
+                    <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger>
                             <section className='flex items-center gap-1 p-2 rounded-sm hover:bg-secondary'>
                                 {Icon && <Icon className='size-4' />}
                                 <span className="font-medium text-xs">{project?.name}</span>
                             </section>
                         </PopoverTrigger>
-                        <PopoverContent>
+                        <PopoverContent side='bottom' align='start'>
                             {
                                 project && <ProjectRenameForm
                                     defaultValues={{ projectName: project.name }}
                                     projectId={project.id}
+                                    setIsOpen={setOpen}
                                 />
                             }
                         </PopoverContent>

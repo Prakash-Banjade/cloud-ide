@@ -6,6 +6,8 @@ import { ELanguage } from 'src/global-types';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { UseGuards } from '@nestjs/common';
 import { WsGuard } from 'src/guard/ws.guard';
+import { KubernetesService } from 'src/kubernetes/kubernetes.service';
+import { ConfigService } from '@nestjs/config';
 
 @WebSocketGateway({
   cors: {
@@ -13,36 +15,27 @@ import { WsGuard } from 'src/guard/ws.guard';
     methods: ['GET', 'POST'],
   },
 })
-@UseGuards(WsGuard)
+// @UseGuards(WsGuard)
 export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
+  private replId: string;
+
   constructor(
     private readonly terminalManager: TerminalManagerService,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly kubernetesService: KubernetesService,
     // private readonly chokidarService: ChokidarService,
-  ) { }
+    private readonly configService: ConfigService,
+  ) {
+    this.replId = this.configService.get('REPL_ID') as string;
+  }
 
   private INACTIVITY_TIMEOUT_MS = 30 * 1000;
   private connectedSocketsIds = new Set<string>();
   private timeOut: NodeJS.Timeout | null = null;
-
-  getReplId(socket: Socket) {
-    // Split the host by '.' and take the first part as replId
-    const host = socket.handshake.headers.host;
-    const replId = host?.split('.')[0];
-
-    return "node-node"; // hardcoded for now
-
-    if (!replId) {
-      socket.disconnect();
-      this.terminalManager.clear(socket.id);
-      return;
-    }
-
-    return replId;
-  }
+  private TIMER_NAME = 'timeout';
 
   handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id}`);
@@ -51,6 +44,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // clear timeout because a new connection is established
     if (this.timeOut) {
+      this.schedulerRegistry.deleteTimeout(this.TIMER_NAME);
       clearTimeout(this.timeOut);
       this.timeOut = null;
     }
@@ -62,13 +56,12 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     this.connectedSocketsIds.delete(socket.id);
 
-    if (this.connectedSocketsIds.size === 0) { // if no active sockets, set timeout
+    if (this.connectedSocketsIds.size === 0 && this.replId) { // if no active sockets, set timeout
       const timeout = setTimeout(() => {
-        // TODO: shutdown the resources
-        console.log('Inactivity timeout reached...')
+        this.kubernetesService.shutdown(this.replId);
       }, this.INACTIVITY_TIMEOUT_MS);
 
-      this.schedulerRegistry.addTimeout(socket.id, timeout);
+      this.schedulerRegistry.addTimeout(this.TIMER_NAME, timeout);
       this.timeOut = timeout;
     }
 
@@ -79,13 +72,9 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage('requestTerminal')
   onRequestTerminal(@ConnectedSocket() socket: Socket) {
-    const replId = this.getReplId(socket);
-
-    if (!replId) return;
-
     // this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
 
-    this.terminalManager.createPty(socket.id, replId, (data) => {
+    this.terminalManager.createPty(socket.id, this.replId, (data) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
     });
   }
