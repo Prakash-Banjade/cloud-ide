@@ -10,7 +10,6 @@ export class EnvService implements OnModuleInit {
     ) { }
 
     DATABASE_URL: string;
-    DB_SYNCHRONIZE: 'true' | 'false';
     REDIS_URL: string;
     ACCESS_TOKEN_SECRET: string;
     ACCESS_TOKEN_EXPIRATION_SEC: number;
@@ -40,7 +39,6 @@ export class EnvService implements OnModuleInit {
 
     onModuleInit() {
         this.DATABASE_URL = this.configService.getOrThrow<string>('DATABASE_URL');
-        this.DB_SYNCHRONIZE = this.configService.getOrThrow<'true' | 'false'>('DB_SYNCHRONIZE');
         this.REDIS_URL = this.configService.getOrThrow<string>('REDIS_URL');
         this.ACCESS_TOKEN_SECRET = this.configService.getOrThrow<string>('ACCESS_TOKEN_SECRET');
         this.ACCESS_TOKEN_EXPIRATION_SEC = +this.configService.getOrThrow<string>('ACCESS_TOKEN_EXPIRATION_SEC');
