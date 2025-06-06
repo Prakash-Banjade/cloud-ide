@@ -103,7 +103,7 @@ export class Auth2faHelper extends BaseRepository {
         await this.getRepository(OtpVerificationPending).remove(foundRequest);
 
         this.refreshTokenService.init({ email: account.email, deviceId }); // initialize the refresh token instance from here bcz it's not going to happen inside proceedLogin
-        return this.authService.proceedLogin({ account, req, reply, checkDevice: false }); // skip device check
+        return this.authService.proceedLogin({ account, req, checkDevice: false }); // skip device check
     }
 
     async resend2faOtp(verificationToken: string, req: FastifyRequest) {

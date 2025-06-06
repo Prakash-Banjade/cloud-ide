@@ -11,5 +11,5 @@ export enum Deleted {
 export class QueryDto extends PageOptionsDto {
     @ApiPropertyOptional({ type: "string", description: "Search query", default: "" })
     @IsOptional()
-    search?: string
+    q?: string
 }

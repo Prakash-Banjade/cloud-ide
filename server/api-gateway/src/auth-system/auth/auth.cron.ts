@@ -1,5 +1,4 @@
 import { InjectRepository } from "@nestjs/typeorm";
-import { OtpVerificationDto } from "./dto/auth.dtos";
 import { Repository } from "typeorm";
 import { Cron } from "@nestjs/schedule";
 import { OtpVerificationPending } from "./entities/otp-verification-pending.entity";

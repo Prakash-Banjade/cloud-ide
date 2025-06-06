@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { MinioService } from '../minio/minio.service';
@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { UsersService } from 'src/auth-system/users/users.service';
 import { ProjectsQueryDto } from './dto/projects-query.dto';
 import paginatedData from 'src/common/utilities/paginated-data';
+import { OrchestratorService } from './orchestrator.service';
 
 @Injectable()
 export class ProjectsService {
@@ -17,13 +18,11 @@ export class ProjectsService {
     @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
     private readonly minioService: MinioService,
     private readonly usersService: UsersService,
+    private readonly orchestratorService: OrchestratorService
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
-    const replId = generateSlug(createProjectDto.projectName);
-
-    const existingProject = await this.projectRepo.findOne({ where: { replId }, select: { id: true } });
-    if (existingProject) throw new ConflictException("The replId is already in use.");
+    const replId = await this.getReplId(createProjectDto.projectName);
 
     const user = await this.usersService.findOne(currentUser.userId);
 
@@ -39,16 +38,26 @@ export class ProjectsService {
 
     await this.projectRepo.save(newProject);
 
-    return { message: "Project created", slug: replId }; // slug is used in frontend to redirect user
+    return { message: "Project created", replId }; // replId is used in frontend to redirect user
+  }
+
+  async getReplId(projectName: string): Promise<string> {
+    const replId = generateSlug(projectName, true);
+
+    const existingProject = await this.projectRepo.findOne({ where: { replId }, select: { id: true } });
+
+    if (existingProject) return await this.getReplId(projectName);
+
+    return replId;
   }
 
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {
     const querybuilder = this.projectRepo.createQueryBuilder('project')
-      .orderBy('project.createdAt', queryDto.order)
+      .orderBy(queryDto.sortBy, queryDto.sortBy.includes('name') ? 'ASC' : queryDto.order) // sort by ASC for name
       .where('project.createdById = :userId', { userId: currentUser.userId });
 
-    if (queryDto.search) {
-      querybuilder.andWhere('project.name ILIKE :search', { search: `%${queryDto.search}%` });
+    if (queryDto.q) {
+      querybuilder.andWhere('project.name ILIKE :q', { q: `%${queryDto.q}%` });
     }
 
     if (queryDto.language) {
@@ -59,6 +68,9 @@ export class ProjectsService {
       'project.id',
       'project.name',
       'project.language',
+      'project.createdAt',
+      'project.replId',
+      'project.updatedAt',
     ]);
 
     return paginatedData(queryDto, querybuilder);
@@ -66,7 +78,7 @@ export class ProjectsService {
 
   async findOne(id: string, currentUser: AuthUser) {
     const project = await this.projectRepo.createQueryBuilder('project')
-      .where('project.id = :id', { id })
+      .where('project.replId = :id', { id })
       .andWhere('project.createdById = :userId', { userId: currentUser.userId })
       .select([
         'project.id',
@@ -77,19 +89,36 @@ export class ProjectsService {
 
     if (!project) throw new NotFoundException('Project not found');
 
+    // update last opened
+    project.updatedAt = new Date().toISOString();
+    this.projectRepo.save(project);
+
     return project;
   }
 
-  update(id: string, dto: UpdateProjectDto, currentUser: AuthUser) {
-    return this.projectRepo.update({
+  async update(id: string, dto: UpdateProjectDto, currentUser: AuthUser) {
+    await this.projectRepo.update({
       id,
       createdBy: { id: currentUser.userId }
     }, {
       name: dto.projectName
     });
+
+    return { message: "Project updated" };
   }
 
-  remove(id: string, currentUser: AuthUser) {
-    return `This action removes a #${id} project`;
+  async remove(id: string, currentUser: AuthUser) {
+    const existingProject = await this.projectRepo.findOne({ where: { id, createdBy: { id: currentUser.userId } }, select: { id: true, replId: true } });
+
+    if (!existingProject) throw new NotFoundException('Project not found');
+
+    await this.orchestratorService.removeResources(existingProject.replId);
+
+    await this.projectRepo.delete({
+      id,
+      createdBy: { id: currentUser.userId }
+    });
+
+    return { message: "Project deleted" };
   }
 }

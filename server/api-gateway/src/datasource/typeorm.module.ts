@@ -15,8 +15,6 @@ import { Global, Module } from '@nestjs/common';
                         url: process.env.DATABASE_URL,
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`],
                         synchronize: process.env.DB_SYNCHRONIZE === 'true',
-                        // timezone: 'Z', // Use UTC - only works with mysql,
-                        useUTC: true, // only works with postgres
                         cache: {
                             type: 'redis',
                             duration: 60000,

@@ -1,6 +1,5 @@
 import { Icons } from "@/components/icons"
 import { FileIcon, FileText, FileJson } from "lucide-react"
-import { TFileItem } from "./file-tree"
 
 export const fileIcons = {
     js: <Icons.javascript className="size-4" />,

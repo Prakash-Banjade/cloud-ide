@@ -7,20 +7,17 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ELanguage } from "@/types"
-import { Icons } from "@/components/icons"
 import LoadingButton from "@/components/loading-button"
 import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAppMutation } from "@/hooks/useAppMutation"
+import { languageFields } from "@/lib/utils"
 
 const formSchema = z.object({
     projectName: z
         .string()
         .min(3, { message: "Project name must be at least 3 characters." })
-        .max(50, { message: "Project name must be less than 50 characters." })
-        .refine((value) => /^[a-zA-Z0-9-_]+$/.test(value), {
-            message: "Project name can only contain letters, numbers, hyphens, and underscores.",
-        }),
+        .max(20, { message: "Project name must be less than 20 characters." }),
     language: z.nativeEnum(ELanguage, { errorMap: () => ({ message: "Please select a programming language." }) }),
 })
 
@@ -63,7 +60,7 @@ export function NewProjectForm() {
                             <FormItem>
                                 <FormLabel>Project Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="my-awesome-project" {...field} />
+                                    <Input placeholder="My awesome project" {...field} />
                                 </FormControl>
                                 <FormDescription>This will be the unique identifier for your project.</FormDescription>
                                 <FormMessage />
@@ -83,30 +80,16 @@ export function NewProjectForm() {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value={ELanguage.REACT_JS}>
-                                            <Icons.javascript />
-                                            React + JS
-                                        </SelectItem>
-                                        <SelectItem value={ELanguage.REACT_TS}>
-                                            <Icons.tsx />
-                                            React + TS
-                                        </SelectItem>
-                                        <SelectItem value={ELanguage.NODE_JS}>
-                                            <Icons.node />
-                                            Node JS
-                                        </SelectItem>
-                                        <SelectItem value={ELanguage.PYTHON}>
-                                            <Icons.python />
-                                            Python
-                                        </SelectItem>
-                                        <SelectItem value={ELanguage.C}>
-                                            <Icons.c />
-                                            C Language
-                                        </SelectItem>
-                                        <SelectItem value={ELanguage.CPP}>
-                                            <Icons.cpp />
-                                            C++
-                                        </SelectItem>
+                                        {
+                                            languageFields.map((field, ind) => {
+                                                return (
+                                                    <SelectItem key={ind} value={field.value}>
+                                                        <field.icon />
+                                                        {field.label}
+                                                    </SelectItem>
+                                                )
+                                            })
+                                        }
                                     </SelectContent>
                                 </Select>
                                 <FormDescription>Select the primary language for your project.</FormDescription>

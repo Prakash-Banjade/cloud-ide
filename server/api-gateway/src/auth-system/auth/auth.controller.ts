@@ -54,8 +54,8 @@ export class AuthController {
     @UseGuards(RefreshTokenGuard)
     @Public()
     @Post('refresh')
-    refresh(@Req() req: FastifyRequest, @Res({ passthrough: true }) res: FastifyReply) {
-        return this.authService.refresh(req, res);
+    refresh(@Req() req: FastifyRequest) {
+        return this.authService.refresh(req);
     }
 
     @ApiOperation({ summary: 'Email verification' })

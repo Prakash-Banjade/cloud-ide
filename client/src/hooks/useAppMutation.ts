@@ -1,3 +1,5 @@
+"use client";
+
 import { useMutation, UseMutationResult, useQueryClient } from '@tanstack/react-query';
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import toast from 'react-hot-toast';

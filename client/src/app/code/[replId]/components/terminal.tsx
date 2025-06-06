@@ -1,26 +1,29 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useCodingStates } from "@/context/coding-states-provider";
+import { EItemType } from "./file-tree";
 
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
 
-export const TerminalComponent = ({ socket }: { socket: Socket }) => {
+export default function TerminalComponent({ socket }: { socket: Socket }) {
+    const { fileStructure } = useCodingStates();
+
     const terminalRef = useRef<HTMLDivElement | null>(null);
+    const [term, setTerm] = useState<Terminal | null>(null);
     const { theme } = useTheme();
 
     useEffect(() => {
-        if (!terminalRef.current || !socket) return;
-
-        const term = new Terminal({
+        const terminal = new Terminal({
             cursorBlink: true,
-            cols: 300,
+            cols: 200,
             theme: {
                 background: theme === "dark" ? "black" : "white",
                 foreground: theme === "dark" ? "white" : "black",
@@ -28,9 +31,22 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
             },
         });
 
+        setTerm(terminal);
+
+        return () => {
+            if (terminal) {
+                terminal.dispose();
+            }
+        };
+    }, [theme]);
+
+    useEffect(() => {
+        if (!term || !socket || !terminalRef.current) return;
+        
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
+        setTerm(term);
 
         socket.emit("requestTerminal");
         socket.on("terminal", ({ data }: { data: string | ArrayBuffer }) => {
@@ -42,14 +58,20 @@ export const TerminalComponent = ({ socket }: { socket: Socket }) => {
             socket.emit("terminalData", { data: input });
         });
 
-        // Kickstart the shell
-        socket.emit("terminalData", { data: "\n" });
+        // execute the dependency install command, if there is one
+        const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
+
+        if (hasDependeiciesNotInstalled) {
+            socket.emit("terminalData", { data: "npm install\n" });
+        }
 
         return () => {
+            if (term) term.dispose();
             socket.off("terminal");
-            term.dispose();
         };
-    }, [socket, theme]);
+    }, [term]);
+
+
 
     return (
         <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-black" : "bg-white")}>

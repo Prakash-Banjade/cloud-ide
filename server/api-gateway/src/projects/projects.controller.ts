@@ -32,9 +32,9 @@ export class ProjectsController {
     return this.projectsService.findAll(queryDto, currentUser);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string, @CurrentUser() currentUser: AuthUser) {
-    return this.projectsService.findOne(id, currentUser);
+  @Get(':replId')
+  findOne(@Param('replId') replId: string, @CurrentUser() currentUser: AuthUser) {
+    return this.projectsService.findOne(replId, currentUser);
   }
 
   @Patch(':id')

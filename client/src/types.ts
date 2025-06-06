@@ -4,7 +4,8 @@ export enum ELanguage {
     C = "c",
     CPP = "cpp",
     REACT_JS = "react-js",
-    REACT_TS = "react-ts"
+    REACT_TS = "react-ts",
+    NEXT_TS = "next-ts"
 }
 
 export type TUser = {
@@ -19,4 +20,27 @@ export type TUser = {
 export interface TLoginResponse {
     access_token: string,
     refresh_token: string,
+}
+
+export type TMeta = {
+    page: number;
+    take: number;
+    itemCount: number;
+    pageCount: number;
+    hasPreviousPage: boolean;
+    hasNextPage: boolean;
+};
+
+export type TProject = {
+    id: string
+    name: string,
+    language: ELanguage
+    replId: string,
+    createdAt: string,
+    updatedAt: string;
+}
+
+export type TProjectsResponse = {
+    data: TProject[]
+    meta: TMeta;
 }

@@ -8,6 +8,7 @@ export abstract class BaseEntity {
     @CreateDateColumn()
     createdAt: string;
 
+    @Index()
     @UpdateDateColumn({ nullable: true })
     updatedAt: string;
 

@@ -1,4 +1,5 @@
-import { TLoginResponse, TUser } from "@/types";
+import { Icons } from "@/components/icons";
+import { ELanguage, TLoginResponse, TUser } from "@/types";
 import { clsx, type ClassValue } from "clsx"
 import { jwtDecode } from "jwt-decode";
 import { twMerge } from "tailwind-merge"
@@ -46,4 +47,52 @@ export function getUserFromLoginResponse(res: TLoginResponse): { user: TUser, ex
     },
     exp: payload.exp
   };
+}
+
+
+export const languageFields = [
+  {
+    value: ELanguage.REACT_JS,
+    label: "React + JS",
+    icon: Icons.javascript
+  },
+  {
+    value: ELanguage.REACT_TS,
+    label: "React + TS",
+    icon: Icons.tsx
+  },
+  {
+    value: ELanguage.NEXT_TS,
+    label: "Next + TS",
+    icon: Icons.nextjs
+  },
+  {
+    value: ELanguage.NODE_JS,
+    label: "Node JS",
+    icon: Icons.node
+  },
+  {
+    value: ELanguage.PYTHON,
+    label: "Python",
+    icon: Icons.python
+  },
+  {
+    value: ELanguage.C,
+    label: "C Language",
+    icon: Icons.c
+  },
+  {
+    value: ELanguage.CPP,
+    label: "C++",
+    icon: Icons.cpp
+  },
+]
+
+export function createQueryString(params: Record<string, any>) {
+  // Remove undefined values
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => !!value)
+  );
+
+  return new URLSearchParams(filteredParams).toString();
 }

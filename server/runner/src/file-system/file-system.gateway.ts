@@ -1,29 +1,26 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
-import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
   },
 })
-export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class FileSystemGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
 
   constructor(
-    private readonly terminalManager: TerminalManagerService,
     private readonly minioService: MinioService,
     private readonly fileSystemService: FileSystemService,
   ) { }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-
     // TODO: Perform authentication
-    console.log("user connected")
+    console.log("user connected - from file-system.gateway v2");
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
@@ -35,20 +32,14 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     const host = socket.handshake.headers.host;
     const replId = host?.split('.')[0];
 
-    return "my-react-project"; // hardcoded for now
+    // return "node-node"; // hardcoded for now
 
     if (!replId) {
       socket.disconnect();
-      this.terminalManager.clear(socket.id);
       return;
     }
 
     return replId;
-  }
-
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
-    console.log('user disconnected');
-    this.terminalManager.clear(socket.id);
   }
 
   @SubscribeMessage('fetchDir')
@@ -80,21 +71,5 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     await this.minioService.saveToMinio(`code/${replId}`, filePath, content);
 
     return true; // need to return something, used in frontend to handle syncing status
-  }
-
-  @SubscribeMessage('requestTerminal')
-  onRequestTerminal(@ConnectedSocket() socket: Socket) {
-    const replId = this.getReplId(socket);
-
-    if (!replId) return;
-
-    this.terminalManager.createPty(socket.id, replId, (data) => {
-      socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
-    });
-  }
-
-  @SubscribeMessage('terminalData')
-  onTerminalData(@MessageBody() payload: { data: string }, @ConnectedSocket() socket: Socket) {
-    this.terminalManager.write(socket.id, payload.data);
   }
 }

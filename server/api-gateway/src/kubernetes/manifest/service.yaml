@@ -45,6 +45,7 @@ spec:
       containers:
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
+          imagePullPolicy: Always
           env:
             - name: MINIO_ACCESS_KEY
               valueFrom:
@@ -62,17 +63,17 @@ spec:
               value: "9000"
           ports:
             - containerPort: 3003 # expose ws port
-            - containerPort: 3000 # expose the port where the application might run on. eg: a node app running on port 3000
+            - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
           resources:
             # Bounty $25 Use ephemeral-storage to add space limits here
             requests:
-              cpu: "1"
+              cpu: "0.5"
               memory: "1Gi"
             limits:
-              cpu: "1"
+              cpu: "0.5"
               memory: "1Gi"
 
 ---
@@ -102,7 +103,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: service_name.runner.com # ws endpoint
+    - host: service_name.prakashbanjade.com # ws endpoint
       http:
         paths:
           - path: /
@@ -112,7 +113,7 @@ spec:
                 name: service_name
                 port:
                   number: 3003
-    - host: service_name.node-app.com # node/python app endpoint
+    - host: service_name.qubide.cloud # node/python app endpoint
       http:
         paths:
           - path: /

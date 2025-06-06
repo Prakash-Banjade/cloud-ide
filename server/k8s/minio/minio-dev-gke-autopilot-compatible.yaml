@@ -1,0 +1,67 @@
+# 1) Namespace definition (unchanged)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-dev
+  labels:
+    name: minio-dev
+---
+# 2) PVC: dynamically provisions a GCE PD under the hood (Autopilot default StorageClass)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: minio-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # If you have a custom StorageClass, uncomment and set it:
+  # storageClassName: standard
+---
+# 3) Pod now mounts the PVC instead of hostPath
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: minio
+  name: minio
+  namespace: minio-dev
+spec:
+  containers:
+    - name: minio
+      image: quay.io/minio/minio:latest
+      command:
+        - /bin/bash
+        - -c
+      args:
+        - minio server /data --console-address :9090
+      volumeMounts:
+        - mountPath: /data
+          name: localvolume
+  # ← Removed nodeSelector entirely
+  volumes:
+    - name: localvolume
+      persistentVolumeClaim:
+        claimName: minio-pvc
+---
+# 4) Service (unchanged)
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: minio-dev
+spec:
+  selector:
+    app: minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: console
+      port: 9090
+      targetPort: 9090
+      protocol: TCP

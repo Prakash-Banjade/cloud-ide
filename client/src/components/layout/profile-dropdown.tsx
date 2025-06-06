@@ -6,9 +6,12 @@ import { signOut, useSession } from 'next-auth/react'
 import axiosClient from '@/lib/axios-client'
 import { useMutation } from '@tanstack/react-query'
 import { REFRESH_TOKEN_HEADER } from '@/lib/CONSTANTS'
+import { useRouter } from 'next/navigation'
+import { Skeleton } from '../ui/skeleton'
 
 export default function ProfileDropdown() {
-    const { data } = useSession();
+    const { data, status } = useSession();
+    const router = useRouter();
 
     const { mutateAsync, isPending } = useMutation<any, any>({
         mutationFn: async () => {
@@ -25,6 +28,14 @@ export default function ProfileDropdown() {
         await mutateAsync();
         signOut();
     }
+
+    if (status === "unauthenticated") router.push("/auth/login");
+
+    if (status === "loading") return (
+        <div className='p-1 flex items-center'>
+            <Skeleton className='size-10 rounded-full' />
+        </div>
+    )
 
     return (
         <DropdownMenu>

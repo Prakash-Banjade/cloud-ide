@@ -238,6 +238,20 @@ function DropdownMenuSubContent({
   )
 }
 
+const DropdownMenuButtonItem = ({
+  children,
+  className,
+  type = 'button',
+  ...props
+}: React.ComponentPropsWithoutRef<'button'> & React.PropsWithChildren
+) => {
+  return <DropdownMenuItem asChild>
+    <button type={type} {...props} className={cn("w-full cursor-pointer", className)}>
+      {children}
+    </button>
+  </DropdownMenuItem>
+}
+
 export {
   DropdownMenu,
   DropdownMenuPortal,
@@ -254,4 +268,5 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuButtonItem
 }

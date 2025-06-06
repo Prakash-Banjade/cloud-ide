@@ -116,6 +116,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -125,4 +126,16 @@
 .container {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* Animation for loader items */
+.css-animate-item {
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.scroll-area-viewport>div {
+  min-width: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 100% !important;
 }
