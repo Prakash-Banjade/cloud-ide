@@ -2,6 +2,8 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
+import { UseGuards } from '@nestjs/common';
+import { WsGuard } from 'src/guard/ws.guard';
 
 @WebSocketGateway({
   cors: {
@@ -9,6 +11,7 @@ import { File, FileSystemService } from './file-system.service';
     methods: ['GET', 'POST'],
   },
 })
+@UseGuards(WsGuard)
 export class FileSystemGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
@@ -19,9 +22,6 @@ export class FileSystemGateway implements OnGatewayConnection {
   ) { }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    // TODO: Perform authentication
-    console.log("user connected - from file-system.gateway v2");
-
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
     socket.emit('loaded', { rootContent });
@@ -32,7 +32,7 @@ export class FileSystemGateway implements OnGatewayConnection {
     const host = socket.handshake.headers.host;
     const replId = host?.split('.')[0];
 
-    // return "node-node"; // hardcoded for now
+    return "node-node"; // hardcoded for now
 
     if (!replId) {
       socket.disconnect();

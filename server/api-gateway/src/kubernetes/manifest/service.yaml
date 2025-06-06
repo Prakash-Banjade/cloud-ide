@@ -57,6 +57,16 @@ spec:
                 secretKeyRef:
                   name: minio-creds
                   key: MINIO_SECRET_KEY
+            - name: ACCESS_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-options
+                  key: ACCESS_TOKEN_SECRET
+            - name: ACCESS_TOKEN_EXPIRATION_SEC
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-options
+                  key: ACCESS_TOKEN_EXPIRATION_SEC
             - name: MINIO_ENDPOINT
               value: minio.minio-dev.svc.cluster.local
             - name: MINIO_PORT

@@ -3,6 +3,8 @@ import { TerminalManagerService } from "src/terminal-manager/terminal-manager.se
 import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { UseGuards } from "@nestjs/common";
+import { WsGuard } from "src/guard/ws.guard";
 
 @WebSocketGateway({
     cors: {
@@ -10,6 +12,7 @@ import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSo
         methods: ['GET', 'POST'],
     },
 })
+@UseGuards(WsGuard)
 export class FileSystemCRUDGateway {
     @WebSocketServer()
     server: Server;
@@ -25,7 +28,7 @@ export class FileSystemCRUDGateway {
         const host = socket.handshake.headers.host;
         const replId = host?.split('.')[0];
 
-        // return "node-node"; // hardcoded for now
+        return "node-node"; // hardcoded for now
 
         if (!replId) {
             socket.disconnect();
