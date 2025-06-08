@@ -18,6 +18,7 @@ import dynamic from "next/dynamic";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getFileIcon } from "./file-icons";
 import TopBar from "./top-bar";
+import { FileTabSwitcher } from "./tab-switcher";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -99,6 +100,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
             <TopBar socket={socket} />
+            <FileTabSwitcher />
 
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
