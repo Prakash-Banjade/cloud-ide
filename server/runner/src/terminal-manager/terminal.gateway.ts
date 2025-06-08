@@ -29,7 +29,8 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     // private readonly chokidarService: ChokidarService,
     private readonly configService: ConfigService,
   ) {
-    this.replId = this.configService.get('REPL_ID') as string;
+    // this.replId = this.configService.get('REPL_ID') as string;
+    this.replId = "node-node";
   }
 
   private INACTIVITY_TIMEOUT_MS = 30 * 1000;
@@ -74,7 +75,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   onRequestTerminal(@ConnectedSocket() socket: Socket) {
     // this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
 
-    this.terminalManager.createPty(socket.id, this.replId, (data) => {
+    this.terminalManager.createPty(socket, this.replId, (data) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
     });
   }
@@ -84,7 +85,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.terminalManager.write(socket.id, payload.data);
   }
 
-  @SubscribeMessage('cmd-run')
+  @SubscribeMessage('process:run')
   onRun(@MessageBody() payload: { lang: ELanguage, path?: string }, @ConnectedSocket() socket: Socket) {
     const cmd = getRunCommand(payload.lang, payload.path);
 
@@ -92,6 +93,23 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
       error: 'Language not supported',
     }
 
-    this.terminalManager.write(socket.id, cmd + '\r'); // \r is to execute the command
+    // this.terminalManager.write(socket.id, cmd + '\r'); // \r is to execute the command
+
+    this.terminalManager.run(cmd, (data, id) => {
+      socket.emit('terminal', { data: Buffer.from(data, 'utf-8'), id });
+    })
+  }
+
+  @SubscribeMessage('process:stop')
+  onStop() {
+    this.terminalManager.stopProcess();
+
+    return true;
+  }
+
+  @SubscribeMessage('check-port')
+  onCheckPort(@MessageBody() payload: { port: number }) {
+    console.log('hi there from check port');
+    return this.terminalManager.checkPort(payload.port);
   }
 }

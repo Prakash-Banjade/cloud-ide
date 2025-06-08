@@ -38,11 +38,11 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
                 terminal.dispose();
             }
         };
-    }, [theme]);
+    }, [theme, socket]);
 
     useEffect(() => {
         if (!term || !socket || !terminalRef.current) return;
-        
+
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
@@ -70,8 +70,6 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
             socket.off("terminal");
         };
     }, [term]);
-
-
 
     return (
         <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-black" : "bg-white")}>

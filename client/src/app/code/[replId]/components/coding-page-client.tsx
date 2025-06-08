@@ -198,7 +198,7 @@ function OpenedFilesTab() {
                                     key={file.path}
                                     ref={isSelected ? selectedTabRef : null}
                                     role="button"
-                                    className={cn("group flex items-center gap-2 cursor-pointer border-r p-2 pl-3", isSelected ? "bg-sidebar font-medium" : "border-b")}
+                                    className={cn("group flex items-center gap-2 cursor-pointer border-r p-2 pl-3", isSelected ? "dark:bg-[#1e1e1e] bg-white font-medium" : "border-b")}
                                     onClick={() => selectFile(file)}
                                 >
                                     <span>

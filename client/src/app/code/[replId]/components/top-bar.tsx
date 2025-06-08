@@ -28,9 +28,28 @@ export default function TopBar({ socket }: Props) {
     function onRun() {
         if (!socket || !project) return;
 
-        socket.emit("cmd-run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
+        socket.emit("process:run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);
         });
+    }
+
+    function onStop() {
+        if (!socket) return;
+
+        socket.emit("process:stop", (res: boolean) => {
+            console.log(res)
+        });
+    }
+
+    function checkPort() {
+        if (!socket) return;
+
+        const port = 3002;
+
+        socket.emit("check-port", { port }, (data: any) => {
+            console.log("port: ", port)
+            console.log(data)
+        })
     }
 
     const Icon = languageFields.find((field) => field.value === project?.language)?.icon || null;
@@ -80,6 +99,14 @@ export default function TopBar({ socket }: Props) {
                     <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
                         <Play size={16} />
                         Run
+                    </Button>
+                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={checkPort}>
+                        <Play size={16} />
+                        Check Port
+                    </Button>
+                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onStop}>
+                        <Play size={16} />
+                        Stop
                     </Button>
                 </section>
 

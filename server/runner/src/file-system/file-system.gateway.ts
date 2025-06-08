@@ -24,7 +24,8 @@ export class FileSystemGateway implements OnGatewayConnection {
     private readonly fileSystemService: FileSystemService,
     private readonly configService: ConfigService,
   ) {
-    this.replId = this.configService.get('REPL_ID') as string;
+    // this.replId = this.configService.get('REPL_ID') as string;
+    this.replId = "node-node";
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {

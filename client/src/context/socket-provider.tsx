@@ -26,8 +26,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         if (!replId || !data) return;
 
         const newSocket = io(
-            // `ws://127.0.0.1:3003`,
-            `ws://${replId}.prakashbanjade.com`,
+            `ws://127.0.0.1:3003`,
+            // `ws://${replId}.prakashbanjade.com`,
             {
                 auth: {
                     access_token: data.backendTokens.access_token
