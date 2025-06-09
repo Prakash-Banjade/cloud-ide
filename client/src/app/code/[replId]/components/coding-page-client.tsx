@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { X } from "lucide-react";
 import { FileTree, TFileItem, TreeItem } from "./file-tree";
-import { onItemSelect } from "../fns/file-manager-fns";
+import { onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
@@ -22,6 +22,7 @@ import { FileTabSwitcher } from "./tab-switcher";
 import TermTopBar from "./term-top-bar";
 import { useTheme } from "next-themes";
 import { previewLanguages } from "@/lib/CONSTANTS";
+import Preview from "./preview";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -65,7 +66,6 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         setSelectedItem,
         setFileStructure,
         setSelectedFile,
-        refreshTree,
         setOpenedFiles,
         setProjectRunning,
         projectRunning,
@@ -74,13 +74,17 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
     const [showTerm, setShowTerm] = useState(true);
 
     const { socket } = useSocket();
+    const refreshTree = useRefreshTree();
 
     useEffect(() => {
         if (!socket) return;
 
         socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
             setLoaded(true)
-            await refreshTree(rootContent);
+            await refreshTree({
+                content: rootContent,
+                socket,
+            });
         });
 
         socket.on('process:status', (data: { isRunning: boolean }) => {
@@ -133,7 +137,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
                 <ResizableHandle />
 
-                <ResizablePanel defaultSize={85} minSize={40} className="relative">
+                <ResizablePanel defaultSize={showPreview ? 50 : 80} minSize={40} className="relative">
                     <ResizablePanelGroup direction="vertical" className="flex-1">
                         {/* Code editor panel */}
                         <ResizablePanel defaultSize={70} minSize={30}>
@@ -163,8 +167,8 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                         <>
                             <ResizableHandle />
 
-                            <ResizablePanel defaultSize={50} minSize={30}>
-                                <iframe width={"100%"} height={"100%"} src={`http://${replId}.qubide.cloud`} />
+                            <ResizablePanel defaultSize={30} minSize={20}>
+                                <Preview />
                             </ResizablePanel>
 
                         </>
