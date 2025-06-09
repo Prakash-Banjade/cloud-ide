@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCodingStates } from '@/context/coding-states-provider';
 import { languageFields } from '@/lib/utils';
-import { CircleCheck, Home, LoaderCircle, Play } from 'lucide-react';
+import { CircleCheck, Home, LoaderCircle, Pause, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Socket } from 'socket.io-client';
@@ -23,7 +23,7 @@ type Props = {
 export default function TopBar({ socket }: Props) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
-    const { isSyncing, project, selectedFile } = useCodingStates();
+    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning } = useCodingStates();
 
     function onRun() {
         if (!socket || !project) return;
@@ -37,19 +37,8 @@ export default function TopBar({ socket }: Props) {
         if (!socket) return;
 
         socket.emit("process:stop", (res: boolean) => {
-            console.log(res)
+            if (res) setProjectRunning(false);
         });
-    }
-
-    function checkPort() {
-        if (!socket) return;
-
-        const port = 3002;
-
-        socket.emit("check-port", { port }, (data: any) => {
-            console.log("port: ", port)
-            console.log(data)
-        })
     }
 
     const Icon = languageFields.find((field) => field.value === project?.language)?.icon || null;
@@ -96,18 +85,19 @@ export default function TopBar({ socket }: Props) {
                 </div>
 
                 <section className='absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2'>
-                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
-                        <Play size={16} />
-                        Run
-                    </Button>
-                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={checkPort}>
-                        <Play size={16} />
-                        Check Port
-                    </Button>
-                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onStop}>
-                        <Play size={16} />
-                        Stop
-                    </Button>
+                    {
+                        projectRunning ? (
+                            <Button size="sm" variant="default" className="gap-1" type="button" onClick={onStop}>
+                                <Pause size={16} />
+                                Stop
+                            </Button>
+                        ) : (
+                            <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
+                                <Play size={16} />
+                                Run
+                            </Button>
+                        )
+                    }
                 </section>
 
                 <div className="flex items-center gap-2">

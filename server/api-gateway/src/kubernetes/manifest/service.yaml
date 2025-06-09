@@ -80,13 +80,14 @@ spec:
             - name: workspace-volume
               mountPath: /workspace
           resources:
-            # Use ephemeral-storage to add space limits here
             requests:
-              cpu: "0.5"
-              memory: "1Gi"
+              cpu: "300m"       # 0.3 core
+              memory: "512Mi"
+              ephemeral-storage: "500Mi"
             limits:
-              cpu: "0.5"
+              cpu: "1"          # 1 full core
               memory: "1Gi"
+              ephemeral-storage: "3Gi"
 
 ---
 apiVersion: v1

@@ -3,28 +3,28 @@ import { IPty, spawn } from 'node-pty-prebuilt-multiarch';
 import * as os from 'os';
 import { Socket } from 'socket.io';
 import { PROJECT_PATH } from 'src/CONSTANTS';
-import * as net from 'net';
 
 @Injectable()
 export class TerminalManagerService {
     private sessions: { [id: string]: { terminal: IPty, socket: Socket } } = {};
     private SHELL = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
+
+    /** The PTY used for “run” commands */
     private runPty: IPty | null = null;
+    /** Scrollback buffer for runPty output */
+    private runScrollback = '';
 
     createPty(socket: Socket, replId: string, onData: (data: string, id: number) => void) {
-        let term = spawn(this.SHELL, [], {
+        const term = spawn(this.SHELL, [], {
             cols: 300,
             name: 'xterm',
             cwd: PROJECT_PATH,
-            env: process.env as any
+            env: process.env as any,
         });
 
         term.onData((data: string) => onData(data, term.pid));
 
-        this.sessions[socket.id] = {
-            terminal: term,
-            socket
-        };
+        this.sessions[socket.id] = { terminal: term, socket };
 
         term.onExit(() => {
             delete this.sessions[term.pid];
@@ -42,56 +42,56 @@ export class TerminalManagerService {
         delete this.sessions[socketId];
     }
 
+    /**
+     * Spawn (or restart) the “run” PTY. 
+     * Accumulate its output into runScrollback,
+     * and forward every chunk via onData().
+     */
     run(cmd: string, onData: (data: string, id: number) => void) {
+        // Kill existing run PTY if present
         this.runPty?.kill();
 
+        // Reset scrollback
+        this.runScrollback = '';
+
+        // Spawn a fresh run PTY
         this.runPty = spawn(this.SHELL, [], {
             cols: 300,
             name: 'xterm',
             cwd: PROJECT_PATH,
-            env: process.env as any
+            env: process.env as any,
         });
 
         const term = this.runPty;
+        term.write(cmd + '\r');
 
-        if (term) {
-            term.write(cmd + '\r');
+        term.onData((data: string) => {
+            // Append & cap scrollback (~100KB)
+            this.runScrollback += data;
+            if (this.runScrollback.length > 100_000) {
+                this.runScrollback = this.runScrollback.slice(-100_000);
+            }
+            // Forward to caller
+            onData(data, term.pid);
+        });
 
-            term.onData((data: string) => onData(data, term.pid));
-
-            term.onExit(() => {
-                this.runPty = null;
-            });
-        }
+        // On exit, clear PTY and scrollback
+        term.onExit(() => {
+            this.runPty = null;
+            this.runScrollback = '';
+        });
     }
 
     stopProcess() {
         this.runPty?.kill();
     }
 
-    checkPort(port: number) {
-        console.log('Checking runPty')
+    isRunning() {
         return this.runPty !== null;
-        
-        return new Promise((resolve) => {
-            const socket = new net.Socket();
+    }
 
-            socket.setTimeout(1000);
-            socket.on('connect', () => {
-                socket.destroy();
-                resolve(true);
-            });
-
-            socket.on('timeout', () => {
-                socket.destroy();
-                resolve(false);
-            });
-
-            socket.on('error', () => {
-                resolve(false);
-            });
-
-            socket.connect(port, '127.0.0.1');
-        });
+    /** Retrieve the current scrollback for the run PTY */
+    getRunScrollback(): string {
+        return this.runScrollback;
     }
 }

@@ -29,17 +29,20 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     // private readonly chokidarService: ChokidarService,
     private readonly configService: ConfigService,
   ) {
-    // this.replId = this.configService.get('REPL_ID') as string;
-    this.replId = "node-node";
+    this.replId = this.configService.get('REPL_ID') as string;
+    // this.replId = "node-node";
   }
 
-  private INACTIVITY_TIMEOUT_MS = 30 * 1000;
+  private INACTIVITY_TIMEOUT_MS = 1000 * 60 * 30; // 30 minutes
   private connectedSocketsIds = new Set<string>();
   private timeOut: NodeJS.Timeout | null = null;
   private TIMER_NAME = 'timeout';
 
   handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id}`);
+
+    socket.join(this.replId); // join project room
+    this.server.to(this.replId).emit('process:status', { isRunning: this.terminalManager.isRunning() });
 
     this.connectedSocketsIds.add(socket.id);
 
@@ -77,11 +80,24 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     this.terminalManager.createPty(socket, this.replId, (data) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
+
+      const isProjectRunning = this.terminalManager.isRunning();
+
+      if (isProjectRunning) {
+        socket.emit('terminal', { data: this.terminalManager.getRunScrollback() });
+      }
     });
   }
 
   @SubscribeMessage('terminalData')
   onTerminalData(@MessageBody() payload: { data: string }, @ConnectedSocket() socket: Socket) {
+    // Check for Ctrl+C (0x03)
+    if (payload.data === '\x03') {
+      // kill the runPty
+      this.terminalManager.stopProcess();
+      this.server.to(this.replId).emit('process:status', { isRunning: false });
+    }
+
     this.terminalManager.write(socket.id, payload.data);
   }
 
@@ -93,23 +109,21 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
       error: 'Language not supported',
     }
 
-    // this.terminalManager.write(socket.id, cmd + '\r'); // \r is to execute the command
-
     this.terminalManager.run(cmd, (data, id) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8'), id });
-    })
+      this.server.to(this.replId).emit('process:status', { isRunning: this.terminalManager.isRunning() }); // send the status to all clients
+    });
   }
 
   @SubscribeMessage('process:stop')
-  onStop() {
+  onStop(@ConnectedSocket() socket: Socket) {
     this.terminalManager.stopProcess();
 
-    return true;
-  }
+    this.terminalManager.write(socket.id, '\x03'); // write Ctrl+C in the terminal to get a new line
+    this.terminalManager.write(socket.id, '\x03'); // write Ctrl+C in the terminal to get a new line
 
-  @SubscribeMessage('check-port')
-  onCheckPort(@MessageBody() payload: { port: number }) {
-    console.log('hi there from check port');
-    return this.terminalManager.checkPort(payload.port);
+    this.server.to(this.replId).emit('process:status', { isRunning: false });
+
+    return true;
   }
 }

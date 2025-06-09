@@ -25,6 +25,8 @@ interface CodingStatesContextType {
     editorInstance: IStandaloneCodeEditor | null,
     setEditorInstance: React.Dispatch<React.SetStateAction<IStandaloneCodeEditor | null>>
     project: TProject | undefined;
+    projectRunning: boolean;
+    setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -44,6 +46,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
+    const [projectRunning, setProjectRunning] = useState(false);
     const { socket } = useSocket();
     const router = useRouter();
     const axios = useAxiosPrivate();
@@ -119,7 +122,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         refreshTree,
         editorInstance,
         setEditorInstance,
-        project: data?.data
+        project: data?.data,
+        projectRunning,
+        setProjectRunning
     };
 
     if (isLoading) return <div>Loading project...</div>;

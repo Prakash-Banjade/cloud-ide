@@ -34,6 +34,8 @@ export function FileTabSwitcher() {
             if (event.altKey && event.key.toLowerCase() === "e") {
                 event.preventDefault()
 
+                if (openedFiles.length === 0) return;
+
                 if (!isOpen) {
                     // First time pressing Alt+E - show switcher and start from next file
                     setIsOpen(true)
@@ -120,6 +122,7 @@ export function FileTabSwitcher() {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-md [&>button]:hidden p-0 px-2">
+                <DialogTitle className="sr-only">Open file</DialogTitle>
                 <ScrollArea className="max-h-[60vh] overflow-y-auto">
                     <div className="flex flex-col py-2">
                         {openedFiles.map((file, index) => {

@@ -19,6 +19,9 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getFileIcon } from "./file-icons";
 import TopBar from "./top-bar";
 import { FileTabSwitcher } from "./tab-switcher";
+import TermTopBar from "./term-top-bar";
+import { useTheme } from "next-themes";
+import { previewLanguages } from "@/lib/CONSTANTS";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -28,6 +31,7 @@ export default function CodingPageClient() {
     const params = useParams();
     const { status } = useSession()
     const [loaded, setLoaded] = useState(false);
+    const theme = useTheme();
 
     const { mutateAsync, isPending } = useAppMutation();
 
@@ -62,8 +66,12 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         setFileStructure,
         setSelectedFile,
         refreshTree,
-        setOpenedFiles
+        setOpenedFiles,
+        setProjectRunning,
+        projectRunning,
+        project,
     } = useCodingStates();
+    const [showTerm, setShowTerm] = useState(true);
 
     const { socket } = useSocket();
 
@@ -73,10 +81,16 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
             setLoaded(true)
             await refreshTree(rootContent);
-        })
+        });
+
+        socket.on('process:status', (data: { isRunning: boolean }) => {
+            console.log(data)
+            setProjectRunning(data.isRunning || false);
+        });
 
         return () => {
             socket.off('loaded');
+            socket.off('process:status');
         };
     }, [socket]);
 
@@ -92,6 +106,8 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         }
     };
 
+    const showPreview = project && projectRunning && previewLanguages.includes(project.language);
+
     if (!loaded) return "Loading your files...";
 
     if (!socket) return null;
@@ -105,7 +121,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={15} minSize={15} maxSize={20} className="bg-sidebar">
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
                     <section className="p-2 pl-4 flex justify-between items-center gap-4">
                         <div className="text-sm font-medium uppercase">Explorer</div>
                         <div className="flex items-center gap-0.5 text-muted-foreground">
@@ -117,38 +133,43 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
                 <ResizableHandle />
 
-                {/* Code editor panel */}
-                <ResizablePanel defaultSize={65} minSize={30}>
-                    <div className="h-full flex flex-col">
-                        <OpenedFilesTab />
-                        <CodeEditor socket={socket} />
-                    </div>
-                </ResizablePanel>
-
-                <ResizableHandle />
-
-                {/* Terminal and preview panel */}
-                <ResizablePanel defaultSize={20} minSize={20} maxSize={30}>
+                <ResizablePanel defaultSize={85} minSize={40} className="relative">
                     <ResizablePanelGroup direction="vertical" className="flex-1">
-                        {
-                            false && (
-                                <>
-                                    <ResizablePanel defaultSize={50} minSize={50}>
-                                        <iframe width={"100%"} height={"100%"} src={`http://${replId}.qubide.cloud`} />
-                                    </ResizablePanel>
+                        {/* Code editor panel */}
+                        <ResizablePanel defaultSize={70} minSize={30}>
+                            <div className="h-full flex flex-col">
+                                <OpenedFilesTab />
+                                <CodeEditor socket={socket} />
+                            </div>
+                        </ResizablePanel>
 
-                                    <ResizableHandle />
-                                </>
-                            )
+                        {
+                            showTerm && <ResizableHandle />
                         }
 
-                        <ResizablePanel defaultSize={100} minSize={30}>
-                            <XTerminalNoSSR socket={socket} />
+                        {/* Terminal panel */}
+                        <div className={cn(!showTerm && "absolute bottom-0 w-full")}>
+                            <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
+                        </div>
+                        <ResizablePanel defaultSize={30} minSize={0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
+                            <XTerminalNoSSR socket={socket} showTerm={showTerm} />
                         </ResizablePanel>
 
                     </ResizablePanelGroup>
-
                 </ResizablePanel>
+
+                {
+                    showPreview && (
+                        <>
+                            <ResizableHandle />
+
+                            <ResizablePanel defaultSize={50} minSize={30}>
+                                <iframe width={"100%"} height={"100%"} src={`http://${replId}.qubide.cloud`} />
+                            </ResizablePanel>
+
+                        </>
+                    )
+                }
             </ResizablePanelGroup>
         </div>
     );

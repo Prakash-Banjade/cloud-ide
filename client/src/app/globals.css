@@ -122,7 +122,6 @@
   }
 }
 
-
 .container {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -138,4 +137,12 @@
   display: flex !important;
   flex-direction: column !important;
   min-height: 100% !important;
+}
+
+.xterm .xterm-viewport {
+  overflow-y: auto !important;
+}
+
+button {
+  cursor: pointer !important;
 }
