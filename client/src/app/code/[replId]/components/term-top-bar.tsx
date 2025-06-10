@@ -28,8 +28,8 @@ export default function TermTopBar({ setShowTerm, showTerm }: Props) {
     }, [])
 
     return (
-        <div className={cn("p-2 flex justify-between items-center", theme === "dark" ? "bg-black" : "bg-white")}>
-            <button type="button" className="underline underline-offset-2 pointer-events-none">
+        <div className={cn("flex justify-between items-center", theme === "dark" ? "bg-black" : "bg-white")}>
+            <button type="button" className="p-2 underline underline-offset-2 pointer-events-none">
                 <Terminal size={18} />
             </button>
 
@@ -37,6 +37,7 @@ export default function TermTopBar({ setShowTerm, showTerm }: Props) {
                 type="button"
                 onClick={() => setShowTerm(!showTerm)}
                 title={showTerm ? 'Hide terminal' : 'Show terminal'}
+                className={cn("p-2", !showTerm && "grow flex items-center justify-end")}
             >
                 {
                     showTerm

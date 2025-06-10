@@ -152,10 +152,8 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
                         }
 
                         {/* Terminal panel */}
-                        <div className={cn(!showTerm && "absolute bottom-0 w-full")}>
-                            <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
-                        </div>
-                        <ResizablePanel defaultSize={30} minSize={0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
+                        <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
+                        <ResizablePanel defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
                             <XTerminalNoSSR socket={socket} showTerm={showTerm} />
                         </ResizablePanel>
 

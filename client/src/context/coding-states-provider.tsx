@@ -1,7 +1,7 @@
 "use client";
 
 import { TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
@@ -43,7 +43,6 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
     const [projectRunning, setProjectRunning] = useState(false);
-    const router = useRouter();
     const axios = useAxiosPrivate();
 
     const replId = params.replId;

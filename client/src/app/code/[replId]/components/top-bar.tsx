@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/popover"
 import ProjectRenameForm from '@/app/workspace/components/project-rename-form';
 import { useState } from 'react';
+import { EItemType, TreeItem } from './file-tree';
+import { useRefreshTree } from '../fns/file-manager-fns';
 
 type Props = {
     socket: Socket
@@ -23,10 +25,20 @@ type Props = {
 export default function TopBar({ socket }: Props) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
-    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning } = useCodingStates();
+    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, fileStructure } = useCodingStates();
+    const refreshTree = useRefreshTree();
 
     function onRun() {
         if (!socket || !project) return;
+
+        // for the first time, packages are being installed so we wait for node_modules to be created but it is not in the fileStructure, so we refresh the tree
+        socket.emit('fetchDir', '', async (data: TreeItem[]) => {
+            await refreshTree({ content: data, socket });
+        });
+
+        const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
+
+        if (hasDependeiciesNotInstalled) return toast.error("Please install dependencies before running the project.");
 
         socket.emit("process:run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);

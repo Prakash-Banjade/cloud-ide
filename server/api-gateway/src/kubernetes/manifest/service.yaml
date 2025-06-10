@@ -105,8 +105,8 @@ spec:
       targetPort: 3003
     - protocol: TCP
       name: user
-      port: 3000
-      targetPort: 3000
+      port: LANG_PORT
+      targetPort: LANG_PORT
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
