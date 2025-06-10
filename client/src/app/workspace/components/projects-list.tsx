@@ -22,7 +22,9 @@ export default async function MyProjectsList(props: { searchParams: Promise<Prop
         order: searchParams.order
     });
 
-    const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects");
+    const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects", {
+        next: { revalidate: 0 } // increase this in production
+    });
 
     if (!res.ok) redirect("/auth/login");
 

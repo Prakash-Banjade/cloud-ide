@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import React, { Suspense } from 'react'
+import CodingPageLoader from './[replId]/components/coding-page-loader'
 
 export const metadata: Metadata = {
     title: 'Code',
@@ -8,10 +9,8 @@ export const metadata: Metadata = {
 
 export default async function CodeLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div>
-            <Suspense fallback={<div>Booting your repl...</div>}>
-                {children}
-            </Suspense>
-        </div>
+        <Suspense fallback={<CodingPageLoader state="booting" />}>
+            {children}
+        </Suspense>
     )
 }

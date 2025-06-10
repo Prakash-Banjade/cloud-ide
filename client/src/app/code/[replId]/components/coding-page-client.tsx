@@ -19,6 +19,7 @@ import { FileTabSwitcher } from "./tab-switcher";
 import TermTopBar from "./term-top-bar";
 import { previewLanguages } from "@/lib/CONSTANTS";
 import Preview from "./preview";
+import CodingPageLoader from "./coding-page-loader";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -28,7 +29,6 @@ export default function CodingPageClient() {
     return (
         <SocketProvider>
             <CodingStatesProvider>
-                {/* <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} /> */}
                 <CodingPagePostPodCreation />
             </CodingStatesProvider>
         </SocketProvider>
@@ -90,7 +90,7 @@ export const CodingPagePostPodCreation = () => {
 
     const showPreview = project && projectRunning && previewLanguages.includes(project.language);
 
-    if (!treeLoaded) return "Loading your files...";
+    if (!treeLoaded) return <CodingPageLoader state="loading_files" />;
 
     if (!socket) return null;
 

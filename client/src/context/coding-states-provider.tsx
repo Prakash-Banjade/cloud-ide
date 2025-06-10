@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
+import CodingPageLoader from '@/app/code/[replId]/components/coding-page-loader';
 
 
 interface CodingStatesContextType {
@@ -154,7 +155,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
 
     }, [selectedFile]);
 
-    if (isLoading) return <div>Loading project...</div>;
+    if (isLoading || status === 'loading') return <CodingPageLoader state='loading_project' />;
 
     return (
         <CodingStatesContext.Provider value={value}>
