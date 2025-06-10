@@ -1,16 +1,13 @@
 "use client"
 
 import Link from 'next/link'
-import React from 'react'
 import { Button } from '../ui/button'
 import { usePathname } from 'next/navigation'
 import ProfileDropdown from './profile-dropdown'
 import { ThemeToggle } from '../theme-toggle'
 import Logo from '../logo'
 
-type Props = {}
-
-export default function Navbar({ }: Props) {
+export default function Navbar() {
     const pathname = usePathname();
 
     return (

@@ -11,7 +11,7 @@ export default function CodingPageLoader({ state }: Props) {
             {
                 state === 'booting'
                     ? (
-                        <section className="space-y-3">
+                        <section className="space-y-3 min-w-[300px]">
                             <div className="flex items-center gap-2">
                                 <LoaderCircle size={20} className="animate-spin" />
                                 <span>Booting your project...</span>
@@ -26,7 +26,7 @@ export default function CodingPageLoader({ state }: Props) {
                             </div>
                         </section>
                     ) : state === 'loading_project' ? (
-                        <section className="space-y-3">
+                        <section className="space-y-3 min-w-[300px]">
                             <div className="flex items-center gap-2">
                                 <CircleCheckBig size={20} className="text-green-500" />
                                 <span>Boot Success</span>
@@ -41,7 +41,7 @@ export default function CodingPageLoader({ state }: Props) {
                             </div>
                         </section>
                     ) : (
-                        <section className="space-y-3">
+                        <section className="space-y-3 min-w-[300px]">
                             <div className="flex items-center gap-2">
                                 <CircleCheckBig size={20} className="text-green-500" />
                                 <span>Boot Success</span>

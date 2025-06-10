@@ -7,9 +7,7 @@ export const metadata: Metadata = {
     description: 'Register to Qubide',
 }
 
-type Props = {}
-
-export default function RegisterPage({ }: Props) {
+export default function RegisterPage() {
     return (
         <div className="lg:p-8 h-screen mx-auto flex flex-col justify-center space-y-10 w-[90%] max-w-[600px]">
             <div className="flex flex-col space-y-2 text-center">

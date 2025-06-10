@@ -96,7 +96,7 @@ function NoProjectsCreated() {
                 <FolderPlus className="size-8 text-primary" />
             </div>
 
-            <h3 className="text-lg font-semibold mb-3">You haven't created any project yet</h3>
+            <h3 className="text-lg font-semibold mb-3">You haven&apos;t created any project yet</h3>
 
             <p className="text-muted-foreground mb-8 max-w-md text-sm">
                 Create your first project to start coding in the cloud with Qubide

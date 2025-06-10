@@ -25,7 +25,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             );
 
             monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-                jsx: "react" as any
+                jsx: 2 // 2 means react
             });
 
             monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
@@ -41,7 +41,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         if (value !== undefined && selectedFile) {
             // TODO: Should send diffs, for now sending the whole file
             setIsSyncing(true);
-            socket.emit("updateContent", { path: selectedFile.path, content: value }, (data: boolean) => {
+            socket.emit("updateContent", { path: selectedFile.path, content: value }, () => {
                 setIsSyncing(false);
             });
         }
@@ -119,7 +119,7 @@ const langObj = {
 }
 
 function getLanguageFromName(name: string) {
-    let ext = name.split('.').pop();
+    const ext = name.split('.').pop();
 
     return langObj?.[ext as keyof typeof langObj] || "plaintext";
 }

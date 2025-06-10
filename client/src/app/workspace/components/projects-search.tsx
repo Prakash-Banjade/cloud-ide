@@ -1,6 +1,5 @@
 "use client"
 
-import { Input } from '@/components/ui/input'
 import { LayoutGrid, List, Search } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

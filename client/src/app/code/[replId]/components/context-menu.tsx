@@ -1,6 +1,5 @@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { EItemType, TreeItem } from "./file-tree"
-import { Pencil, Trash } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"
@@ -60,7 +59,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                 <ContextMenuTrigger>
                     <section
                         className={cn(isOpen && "outline")}
-                        onContextMenu={e => {
+                        onContextMenu={() => {
                             if (item.type === EItemType.DIR && !Array.isArray(item.children)) { // fetch children if they don't exist, this is to show alert dialog based on children presence
                                 socket?.emit("fetchDir", item.path, (data: TreeItem[]) => {
                                     setFileStructure(prev =>

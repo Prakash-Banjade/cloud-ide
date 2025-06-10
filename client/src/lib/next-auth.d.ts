@@ -1,4 +1,4 @@
-import { TLoginResponse, TUser } from "@/types";
+import { TUser } from "@/types";
 
 import NextAuth from "next-auth";
 

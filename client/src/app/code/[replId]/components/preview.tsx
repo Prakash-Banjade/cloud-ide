@@ -2,9 +2,7 @@ import { ArrowLeft, ArrowRight, ExternalLink, RotateCw } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useRef } from 'react';
 
-type Props = {}
-
-export default function Preview({ }: Props) {
+export default function Preview() {
     const params = useParams();
     const replId = params.replId ?? '';
 

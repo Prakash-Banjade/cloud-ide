@@ -88,10 +88,11 @@ export const languageFields = [
   },
 ]
 
-export function createQueryString(params: Record<string, any>) {
+export function createQueryString(params: Record<string, string | boolean | undefined | null>) {
   // Remove undefined values
   const filteredParams = Object.fromEntries(
-    Object.entries(params).filter(([_, value]) => !!value)
+    Object.entries(params).filter(([key, value]) => !!value && !!key)
+      .map(([key, value]) => [key, String(value)])
   );
 
   return new URLSearchParams(filteredParams).toString();

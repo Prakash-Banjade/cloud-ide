@@ -9,8 +9,8 @@ type Props = {
     }
 }
 
-export default async function VerifyEmailPage(props: Promise<Props>) {
-    const { params } = await props;
+export default async function VerifyEmailPage(props: { params: Promise<Props> }) {
+    const { params } = await props.params;
 
     return (
         <Suspense fallback={<div>Loading...</div>}>
@@ -25,6 +25,7 @@ async function Component({ token }: Props["params"]) {
 
         if (res.status !== 200) return redirect('/auth/login');
     } catch (e) {
+        console.log(e);
         redirect('/auth/login');
     }
 

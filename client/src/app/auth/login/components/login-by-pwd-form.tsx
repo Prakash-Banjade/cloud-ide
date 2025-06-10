@@ -54,7 +54,11 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                 router.push("/workspace");
                 router.refresh();
             } catch (error) {
-                toast.error("An error occurred during sign in");
+                if (error instanceof Error) {
+                    toast.error(error.message);
+                } else {
+                    toast.error("An error occurred during sign in");
+                }
             }
         })
     };

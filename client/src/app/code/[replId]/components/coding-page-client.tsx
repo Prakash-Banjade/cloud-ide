@@ -196,9 +196,7 @@ function OpenedFilesTab() {
 
     return (
         <div className="flex items-center gap-2">
-            <ScrollArea
-                className="overflow-x-auto"
-            >
+            <ScrollArea className="overflow-x-auto">
                 <div className="flex">
                     {
                         openedFiles.map((file) => {

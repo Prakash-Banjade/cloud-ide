@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,8 +10,9 @@ import Link from "next/link"
 import LoadingButton from "@/components/loading-button"
 import { NAME_REGEX, NAME_WITH_SPACE_REGEX } from "@/lib/CONSTANTS"
 import { useAppMutation } from "@/hooks/useAppMutation"
-import { useServerErrorInField } from "@/hooks/useServerErrorInField"
 import toast from "react-hot-toast"
+import { AxiosError } from "axios"
+import { useEffect, useState } from "react"
 
 const passwordSchema = z
     .string()
@@ -38,7 +38,7 @@ const signupFormSchema = z
 export type signUpFormSchemaType = z.infer<typeof signupFormSchema>;
 
 export function SignUpForm() {
-    const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
+    const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
     const form = useForm<signUpFormSchemaType>({
         resolver: zodResolver(signupFormSchema),
@@ -71,7 +71,15 @@ export function SignUpForm() {
         form.reset();
     };
 
-    useServerErrorInField(error, form);
+    useEffect(() => { // show error directly in form field if send by server
+        if (error instanceof AxiosError) {
+            const errObj = error?.response?.data?.message;
+            if (!!errObj?.field) {
+                form.setError(errObj.field, { message: errObj?.message });
+                form.setFocus(errObj.field);
+            }
+        }
+    }, [error])
 
     return (
         <section className="space-y-8">

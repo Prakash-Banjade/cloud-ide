@@ -122,7 +122,11 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
             }
             if (selectedFile) {
                 const file = findItem(fileStructure, selectedFile);
+
                 if (file && file.type === EItemType.FILE) {
+                    socket?.emit("fetchContent", { path: file.path }, (data: string) => { // load data
+                        file.content = data;
+                    });
                     setSelectedFile(file);
                     setSelectedItem(file);
                 }
@@ -143,15 +147,16 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     }, [mruFiles]);
 
     useEffect(() => {
-        if (!treeLoaded || !selectedFile) return;
-        cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
+        if (!selectedFile) return;
 
-        // load the content
+        // load the content if not loaded
         if (selectedFile.content === undefined) {
             socket?.emit("fetchContent", { path: selectedFile.path }, (data: string) => {
                 selectedFile.content = data;
             });
         }
+
+        cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
 
     }, [selectedFile]);
 

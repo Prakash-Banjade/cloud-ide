@@ -32,9 +32,9 @@ export const useAppMutation = <TData, TResponse>(): UseMutationResult<
                 throw error;
             }
         },
-        onError(error, variables) {
+        onError(error, { toastOnError = true }) {
             if (error instanceof AxiosError) {
-                if (variables.toastOnError ?? true) {
+                if (toastOnError) {
                     const message = error.response?.data?.message;
                     if (message instanceof Object && 'message' in message) {
                         toast.error(message.message);
@@ -44,27 +44,29 @@ export const useAppMutation = <TData, TResponse>(): UseMutationResult<
                         toast.error(error.message);
                     }
                 }
-            } else if (error instanceof Error) {
-                (variables.toastOnError ?? true) && toast.error(`${error.message}`);
+            } else if (error instanceof Error && toastOnError) {
+                toast.error(`${error.message}`);
             }
             console.log(error)
         },
-        onSuccess(data, variables) {
-            if (variables.invalidateTags) {
-                if (variables.invalidateTags[0] instanceof Array) {
-                    for (const tag of variables.invalidateTags) {
+        onSuccess(data, { invalidateTags, toastOnSuccess = true }) {
+            if (invalidateTags) {
+                if (invalidateTags[0] instanceof Array) {
+                    for (const tag of invalidateTags) {
                         queryClient.invalidateQueries({
                             queryKey: tag as string[],
                         })
                     }
                 } else {
                     queryClient.invalidateQueries({
-                        queryKey: variables.invalidateTags as string[],
+                        queryKey: invalidateTags as string[],
                     })
                 }
             }
 
-            (variables.toastOnSuccess ?? true) && toast.success(data.data.message ?? 'Success!');
+            if (toastOnSuccess) {
+                toast.success(data.data.message ?? 'Success!');
+            }
         },
     })
 };
