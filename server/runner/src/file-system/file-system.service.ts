@@ -30,7 +30,10 @@ export class FileSystemService {
                             type: isDir ? "dir" : "file",
                             name: file.name,
                             path: `${baseDir}/${file.name}`,
-                            ...(!isDir ? { language: file.name.split('.').pop() } : {}),
+                            ...(!isDir ? {
+                                language: file.name.split('.').pop(),
+                                content: undefined // intially content is undefined
+                            } : {}),
                         }
                     }));
                 }

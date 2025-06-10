@@ -1,12 +1,17 @@
 "use client";
 
-import { TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
+import { EItemType, TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
 import { useParams } from 'next/navigation';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
 import { TProject } from '@/types';
+import cookie from 'js-cookie';
+import { z } from 'zod';
+import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
+import { useSocket } from './socket-provider';
+
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -25,7 +30,9 @@ interface CodingStatesContextType {
     projectRunning: boolean;
     setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>;
     mruFiles: TFileItem[];
-    setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>
+    setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
+    treeLoaded: boolean;
+    setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -46,7 +53,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
+    const [treeLoaded, setTreeLoaded] = useState(false);
     const axios = useAxiosPrivate();
+    const { socket } = useSocket();
 
     const replId = params.replId;
 
@@ -74,8 +83,71 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         projectRunning,
         setProjectRunning,
         mruFiles,
-        setMruFiles
+        setMruFiles,
+        treeLoaded,
+        setTreeLoaded
     };
+
+    useEffect(() => {
+        if (!treeLoaded) return;
+
+        const openedFiles = cookie.get(`openedFiles:${replId}`);
+        const mruFiles = cookie.get(`mruFiles:${replId}`);
+        const selectedFile = cookie.get(`selectedFile:${replId}`);
+
+        try {
+            if (openedFiles) {
+                const parsedData = JSON.parse(openedFiles);
+
+                const { data, success } = z.array(z.string()).safeParse(parsedData);
+
+                if (success) {
+                    setOpenedFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                }
+            }
+            if (mruFiles) {
+                const parsedData = JSON.parse(mruFiles);
+
+                const { data, success } = z.array(z.string()).safeParse(parsedData);
+
+                if (success) {
+                    setMruFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                }
+            }
+            if (selectedFile) {
+                const file = findItem(fileStructure, selectedFile);
+                if (file && file.type === EItemType.FILE) {
+                    setSelectedFile(file);
+                    setSelectedItem(file);
+                }
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }, [treeLoaded])
+
+    useEffect(() => {
+        if (!treeLoaded) return;
+        cookie.set(`openedFiles:${replId}`, JSON.stringify(openedFiles.map(f => f.path)), { expires: 7 });
+    }, [openedFiles]);
+
+    useEffect(() => {
+        if (!treeLoaded) return;
+        cookie.set(`mruFiles:${replId}`, JSON.stringify(mruFiles.map(f => f.path)), { expires: 7 });
+    }, [mruFiles]);
+
+    useEffect(() => {
+        if (!treeLoaded || !selectedFile) return;
+        cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
+
+        // load the content
+        if (selectedFile.content === undefined) {
+            socket?.emit("fetchContent", { path: selectedFile.path }, (data: string) => {
+                selectedFile.content = data;
+            });
+        }
+
+    }, [selectedFile]);
 
     if (isLoading) return <div>Loading project...</div>;
 

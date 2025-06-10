@@ -20,7 +20,6 @@ import { getFileIcon } from "./file-icons";
 import TopBar from "./top-bar";
 import { FileTabSwitcher } from "./tab-switcher";
 import TermTopBar from "./term-top-bar";
-import { useTheme } from "next-themes";
 import { previewLanguages } from "@/lib/CONSTANTS";
 import Preview from "./preview";
 
@@ -30,9 +29,7 @@ const XTerminalNoSSR = dynamic(() => import("./terminal"), {
 
 export default function CodingPageClient() {
     const params = useParams();
-    const { status } = useSession()
-    const [loaded, setLoaded] = useState(false);
-    const theme = useTheme();
+    const { status } = useSession();
 
     const { mutateAsync, isPending } = useAppMutation();
 
@@ -51,14 +48,14 @@ export default function CodingPageClient() {
     return (
         <SocketProvider>
             <CodingStatesProvider>
-                <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} isLoaded={loaded} />
-                <CodingPagePostPodCreation loaded={loaded} setLoaded={setLoaded} />
+                <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} />
+                <CodingPagePostPodCreation />
             </CodingStatesProvider>
         </SocketProvider>
     )
 }
 
-export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boolean, setLoaded: (loaded: boolean) => void }) => {
+export const CodingPagePostPodCreation = () => {
     const params = useParams();
     const router = useRouter();
     const replId = params.replId ?? '';
@@ -70,6 +67,8 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         setProjectRunning,
         projectRunning,
         project,
+        treeLoaded,
+        setTreeLoaded
     } = useCodingStates();
     const [showTerm, setShowTerm] = useState(true);
 
@@ -80,15 +79,14 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         if (!socket) return;
 
         socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
-            setLoaded(true)
             await refreshTree({
                 content: rootContent,
                 socket,
             });
+            setTreeLoaded(true)
         });
 
         socket.on('process:status', (data: { isRunning: boolean }) => {
-            console.log(data)
             setProjectRunning(data.isRunning || false);
         });
 
@@ -112,7 +110,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
     const showPreview = project && projectRunning && previewLanguages.includes(project.language);
 
-    if (!loaded) return "Loading your files...";
+    if (!treeLoaded) return "Loading your files...";
 
     if (!socket) return null;
 
@@ -180,6 +178,8 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 function OpenedFilesTab() {
     const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+    const { replId } = useParams();
 
     useEffect(() => {
         if (selectedTabRef.current) {
@@ -205,11 +205,13 @@ function OpenedFilesTab() {
     }
 
     function selectFile(file: TFileItem | undefined) { // for file to be selected both has to be set
-        setSelectedFile(file);
-        setSelectedItem(file);
         if (file) {
+            router.push(`/code/${replId}?path=${file.path}`);
             setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
         }
+
+        setSelectedFile(file);
+        setSelectedItem(file);
     }
 
     return (

@@ -17,27 +17,27 @@ const loadingStates = [
 type Props = {
     isLoadingUser: boolean,
     isLoadingRepl: boolean,
-    isLoaded: boolean
 }
 
-export default function FullPageLoader({ isLoadingRepl, isLoadingUser, isLoaded }: Props) {
+export default function FullPageLoader({ isLoadingRepl, isLoadingUser }: Props) {
+    const { treeLoaded } = useCodingStates();
     const [currentState, setCurrentState] = React.useState(0);
 
     useEffect(() => {
         setCurrentState(
             isLoadingUser ? 0
                 : isLoadingRepl ? 1
-                    : isLoaded ? 2
+                    : treeLoaded ? 2
                         : 2
         )
-    }, [isLoadingRepl, isLoadingUser, isLoaded]);
+    }, [isLoadingRepl, isLoadingUser, treeLoaded]);
 
     return (
         <MultiStepLoader
             currentStateValue={currentState}
             loadingStates={loadingStates}
             onStateChange={setCurrentState}
-            loading={isLoadingRepl || isLoadingUser || !isLoaded}
+            loading={isLoadingRepl || isLoadingUser || !treeLoaded}
             duration={2000}
         />
     )

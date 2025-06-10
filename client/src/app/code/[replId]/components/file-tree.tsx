@@ -20,7 +20,7 @@ interface ItemCommonProps {
 
 export interface TFileItem extends ItemCommonProps {
     type: EItemType.FILE
-    content?: string
+    content: string | undefined
     language?: string
 }
 

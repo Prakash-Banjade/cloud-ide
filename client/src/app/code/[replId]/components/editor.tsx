@@ -71,7 +71,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
 
     return (
         <Editor
-            height="100vh"
+            height="100%"
             language={getLanguageFromName(selectedFile.name)}
             value={selectedFile.content}
             options={{
@@ -80,7 +80,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
                 autoClosingBrackets: "always",
                 autoClosingComments: "always",
                 padding: {
-                    top: 6
+                    top: 6,
                 }
             }}
             onMount={handleEditorDidMount}

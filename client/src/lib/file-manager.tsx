@@ -30,8 +30,8 @@ export interface Directory extends CommonProps {
 export function buildFileTree(data: RemoteFile[]): Directory {
     const dirs = data.filter(x => x.type === "dir");
     const files = data.filter(x => x.type === "file");
-    const cache = new Map<string, Directory | File>(); 
-    
+    const cache = new Map<string, Directory | File>();
+
     let rootDir: Directory = {
         id: "root",
         name: "root",

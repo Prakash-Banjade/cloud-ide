@@ -120,7 +120,6 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.terminalManager.stopProcess();
 
     this.terminalManager.write(socket.id, '\x03'); // write Ctrl+C in the terminal to get a new line
-    this.terminalManager.write(socket.id, '\x03'); // write Ctrl+C in the terminal to get a new line
 
     this.server.to(this.replId).emit('process:status', { isRunning: false });
 

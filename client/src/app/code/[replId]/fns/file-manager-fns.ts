@@ -92,12 +92,6 @@ export const onItemSelect = (
             })
         }
     } else {
-        if (!file.content?.length) { // if no content is loaded, fetch the content
-            socket?.emit("fetchContent", { path: file.path }, (data: string) => {
-                file.content = data;
-            });
-        }
-
         setSelectedFile(file);
         setOpenedFiles(prev => {
             return prev.some(f => f.path === file.path) ? prev : [...prev, file];

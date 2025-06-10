@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, startTransition } from "react"
 import {
     Dialog,
     DialogContent,
@@ -11,10 +11,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getFileIcon } from "./file-icons"
 import { TFileItem } from "./file-tree"
+import { useParams, useRouter } from "next/navigation"
 
 export function FileTabSwitcher() {
     const { selectedFile, setSelectedItem, setSelectedFile, setMruFiles, mruFiles } = useCodingStates();
-
+    const router = useRouter();
+    const { replId } = useParams();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isAltPressed, setIsAltPressed] = useState(false);
@@ -122,6 +124,11 @@ export function FileTabSwitcher() {
         setSelectedFile(file);
         setSelectedItem(file);
         setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
+
+        window.requestAnimationFrame(() => {
+            router.push(`/code/${replId}?path=${file.path}`);
+        });
+
     }
 
     return (
