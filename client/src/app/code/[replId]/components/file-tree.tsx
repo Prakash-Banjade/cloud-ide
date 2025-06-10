@@ -20,7 +20,7 @@ interface ItemCommonProps {
 
 export interface TFileItem extends ItemCommonProps {
     type: EItemType.FILE
-    content?: string
+    content: string | undefined
     language?: string
 }
 
@@ -142,7 +142,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
 }
 
 function FileItem({ item, level, onSelectFile }: FileItemProps) {
-    const { selectedFile, selectedItem } = useCodingStates();
+    const { selectedFile, selectedItem, setMruFiles } = useCodingStates();
     const isSelected = item.path === selectedFile?.path && item.path === selectedItem?.path; // for file to be selected, both path must match
 
     const paddingLeft = `${level * 12 + 8}px`;
@@ -152,7 +152,10 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
             <div
                 className={cn("select-none flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
                 style={{ paddingLeft }}
-                onClick={() => onSelectFile(item)}
+                onClick={() => {
+                    onSelectFile(item);
+                    setMruFiles(prev => [item, ...prev.filter(f => f.path !== item.path)]); // place at the beginning
+                }}
             >
                 <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
                 <span className={cn("truncate line-clamp-1", isSelected && "text-shadow-2xs")}>{item.name}</span>

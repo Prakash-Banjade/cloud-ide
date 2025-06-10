@@ -3,6 +3,9 @@ import { TerminalManagerService } from "src/terminal-manager/terminal-manager.se
 import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { UseGuards } from "@nestjs/common";
+import { WsGuard } from "src/guard/ws.guard";
+import { ConfigService } from "@nestjs/config";
 
 @WebSocketGateway({
     cors: {
@@ -10,30 +13,21 @@ import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSo
         methods: ['GET', 'POST'],
     },
 })
+// @UseGuards(WsGuard)
 export class FileSystemCRUDGateway {
     @WebSocketServer()
     server: Server;
 
+    private replId: string;
+
     constructor(
         private readonly minioService: MinioService,
         private readonly fileSystemService: FileSystemService,
-        private readonly terminalManager: TerminalManagerService
-    ) { }
-
-    getReplId(socket: Socket) {
-        // Split the host by '.' and take the first part as replId
-        const host = socket.handshake.headers.host;
-        const replId = host?.split('.')[0];
-
-        // return "node-node"; // hardcoded for now
-
-        if (!replId) {
-            socket.disconnect();
-            this.terminalManager.clear(socket.id);
-            return;
-        }
-
-        return replId;
+        private readonly terminalManager: TerminalManagerService,
+        private readonly configService: ConfigService,
+    ) {
+        this.replId = this.configService.get('REPL_ID') as string;
+        // this.replId = "node-node";
     }
 
     /**
@@ -44,8 +38,6 @@ export class FileSystemCRUDGateway {
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
         @ConnectedSocket() socket: Socket
     ): Promise<{ success: boolean, error: string | null }> {
-        const replId = this.getReplId(socket);
-
         try {
             const { path, type } = payload;
             const fullPath = `/workspace${path}`;
@@ -54,12 +46,12 @@ export class FileSystemCRUDGateway {
                 // create an on-disk folder
                 await this.fileSystemService.createDir(fullPath);
                 // mirror into Minio under same prefix
-                await this.minioService.ensurePrefix(`code/${replId}${path}`);
+                await this.minioService.ensurePrefix(`code/${this.replId}${path}`);
             } else {
                 // create an empty file
                 await this.fileSystemService.createFile(fullPath, '');
                 // push empty content into Minio
-                await this.minioService.saveToMinio(`code/${replId}`, path, '');
+                await this.minioService.saveToMinio(`code/${this.replId}`, path, '');
             }
 
             return { success: true, error: null };
@@ -80,16 +72,15 @@ export class FileSystemCRUDGateway {
         try {
             const { path, type } = payload;
             const fullPath = `/workspace${path}`;
-            const replId = this.getReplId(socket);
 
             // delete on disk (recursive for dirs)
             await this.fileSystemService.deletePath(fullPath);
 
             // remove from Minio: if it's a folder, remove all objects under that prefix
             if (type === 'dir') {
-                await this.minioService.removePrefix(`code/${replId}${path}`);
+                await this.minioService.removePrefix(`code/${this.replId}${path}`);
             } else {
-                await this.minioService.removeObject(`code/${replId}`, path);
+                await this.minioService.removeObject(`code/${this.replId}`, path);
             }
 
             return true;
@@ -108,8 +99,6 @@ export class FileSystemCRUDGateway {
         @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' },
         @ConnectedSocket() socket: Socket
     ): Promise<{ success: boolean, error: string | null }> {
-        const replId = this.getReplId(socket);
-
         try {
             const { oldPath, newPath, type } = payload;
             const fullOld = `/workspace${oldPath}`;
@@ -122,12 +111,12 @@ export class FileSystemCRUDGateway {
 
             if (type === 'dir') {
                 // ensure trailing slash so listObjectsV2 will enumerate children :contentReference[oaicite:2]{index=2}
-                const srcPrefix = `code/${replId}${oldPath.endsWith('/') ? oldPath : oldPath + '/'}`;
-                const dstPrefix = `code/${replId}${newPath.endsWith('/') ? newPath : newPath + '/'}`;
+                const srcPrefix = `code/${this.replId}${oldPath.endsWith('/') ? oldPath : oldPath + '/'}`;
+                const dstPrefix = `code/${this.replId}${newPath.endsWith('/') ? newPath : newPath + '/'}`;
                 await this.minioService.movePrefix(srcPrefix, dstPrefix);
             } else {
-                await this.minioService.copyObject(`code/${replId}`, oldPath, `code/${replId}`, newPath);
-                await this.minioService.removeObject(`code/${replId}`, oldPath);
+                await this.minioService.copyObject(`code/${this.replId}`, oldPath, `code/${this.replId}`, newPath);
+                await this.minioService.removeObject(`code/${this.replId}`, oldPath);
             }
 
             return { success: true, error: null };

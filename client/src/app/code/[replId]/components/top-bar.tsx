@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCodingStates } from '@/context/coding-states-provider';
 import { languageFields } from '@/lib/utils';
-import { CircleCheck, Home, LoaderCircle, Play } from 'lucide-react';
+import { CircleCheck, Home, LoaderCircle, Pause, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Socket } from 'socket.io-client';
@@ -14,6 +14,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import ProjectRenameForm from '@/app/workspace/components/project-rename-form';
+import { useState } from 'react';
+import { EItemType, TreeItem } from './file-tree';
+import { useRefreshTree } from '../fns/file-manager-fns';
 
 type Props = {
     socket: Socket
@@ -21,13 +24,32 @@ type Props = {
 
 export default function TopBar({ socket }: Props) {
     const router = useRouter();
-    const { isSyncing, project, selectedFile } = useCodingStates();
+    const [open, setOpen] = useState(false);
+    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, fileStructure } = useCodingStates();
+    const refreshTree = useRefreshTree();
 
     function onRun() {
         if (!socket || !project) return;
 
-        socket.emit("cmd-run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
+        // for the first time, packages are being installed so we wait for node_modules to be created but it is not in the fileStructure, so we refresh the tree
+        socket.emit('fetchDir', '', async (data: TreeItem[]) => {
+            await refreshTree({ content: data, socket });
+        });
+
+        const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
+
+        if (hasDependeiciesNotInstalled) return toast.error("Please install dependencies before running the project.");
+
+        socket.emit("process:run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);
+        });
+    }
+
+    function onStop() {
+        if (!socket) return;
+
+        socket.emit("process:stop", (res: boolean) => {
+            if (res) setProjectRunning(false);
         });
     }
 
@@ -47,18 +69,19 @@ export default function TopBar({ socket }: Props) {
                         <Home />
                     </Button>
 
-                    <Popover>
+                    <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger>
                             <section className='flex items-center gap-1 p-2 rounded-sm hover:bg-secondary'>
                                 {Icon && <Icon className='size-4' />}
                                 <span className="font-medium text-xs">{project?.name}</span>
                             </section>
                         </PopoverTrigger>
-                        <PopoverContent>
+                        <PopoverContent side='bottom' align='start'>
                             {
                                 project && <ProjectRenameForm
                                     defaultValues={{ projectName: project.name }}
                                     projectId={project.id}
+                                    setIsOpen={setOpen}
                                 />
                             }
                         </PopoverContent>
@@ -74,10 +97,19 @@ export default function TopBar({ socket }: Props) {
                 </div>
 
                 <section className='absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2'>
-                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
-                        <Play size={16} />
-                        Run
-                    </Button>
+                    {
+                        projectRunning ? (
+                            <Button size="sm" variant="default" className="gap-1" type="button" onClick={onStop}>
+                                <Pause size={16} />
+                                Stop
+                            </Button>
+                        ) : (
+                            <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
+                                <Play size={16} />
+                                Run
+                            </Button>
+                        )
+                    }
                 </section>
 
                 <div className="flex items-center gap-2">

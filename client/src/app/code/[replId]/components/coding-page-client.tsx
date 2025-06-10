@@ -1,58 +1,41 @@
 "use client"
 
-import { useAppMutation } from "@/hooks/useAppMutation";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { X } from "lucide-react";
 import { FileTree, TFileItem, TreeItem } from "./file-tree";
-import { onItemSelect } from "../fns/file-manager-fns";
+import { onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
-import { useSession } from "next-auth/react";
-import FullPageLoader from "./full-page-loader";
 import dynamic from "next/dynamic";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getFileIcon } from "./file-icons";
 import TopBar from "./top-bar";
+import { FileTabSwitcher } from "./tab-switcher";
+import TermTopBar from "./term-top-bar";
+import { previewLanguages } from "@/lib/CONSTANTS";
+import Preview from "./preview";
+import CodingPageLoader from "./coding-page-loader";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
 });
 
 export default function CodingPageClient() {
-    const params = useParams();
-    const { status } = useSession()
-    const [loaded, setLoaded] = useState(false);
-
-    const { mutateAsync, isPending } = useAppMutation();
-
-    useEffect(() => {
-        const startResources = async () => {
-            await mutateAsync({
-                endpoint: `/projects/start`,
-                method: 'post',
-                data: { replId: params.replId }
-            });
-        }
-
-        if (status === "authenticated") startResources();
-    }, []);
-
     return (
         <SocketProvider>
             <CodingStatesProvider>
-                <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} isLoaded={loaded} />
-                <CodingPagePostPodCreation loaded={loaded} setLoaded={setLoaded} />
+                <CodingPagePostPodCreation />
             </CodingStatesProvider>
         </SocketProvider>
     )
 }
 
-export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boolean, setLoaded: (loaded: boolean) => void }) => {
+export const CodingPagePostPodCreation = () => {
     const params = useParams();
     const router = useRouter();
     const replId = params.replId ?? '';
@@ -60,22 +43,36 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         setSelectedItem,
         setFileStructure,
         setSelectedFile,
-        refreshTree,
-        setOpenedFiles
+        setOpenedFiles,
+        setProjectRunning,
+        projectRunning,
+        project,
+        treeLoaded,
+        setTreeLoaded
     } = useCodingStates();
+    const [showTerm, setShowTerm] = useState(true);
 
     const { socket } = useSocket();
+    const refreshTree = useRefreshTree();
 
     useEffect(() => {
         if (!socket) return;
 
         socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
-            setLoaded(true)
-            await refreshTree(rootContent);
-        })
+            await refreshTree({
+                content: rootContent,
+                socket,
+            });
+            setTreeLoaded(true);
+        });
+
+        socket.on('process:status', (data: { isRunning: boolean }) => {
+            setProjectRunning(data.isRunning || false);
+        });
 
         return () => {
             socket.off('loaded');
+            socket.off('process:status');
         };
     }, [socket]);
 
@@ -91,7 +88,9 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         }
     };
 
-    if (!loaded) return "Loading your files...";
+    const showPreview = project && projectRunning && previewLanguages.includes(project.language);
+
+    if (!treeLoaded) return <CodingPageLoader state="loading_files" />;
 
     if (!socket) return null;
 
@@ -99,11 +98,12 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
             <TopBar socket={socket} />
+            <FileTabSwitcher />
 
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={15} minSize={15} maxSize={20} className="bg-sidebar">
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
                     <section className="p-2 pl-4 flex justify-between items-center gap-4">
                         <div className="text-sm font-medium uppercase">Explorer</div>
                         <div className="flex items-center gap-0.5 text-muted-foreground">
@@ -115,47 +115,51 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 
                 <ResizableHandle />
 
-                {/* Code editor panel */}
-                <ResizablePanel defaultSize={65} minSize={30}>
-                    <div className="h-full flex flex-col">
-                        <OpenedFilesTab />
-                        <CodeEditor socket={socket} />
-                    </div>
-                </ResizablePanel>
-
-                <ResizableHandle />
-
-                {/* Terminal and preview panel */}
-                <ResizablePanel defaultSize={20} minSize={20} maxSize={30}>
+                <ResizablePanel defaultSize={showPreview ? 50 : 80} minSize={40} className="relative">
                     <ResizablePanelGroup direction="vertical" className="flex-1">
-                        {
-                            false && (
-                                <>
-                                    <ResizablePanel defaultSize={50} minSize={50}>
-                                        <iframe width={"100%"} height={"100%"} src={`http://${replId}.qubide.cloud`} />
-                                    </ResizablePanel>
+                        {/* Code editor panel */}
+                        <ResizablePanel defaultSize={70} minSize={30}>
+                            <div className="h-full flex flex-col">
+                                <OpenedFilesTab />
+                                <CodeEditor socket={socket} />
+                            </div>
+                        </ResizablePanel>
 
-                                    <ResizableHandle />
-                                </>
-                            )
+                        {
+                            showTerm && <ResizableHandle />
                         }
 
-                        <ResizablePanel defaultSize={100} minSize={30}>
-                            <XTerminalNoSSR socket={socket} />
+                        {/* Terminal panel */}
+                        <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
+                        <ResizablePanel defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
+                            <XTerminalNoSSR socket={socket} showTerm={showTerm} />
                         </ResizablePanel>
 
                     </ResizablePanelGroup>
-
                 </ResizablePanel>
+
+                {
+                    showPreview && (
+                        <>
+                            <ResizableHandle />
+
+                            <ResizablePanel defaultSize={30} minSize={20}>
+                                <Preview />
+                            </ResizablePanel>
+
+                        </>
+                    )
+                }
             </ResizablePanelGroup>
         </div>
     );
 }
 
 function OpenedFilesTab() {
-    const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem } = useCodingStates();
-    // const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
+    const { replId } = useParams();
 
     useEffect(() => {
         if (selectedTabRef.current) {
@@ -172,22 +176,27 @@ function OpenedFilesTab() {
         const newOpenedFiles = openedFiles.filter((f) => f.path !== file.path);
         setOpenedFiles(newOpenedFiles);
 
+        const newMruFiles = mruFiles.filter((f) => f.path !== file.path);
+        setMruFiles(newMruFiles);
+
         if (file.path === selectedFile?.path) {
-            selectFile(newOpenedFiles.at(-1));
+            selectFile(mruFiles[0]);
         }
     }
 
     function selectFile(file: TFileItem | undefined) { // for file to be selected both has to be set
+        if (file) {
+            router.push(`/code/${replId}?path=${file.path}`);
+            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
+        }
+
         setSelectedFile(file);
         setSelectedItem(file);
     }
 
     return (
         <div className="flex items-center gap-2">
-            <ScrollArea
-                // ref={scrollContainerRef}
-                className="overflow-x-auto"
-            >
+            <ScrollArea className="overflow-x-auto">
                 <div className="flex">
                     {
                         openedFiles.map((file) => {
@@ -198,7 +207,8 @@ function OpenedFilesTab() {
                                     key={file.path}
                                     ref={isSelected ? selectedTabRef : null}
                                     role="button"
-                                    className={cn("group flex items-center gap-2 cursor-pointer border-r p-2 pl-3", isSelected ? "bg-sidebar font-medium" : "border-b")}
+                                    className={cn("group flex items-center gap-2 cursor-pointer border-r p-2 pl-3", isSelected ? "dark:bg-[#1e1e1e] bg-white font-medium" : "border-b")}
+                                    style={{ boxShadow: isSelected ? "inset 0 1px dodgerblue" : "" }}
                                     onClick={() => selectFile(file)}
                                 >
                                     <span>

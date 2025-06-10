@@ -23,7 +23,10 @@ export default async function WorkspacePage(props: { searchParams: Promise<Works
                 <CreateProjectButton />
             </header>
 
-            <ProjectsSearch />
+            <Suspense fallback={<div>Loading...</div>}>
+                <ProjectsSearch />
+
+            </Suspense>
 
             <Suspense fallback={<CardsSkeleton />}>
                 <MyProjectsList searchParams={props.searchParams} />

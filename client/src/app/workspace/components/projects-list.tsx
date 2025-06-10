@@ -22,7 +22,9 @@ export default async function MyProjectsList(props: { searchParams: Promise<Prop
         order: searchParams.order
     });
 
-    const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects");
+    const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects", {
+        next: { revalidate: 0 } // increase this in production
+    });
 
     if (!res.ok) redirect("/auth/login");
 
@@ -94,7 +96,7 @@ function NoProjectsCreated() {
                 <FolderPlus className="size-8 text-primary" />
             </div>
 
-            <h3 className="text-lg font-semibold mb-3">You haven't created any project yet</h3>
+            <h3 className="text-lg font-semibold mb-3">You haven&apos;t created any project yet</h3>
 
             <p className="text-muted-foreground mb-8 max-w-md text-sm">
                 Create your first project to start coding in the cloud with Qubide

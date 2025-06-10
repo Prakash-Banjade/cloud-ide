@@ -1,6 +1,5 @@
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu"
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { EItemType, TreeItem } from "./file-tree"
-import { Pencil, Trash } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"
@@ -60,7 +59,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                 <ContextMenuTrigger>
                     <section
                         className={cn(isOpen && "outline")}
-                        onContextMenu={e => {
+                        onContextMenu={() => {
                             if (item.type === EItemType.DIR && !Array.isArray(item.children)) { // fetch children if they don't exist, this is to show alert dialog based on children presence
                                 socket?.emit("fetchDir", item.path, (data: TreeItem[]) => {
                                     setFileStructure(prev =>
@@ -74,15 +73,35 @@ export function TreeItemContextMenu({ children, item }: Props) {
                     </section>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                    <ContextMenuItem onClick={() => setIsRenameOpen(true)}>
-                        <Pencil />
+                    {
+                        item.type === EItemType.DIR && (
+                            <>
+                                <ContextMenuItem
+                                    className="px-4 pr-20"
+                                >
+                                    New File...
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    className="px-4"
+                                >
+                                    New Folder...
+                                </ContextMenuItem>
+                                <ContextMenuSeparator />
+                            </>
+                        )
+                    }
+                    <ContextMenuItem
+                        className="px-4"
+                        onClick={() => setIsRenameOpen(true)}
+                    >
+                        {/* <Pencil /> */}
                         Rename
                     </ContextMenuItem>
                     <ContextMenuItem
-                        className="text-destructive hover:!text-destructive"
+                        className="text-destructive hover:!text-destructive px-4"
                         onClick={(item.type === EItemType.DIR && item.children?.length) ? () => setIsAlertOpen(true) : handleDelete} // show alert only if item is dir and has children
                     >
-                        <Trash className="text-destructive" />
+                        {/* <Trash className="text-destructive" /> */}
                         Delete
                     </ContextMenuItem>
                 </ContextMenuContent>

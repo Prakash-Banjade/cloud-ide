@@ -25,7 +25,7 @@ export function ResponsiveAlertDialog({
     title: string;
     description?: string;
     className?: string;
-    action: Function;
+    action: () => void;
     actionLabel?: string;
     isLoading?: boolean;
     loadingText?: string;

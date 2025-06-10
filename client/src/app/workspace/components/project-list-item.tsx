@@ -1,7 +1,7 @@
 import { format, formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Code, Calendar, Clock, MoreVertical, ExternalLink, Copy, Trash, Edit } from "lucide-react"
+import { Code, Calendar, Clock, MoreVertical, ExternalLink, Trash, Edit } from "lucide-react"
 import { TProject } from "@/types"
 import Link from "next/link"
 import { Card } from "@/components/ui/card"

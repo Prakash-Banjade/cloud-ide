@@ -4,14 +4,15 @@ import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
 import { CopyMinus, FilePlus2, FolderPlus, RotateCcw } from 'lucide-react'
 import React, { useState } from 'react'
-import { getParentFolder } from '../fns/file-manager-fns'
+import { getParentFolder, useRefreshTree } from '../fns/file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
 import { EItemType, TreeItem } from './file-tree'
 import { NewItemForm } from './item-form'
 
 export default function ExplorerActions() {
-    const { selectedItem, fileStructure, refreshTree, setFileStructure } = useCodingStates();
+    const { selectedItem, fileStructure, setFileStructure } = useCodingStates();
+    const refreshTree = useRefreshTree();
     const [isOpen, setIsOpen] = useState(false);
     const [newItemType, setNewItemType] = useState<EItemType>(EItemType.FILE);
     const { socket } = useSocket();
@@ -22,7 +23,7 @@ export default function ExplorerActions() {
         if (!socket) return;
 
         socket.emit('fetchDir', '', (data: TreeItem[]) => {
-            refreshTree(data);
+            refreshTree({ content: data, socket });
         })
     }
 

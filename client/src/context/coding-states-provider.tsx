@@ -1,14 +1,19 @@
 "use client";
 
-import { fetchDirAsync, findItem, onItemSelect, updateTree } from '@/app/code/[replId]/fns/file-manager-fns';
-import { TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { useSocket } from './socket-provider';
+import { EItemType, TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
+import { useParams } from 'next/navigation';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
 import { TProject } from '@/types';
+import cookie from 'js-cookie';
+import { z } from 'zod';
+import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
+import { useSocket } from './socket-provider';
+import { useSession } from 'next-auth/react';
+import CodingPageLoader from '@/app/code/[replId]/components/coding-page-loader';
+
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -21,10 +26,15 @@ interface CodingStatesContextType {
     setOpenedFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
     isSyncing: boolean;
     setIsSyncing: (value: boolean) => void;
-    refreshTree: (content: TreeItem[]) => Promise<void>;
     editorInstance: IStandaloneCodeEditor | null,
     setEditorInstance: React.Dispatch<React.SetStateAction<IStandaloneCodeEditor | null>>
     project: TProject | undefined;
+    projectRunning: boolean;
+    setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>;
+    mruFiles: TFileItem[];
+    setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
+    treeLoaded: boolean;
+    setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -37,73 +47,30 @@ interface CodingStatesProviderProps {
 }
 
 export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
-    const searchParams = useSearchParams();
     const params = useParams();
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
-    const { socket } = useSocket();
-    const router = useRouter();
+    const [projectRunning, setProjectRunning] = useState(false);
+    const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
+    const [treeLoaded, setTreeLoaded] = useState(false);
     const axios = useAxiosPrivate();
+    const { socket } = useSocket();
+    const { status } = useSession();
 
     const replId = params.replId;
 
-    const { data, error, isLoading } = useQuery({
-        queryKey: ['project'],
+    const { data, isLoading } = useQuery({
+        queryKey: ['project', replId],
         queryFn: async () => axios.get<TProject>(`/projects/${replId}`),
+        enabled: status === 'authenticated',
+        staleTime: Infinity,
+        gcTime: Infinity
     });
 
     const [isSyncing, setIsSyncing] = useState(false);
-
-    async function refreshTree(content: TreeItem[]) {
-        if (!socket) return;
-
-        // first show whatever the server gave us at top-level
-        let tree = content;
-        setFileStructure(tree)
-
-        const path = searchParams.get('path')
-        if (!path) return
-
-        // break “/a/b/c.txt” into ["a","b","c.txt"]
-        const segments = path.split('/').filter(Boolean)
-        let cumulative = ''
-
-        // for each folder segment (all except the last)
-        for (let i = 0; i < segments.length - 1; i++) {
-            cumulative += '/' + segments[i]
-
-            // do we already have that folder in our current tree?
-            const folder = findItem(tree, cumulative)
-            if (!folder || folder.type !== 'dir') break
-
-            // if it has no children yet, fetch them
-            if (!Array.isArray(folder.children)) {
-                const data = await fetchDirAsync(socket, cumulative)
-                tree = updateTree(tree, cumulative, data)
-            }
-            // if it already has children, just toggle expanded
-            else {
-                tree = updateTree(tree, cumulative, null)
-            }
-
-            // update state so UI shows the expansion as we go
-            setFileStructure(tree)
-        }
-
-        // now finally select the last segment (could be file or dir)
-        const target = findItem(tree, path)
-        if (target) {
-            // if it’s a file, fetch its content & mark selected
-            onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket)
-            // also push the same URL so router stays in sync
-            if (target.type === 'file') {
-                router.replace(`/code/${replId}?path=${target.path}`)
-            }
-        }
-    }
 
     const value = {
         fileStructure,
@@ -116,15 +83,84 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setOpenedFiles,
         isSyncing,
         setIsSyncing,
-        refreshTree,
         editorInstance,
         setEditorInstance,
-        project: data?.data
+        project: data?.data,
+        projectRunning,
+        setProjectRunning,
+        mruFiles,
+        setMruFiles,
+        treeLoaded,
+        setTreeLoaded
     };
 
-    if (isLoading) return <div>Loading project...</div>;
+    useEffect(() => {
+        if (!treeLoaded) return;
 
-    if (error) router.push('/workspace');
+        const openedFiles = cookie.get(`openedFiles:${replId}`);
+        const mruFiles = cookie.get(`mruFiles:${replId}`);
+        const selectedFile = cookie.get(`selectedFile:${replId}`);
+
+        try {
+            if (openedFiles) {
+                const parsedData = JSON.parse(openedFiles);
+
+                const { data, success } = z.array(z.string()).safeParse(parsedData);
+
+                if (success) {
+                    setOpenedFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                }
+            }
+            if (mruFiles) {
+                const parsedData = JSON.parse(mruFiles);
+
+                const { data, success } = z.array(z.string()).safeParse(parsedData);
+
+                if (success) {
+                    setMruFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                }
+            }
+            if (selectedFile) {
+                const file = findItem(fileStructure, selectedFile);
+
+                if (file && file.type === EItemType.FILE) {
+                    socket?.emit("fetchContent", { path: file.path }, (data: string) => { // load data
+                        file.content = data;
+                    });
+                    setSelectedFile(file);
+                    setSelectedItem(file);
+                }
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }, [treeLoaded])
+
+    useEffect(() => {
+        if (!treeLoaded) return;
+        cookie.set(`openedFiles:${replId}`, JSON.stringify(openedFiles.map(f => f.path)), { expires: 7 });
+    }, [openedFiles]);
+
+    useEffect(() => {
+        if (!treeLoaded) return;
+        cookie.set(`mruFiles:${replId}`, JSON.stringify(mruFiles.map(f => f.path)), { expires: 7 });
+    }, [mruFiles]);
+
+    useEffect(() => {
+        if (!selectedFile) return;
+
+        // load the content if not loaded
+        if (selectedFile.content === undefined) {
+            socket?.emit("fetchContent", { path: selectedFile.path }, (data: string) => {
+                selectedFile.content = data;
+            });
+        }
+
+        cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
+
+    }, [selectedFile]);
+
+    if (isLoading || status === 'loading') return <CodingPageLoader state='loading_project' />;
 
     return (
         <CodingStatesContext.Provider value={value}>

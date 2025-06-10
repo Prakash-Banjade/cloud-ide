@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { RunnerModule } from './runner.module';
 import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(RunnerModule);
 
   const configService = app.get(ConfigService);
-  
+
   app.enableCors({
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: runner-pdb
+  namespace: qubide
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app: node-node

@@ -1,5 +1,6 @@
 "use client"
 
+import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
@@ -17,19 +18,28 @@ interface SocketProviderProps {
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const params = useParams();
     const { replId } = params;
+    const { data } = useSession();
 
     const [socket, setSocket] = useState<Socket | null>(null);
 
     useEffect(() => {
-        if (!replId) return;
-        const newSocket = io(`ws://${replId}.prakashbanjade.com`);
-        // const newSocket = io(`ws://127.0.0.1:3003`);
+        if (!replId || !data) return;
+
+        const newSocket = io(
+            // `ws://127.0.0.1:3003`,
+            `ws://${replId}.prakashbanjade.com`,
+            {
+                auth: {
+                    access_token: data.backendTokens.access_token
+                }
+            }
+        );
         setSocket(newSocket);
 
         return () => {
             newSocket.disconnect();
         };
-    }, [replId]);
+    }, [replId, data]);
 
     return (
         <SocketContext.Provider value={{ socket }}>

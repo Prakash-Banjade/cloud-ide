@@ -2,6 +2,9 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
+import { UseGuards } from '@nestjs/common';
+import { WsGuard } from 'src/guard/ws.guard';
+import { ConfigService } from '@nestjs/config';
 
 @WebSocketGateway({
   cors: {
@@ -9,37 +12,26 @@ import { File, FileSystemService } from './file-system.service';
     methods: ['GET', 'POST'],
   },
 })
+// @UseGuards(WsGuard)
 export class FileSystemGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
 
+  private replId: string;
+
   constructor(
     private readonly minioService: MinioService,
     private readonly fileSystemService: FileSystemService,
-  ) { }
+    private readonly configService: ConfigService,
+  ) {
+    this.replId = this.configService.get('REPL_ID') as string;
+    // this.replId = "node-node";
+  }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    // TODO: Perform authentication
-    console.log("user connected - from file-system.gateway v2");
-
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
     socket.emit('loaded', { rootContent });
-  }
-
-  getReplId(socket: Socket) {
-    // Split the host by '.' and take the first part as replId
-    const host = socket.handshake.headers.host;
-    const replId = host?.split('.')[0];
-
-    // return "node-node"; // hardcoded for now
-
-    if (!replId) {
-      socket.disconnect();
-      return;
-    }
-
-    return replId;
   }
 
   @SubscribeMessage('fetchDir')
@@ -63,12 +55,8 @@ export class FileSystemGateway implements OnGatewayConnection {
     const { path: filePath, content } = payload;
     const fullPath = `/workspace/${filePath}`;
     await this.fileSystemService.saveFile(fullPath, content);
-    // Use replId stored in terminalManager or a map
-    const replId = this.getReplId(socket);
 
-    if (!replId) return;
-
-    await this.minioService.saveToMinio(`code/${replId}`, filePath, content);
+    await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);
 
     return true; // need to return something, used in frontend to handle syncing status
   }

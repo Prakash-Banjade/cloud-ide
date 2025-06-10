@@ -13,7 +13,12 @@ import { EItemType } from "./file-tree";
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
 
-export default function TerminalComponent({ socket }: { socket: Socket }) {
+type XterminalProps = {
+    socket: Socket,
+    showTerm: boolean
+}
+
+export default function XTerminal({ socket, showTerm }: XterminalProps) {
     const { fileStructure } = useCodingStates();
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
@@ -23,7 +28,7 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
     useEffect(() => {
         const terminal = new Terminal({
             cursorBlink: true,
-            cols: 200,
+            cols: 1000,
             theme: {
                 background: theme === "dark" ? "black" : "white",
                 foreground: theme === "dark" ? "white" : "black",
@@ -38,11 +43,11 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
                 terminal.dispose();
             }
         };
-    }, [theme]);
+    }, [socket]);
 
     useEffect(() => {
         if (!term || !socket || !terminalRef.current) return;
-        
+
         term.loadAddon(fitAddon);
         term.open(terminalRef.current);
         fitAddon.fit();
@@ -65,17 +70,39 @@ export default function TerminalComponent({ socket }: { socket: Socket }) {
             socket.emit("terminalData", { data: "npm install\n" });
         }
 
+        // --- observe container resizes and re-fit ---
+        const ro = new ResizeObserver(() => {
+            fitAddon.fit();
+        });
+        ro.observe(terminalRef.current);
+
         return () => {
             if (term) term.dispose();
             socket.off("terminal");
+            ro.disconnect();
         };
     }, [term]);
 
+    useEffect(() => {
+        if (term) {
+            term.options.theme = {
+                background: theme === "dark" ? "black" : "white",
+                foreground: theme === "dark" ? "white" : "black",
+                cursor: theme === "dark" ? "white" : "black",
+            }
+        }
+    }, [theme, term]);
 
+    // Focus the terminal when showTerm is true
+    useEffect(() => {
+        if (showTerm && term) {
+            term.focus();
+        }
+    }, [showTerm])
 
     return (
         <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-black" : "bg-white")}>
-            <div className="h-full w-full" ref={terminalRef} />
+            <div className="term-container h-full w-full" ref={terminalRef} />
         </div>
     );
 };

@@ -1,4 +1,3 @@
-import React from 'react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ProfileAvatar } from '../ui/avatar'
 import { Button } from '../ui/button'
@@ -13,7 +12,7 @@ export default function ProfileDropdown() {
     const { data, status } = useSession();
     const router = useRouter();
 
-    const { mutateAsync, isPending } = useMutation<any, any>({
+    const { mutateAsync, isPending } = useMutation({
         mutationFn: async () => {
             await axiosClient.post(`/auth/logout`, {}, {
                 headers: {

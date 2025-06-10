@@ -1,8 +1,9 @@
 import LoadingButton from "@/components/loading-button";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -25,6 +26,7 @@ type Props = {
 
 export default function ProjectRenameForm({ defaultValues, projectId, setIsOpen, toastOnSuccess = true }: Props) {
     const router = useRouter();
+    const queryclient = useQueryClient();
 
     const form = useForm<formSchemaType>({
         resolver: zodResolver(formSchema),
@@ -41,6 +43,10 @@ export default function ProjectRenameForm({ defaultValues, projectId, setIsOpen,
             toastOnSuccess,
         });
 
+        queryclient.invalidateQueries({
+            queryKey: ['project'],
+        });
+
         router.refresh();
 
         if (setIsOpen) setIsOpen(false);
@@ -54,6 +60,7 @@ export default function ProjectRenameForm({ defaultValues, projectId, setIsOpen,
                     name="projectName"
                     render={({ field }) => (
                         <FormItem>
+                            <FormLabel>Project name</FormLabel>
                             <FormControl>
                                 <Input placeholder="My awesome project" {...field} />
                             </FormControl>
@@ -65,9 +72,10 @@ export default function ProjectRenameForm({ defaultValues, projectId, setIsOpen,
                 <LoadingButton
                     type="submit"
                     isLoading={isPending}
-                    loadingText="Saving..."
+                    loadingText="Updating..."
+                    size={"sm"}
                 >
-                    Save
+                    Update
                 </LoadingButton>
             </form>
         </Form>

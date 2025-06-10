@@ -1,4 +1,4 @@
-# 1) Namespace definition (unchanged)
+# 1) Namespace definition
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -6,7 +6,18 @@ metadata:
   labels:
     name: minio-dev
 ---
-# 2) PVC: dynamically provisions a GCE PD under the hood (Autopilot default StorageClass)
+# 2) Secret: contains custom MinIO access and secret keys
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-creds
+  namespace: minio-dev
+stringData:
+  MINIO_ACCESS_KEY: "prakash-banjade"
+  MINIO_SECRET_KEY: "prakash-banjade-secret"
+type: Opaque
+---
+# 3) PVC: dynamically provisions a GCE PD under the hood (Autopilot default StorageClass)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -21,7 +32,7 @@ spec:
   # If you have a custom StorageClass, uncomment and set it:
   # storageClassName: standard
 ---
-# 3) Pod now mounts the PVC instead of hostPath
+# 4) Pod now mounts the PVC instead of hostPath, and uses the secret to override default credentials
 apiVersion: v1
 kind: Pod
 metadata:
@@ -38,16 +49,26 @@ spec:
         - -c
       args:
         - minio server /data --console-address :9090
+      env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: MINIO_SECRET_KEY
       volumeMounts:
         - mountPath: /data
           name: localvolume
-  # ← Removed nodeSelector entirely
   volumes:
     - name: localvolume
       persistentVolumeClaim:
         claimName: minio-pvc
 ---
-# 4) Service (unchanged)
+# 5) Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -65,3 +86,32 @@ spec:
       port: 9090
       targetPort: 9090
       protocol: TCP
+
+# # 6) Ingress to expose MinIO API and Console via a specific domain
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: minio-ingress
+#   namespace: minio-dev
+#   annotations:
+#     nginx.ingress.kubernetes.io/rewrite-target: /
+# spec:
+#   ingressClassName: nginx
+#   rules:
+#     - host: minio.qubide.cloud            # replace with your actual domain
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: minio
+#                 port:
+#                   number: 9000         # MinIO API port
+#           - path: /console
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: minio
+#                 port:
+#                   number: 9090         # MinIO Console port

@@ -1,6 +1,70 @@
 import { Socket } from "socket.io-client";
 import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree";
 import { Dispatch, SetStateAction } from "react";
+import { useCodingStates } from "@/context/coding-states-provider";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+
+type RefreshTreeProps = {
+    content: TreeItem[],
+    socket: Socket,
+    path?: string | undefined,
+}
+
+export function useRefreshTree() {
+    const { setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles } = useCodingStates();
+    const router = useRouter();
+    const { replId } = useParams();
+    const searchParams = useSearchParams();
+
+    async function refreshTree({ content, socket }: RefreshTreeProps) {
+        // first show whatever the server gave us at top-level
+        let tree = content;
+        setFileStructure(tree)
+
+        // then expand any folders that are in the path
+        const path = searchParams.get('path')
+        if (!path) return
+
+        // break “/a/b/c.txt” into ["a","b","c.txt"]
+        const segments = path.split('/').filter(Boolean)
+        let cumulative = ''
+
+        // for each folder segment (all except the last)
+        for (let i = 0; i < segments.length - 1; i++) {
+            cumulative += '/' + segments[i]
+
+            // do we already have that folder in our current tree?
+            const folder = findItem(tree, cumulative)
+            if (!folder || folder.type !== 'dir') break
+
+            // if it has no children yet, fetch them
+            if (!Array.isArray(folder.children)) {
+                const data = await fetchDirAsync(socket, cumulative)
+                tree = updateTree(tree, cumulative, data)
+            }
+            // if it already has children, just toggle expanded
+            else {
+                tree = updateTree(tree, cumulative, null)
+            }
+
+            // update state so UI shows the expansion as we go
+            setFileStructure(tree)
+        }
+
+        // now finally select the last segment (could be file or dir)
+        const target = findItem(tree, path)
+        if (target) {
+            // if it’s a file, fetch its content & mark selected
+            onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket)
+            // also push the same URL so router stays in sync
+            if (target.type === 'file') {
+                router.replace(`/code/${replId}?path=${target.path}`)
+            }
+        }
+    }
+
+    return refreshTree;
+}
 
 export const onItemSelect = (
     file: TreeItem,
@@ -28,12 +92,6 @@ export const onItemSelect = (
             })
         }
     } else {
-        if (!file.content?.length) { // if no content is loaded, fetch the content
-            socket?.emit("fetchContent", { path: file.path }, (data: string) => {
-                file.content = data;
-            });
-        }
-
         setSelectedFile(file);
         setOpenedFiles(prev => {
             return prev.some(f => f.path === file.path) ? prev : [...prev, file];
