@@ -39,7 +39,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         return () => {
             newSocket.disconnect();
         };
-    }, [replId]);
+    }, [replId, data]);
 
     return (
         <SocketContext.Provider value={{ socket }}>

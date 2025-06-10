@@ -23,7 +23,7 @@ export class ProjectsController {
   }
 
   @Post('start')
-  startResource(@Body() resourceStartDto: ResourceStartDto, @CurrentUser() currentUser: AuthUser) {
+  startResource(@Query() resourceStartDto: ResourceStartDto, @CurrentUser() currentUser: AuthUser) {
     return this.orchestratorService.startResource(resourceStartDto, currentUser);
   }
 

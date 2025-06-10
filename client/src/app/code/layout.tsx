@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import React from 'react'
+import React, { Suspense } from 'react'
 
 export const metadata: Metadata = {
     title: 'Code',
@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 export default async function CodeLayout({ children }: { children: React.ReactNode }) {
     return (
         <div>
-            {children}
+            <Suspense fallback={<div>Booting your repl...</div>}>
+                {children}
+            </Suspense>
         </div>
     )
 }

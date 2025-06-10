@@ -11,6 +11,7 @@ import cookie from 'js-cookie';
 import { z } from 'zod';
 import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
+import { useSession } from 'next-auth/react';
 
 
 interface CodingStatesContextType {
@@ -56,12 +57,16 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [treeLoaded, setTreeLoaded] = useState(false);
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
+    const { status } = useSession();
 
     const replId = params.replId;
 
     const { data, isLoading } = useQuery({
         queryKey: ['project', replId],
         queryFn: async () => axios.get<TProject>(`/projects/${replId}`),
+        enabled: status === 'authenticated',
+        staleTime: Infinity,
+        gcTime: Infinity
     });
 
     const [isSyncing, setIsSyncing] = useState(false);

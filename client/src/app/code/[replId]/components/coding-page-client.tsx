@@ -1,6 +1,5 @@
 "use client"
 
-import { useAppMutation } from "@/hooks/useAppMutation";
 import { cn } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -12,8 +11,6 @@ import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
-import { useSession } from "next-auth/react";
-import FullPageLoader from "./full-page-loader";
 import dynamic from "next/dynamic";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getFileIcon } from "./file-icons";
@@ -28,27 +25,10 @@ const XTerminalNoSSR = dynamic(() => import("./terminal"), {
 });
 
 export default function CodingPageClient() {
-    const params = useParams();
-    const { status } = useSession();
-
-    const { mutateAsync, isPending } = useAppMutation();
-
-    useEffect(() => {
-        const startResources = async () => {
-            await mutateAsync({
-                endpoint: `/projects/start`,
-                method: 'post',
-                data: { replId: params.replId }
-            });
-        }
-
-        if (status === "authenticated") startResources();
-    }, []);
-
     return (
         <SocketProvider>
             <CodingStatesProvider>
-                <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} />
+                {/* <FullPageLoader isLoadingUser={status === 'loading'} isLoadingRepl={isPending} /> */}
                 <CodingPagePostPodCreation />
             </CodingStatesProvider>
         </SocketProvider>
@@ -83,7 +63,7 @@ export const CodingPagePostPodCreation = () => {
                 content: rootContent,
                 socket,
             });
-            setTreeLoaded(true)
+            setTreeLoaded(true);
         });
 
         socket.on('process:status', (data: { isRunning: boolean }) => {
