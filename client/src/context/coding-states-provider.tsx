@@ -23,7 +23,9 @@ interface CodingStatesContextType {
     setEditorInstance: React.Dispatch<React.SetStateAction<IStandaloneCodeEditor | null>>
     project: TProject | undefined;
     projectRunning: boolean;
-    setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>
+    setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>;
+    mruFiles: TFileItem[];
+    setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -43,11 +45,12 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
     const [projectRunning, setProjectRunning] = useState(false);
+    const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const axios = useAxiosPrivate();
 
     const replId = params.replId;
 
-    const { data, error, isLoading } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['project', replId],
         queryFn: async () => axios.get<TProject>(`/projects/${replId}`),
     });
@@ -69,7 +72,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setEditorInstance,
         project: data?.data,
         projectRunning,
-        setProjectRunning
+        setProjectRunning,
+        mruFiles,
+        setMruFiles
     };
 
     if (isLoading) return <div>Loading project...</div>;

@@ -1,27 +1,23 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { File } from "lucide-react"
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getFileIcon } from "./file-icons"
+import { TFileItem } from "./file-tree"
 
 export function FileTabSwitcher() {
-    const { openedFiles, selectedFile, setSelectedItem, setSelectedFile } = useCodingStates();
+    const { selectedFile, setSelectedItem, setSelectedFile, setMruFiles, mruFiles } = useCodingStates();
 
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isAltPressed, setIsAltPressed] = useState(false);
-
-    const activeFileIndex = openedFiles.findIndex((file) => file.path === selectedFile?.path);
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -34,16 +30,15 @@ export function FileTabSwitcher() {
             if (event.altKey && event.key.toLowerCase() === "e") {
                 event.preventDefault()
 
-                if (openedFiles.length === 0) return;
+                if (mruFiles.length === 0) return;
 
                 if (!isOpen) {
-                    // First time pressing Alt+E - show switcher and start from next file
+                    // First time pressing Alt+E - show switcher and start from second file (index 1)
                     setIsOpen(true)
-                    const nextIndex = (activeFileIndex + 1) % openedFiles.length
-                    setSelectedIndex(nextIndex)
+                    setSelectedIndex(1) // Start from second file in MRU order
                 } else {
                     // Already visible - navigate to next file
-                    setSelectedIndex((prevIndex) => (prevIndex + 1) % openedFiles.length)
+                    setSelectedIndex((prevIndex) => (prevIndex + 1) % mruFiles.length)
                 }
             }
 
@@ -51,14 +46,15 @@ export function FileTabSwitcher() {
             if (event.altKey && event.shiftKey && event.key.toLowerCase() === "e") {
                 event.preventDefault()
 
+                if (mruFiles.length === 0) return;
+
                 if (!isOpen) {
-                    // First time pressing Alt+Shift+E - show switcher and start from previous file
+                    // First time pressing Alt+Shift+E - show switcher and start from last file
                     setIsOpen(true)
-                    const prevIndex = (activeFileIndex - 1 + openedFiles.length) % openedFiles.length
-                    setSelectedIndex(prevIndex)
+                    setSelectedIndex(mruFiles.length - 1)
                 } else {
                     // Already visible - navigate to previous file
-                    setSelectedIndex((prevIndex) => (prevIndex - 1 + openedFiles.length) % openedFiles.length)
+                    setSelectedIndex((prevIndex) => (prevIndex - 1 + mruFiles.length) % mruFiles.length)
                 }
             }
 
@@ -66,22 +62,23 @@ export function FileTabSwitcher() {
             if (isOpen) {
                 if (event.key === "ArrowDown") {
                     event.preventDefault()
-                    setSelectedIndex((prevIndex) => (prevIndex + 1) % openedFiles.length)
+                    setSelectedIndex((prevIndex) => (prevIndex + 1) % mruFiles.length)
                 } else if (event.key === "ArrowUp") {
                     event.preventDefault()
-                    setSelectedIndex((prevIndex) => (prevIndex - 1 + openedFiles.length) % openedFiles.length)
+                    setSelectedIndex((prevIndex) => (prevIndex - 1 + mruFiles.length) % mruFiles.length)
                 } else if (event.key === "Enter") {
                     event.preventDefault()
-                    setSelectedFile(openedFiles[selectedIndex])
-                    setSelectedItem(openedFiles[selectedIndex])
-                    setIsOpen(false)
+                    const selectedFileItem = mruFiles[selectedIndex];
+                    if (selectedFileItem) {
+                        onFileSelect(selectedFileItem);
+                    }
                 } else if (event.key === "Escape") {
                     event.preventDefault()
                     setIsOpen(false)
                 }
             }
         },
-        [isOpen, activeFileIndex, openedFiles.length, selectedIndex],
+        [isOpen, mruFiles.length, mruFiles],
     )
 
     const handleKeyUp = useCallback(
@@ -90,13 +87,15 @@ export function FileTabSwitcher() {
                 setIsAltPressed(false)
                 if (isOpen) {
                     // Alt released - select the file and hide switcher
-                    setSelectedFile(openedFiles[selectedIndex])
-                    setSelectedItem(openedFiles[selectedIndex])
+                    const selectedFileItem = mruFiles[selectedIndex];
+                    if (selectedFileItem) {
+                        onFileSelect(selectedFileItem);
+                    }
                     setIsOpen(false)
                 }
             }
         },
-        [isOpen, selectedIndex],
+        [isOpen, selectedIndex, mruFiles],
     )
 
     useEffect(() => {
@@ -117,7 +116,13 @@ export function FileTabSwitcher() {
             }, 100)
             return () => clearTimeout(timer)
         }
-    }, [isOpen, isAltPressed])
+    }, [isOpen, isAltPressed]);
+
+    function onFileSelect(file: TFileItem) {
+        setSelectedFile(file);
+        setSelectedItem(file);
+        setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -125,9 +130,9 @@ export function FileTabSwitcher() {
                 <DialogTitle className="sr-only">Open file</DialogTitle>
                 <ScrollArea className="max-h-[60vh] overflow-y-auto">
                     <div className="flex flex-col py-2">
-                        {openedFiles.map((file, index) => {
+                        {mruFiles.map((file, index) => {
                             const isSelected = index === selectedIndex
-                            const isActive = index === activeFileIndex
+                            const isActive = file.path === selectedFile?.path
 
                             return (
                                 <div
@@ -138,12 +143,10 @@ export function FileTabSwitcher() {
                                         isActive ? "font-medium" : ""
                                     )}
                                     onClick={() => {
-                                        setSelectedItem(file)
-                                        setSelectedFile(file)
+                                        onFileSelect(file);
                                         setIsOpen(false)
                                     }}
                                 >
-                                    {/* <File className="w-4 h-4 flex-shrink-0" /> */}
                                     {getFileIcon(file.name)}
                                     <span className="truncate">{file.name}</span>
                                     <span className="text-xs text-muted-foreground flex-shrink-0 ml-auto">

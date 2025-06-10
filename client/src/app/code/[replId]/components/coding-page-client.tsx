@@ -178,8 +178,7 @@ export const CodingPagePostPodCreation = ({ loaded, setLoaded }: { loaded: boole
 }
 
 function OpenedFilesTab() {
-    const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem } = useCodingStates();
-    // const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -197,20 +196,25 @@ function OpenedFilesTab() {
         const newOpenedFiles = openedFiles.filter((f) => f.path !== file.path);
         setOpenedFiles(newOpenedFiles);
 
+        const newMruFiles = mruFiles.filter((f) => f.path !== file.path);
+        setMruFiles(newMruFiles);
+
         if (file.path === selectedFile?.path) {
-            selectFile(newOpenedFiles.at(-1));
+            selectFile(mruFiles[0]);
         }
     }
 
     function selectFile(file: TFileItem | undefined) { // for file to be selected both has to be set
         setSelectedFile(file);
         setSelectedItem(file);
+        if (file) {
+            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
+        }
     }
 
     return (
         <div className="flex items-center gap-2">
             <ScrollArea
-                // ref={scrollContainerRef}
                 className="overflow-x-auto"
             >
                 <div className="flex">
@@ -224,6 +228,7 @@ function OpenedFilesTab() {
                                     ref={isSelected ? selectedTabRef : null}
                                     role="button"
                                     className={cn("group flex items-center gap-2 cursor-pointer border-r p-2 pl-3", isSelected ? "dark:bg-[#1e1e1e] bg-white font-medium" : "border-b")}
+                                    style={{ boxShadow: isSelected ? "inset 0 1px dodgerblue" : "" }}
                                     onClick={() => selectFile(file)}
                                 >
                                     <span>
