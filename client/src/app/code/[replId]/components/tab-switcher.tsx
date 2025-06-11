@@ -11,15 +11,15 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getFileIcon } from "./file-icons"
 import { TFileItem } from "./file-tree"
-import { useParams, useRouter } from "next/navigation"
+import { onFileSelect } from "../fns/file-manager-fns"
+import { useSocket } from "@/context/socket-provider"
 
 export function FileTabSwitcher() {
     const { selectedFile, setSelectedItem, setSelectedFile, setMruFiles, mruFiles } = useCodingStates();
-    const router = useRouter();
-    const { replId } = useParams();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isAltPressed, setIsAltPressed] = useState(false);
+    const { socket } = useSocket();
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -72,7 +72,7 @@ export function FileTabSwitcher() {
                     event.preventDefault()
                     const selectedFileItem = mruFiles[selectedIndex];
                     if (selectedFileItem) {
-                        onFileSelect(selectedFileItem);
+                        handleFileSelect(selectedFileItem);
                     }
                 } else if (event.key === "Escape") {
                     event.preventDefault()
@@ -91,7 +91,7 @@ export function FileTabSwitcher() {
                     // Alt released - select the file and hide switcher
                     const selectedFileItem = mruFiles[selectedIndex];
                     if (selectedFileItem) {
-                        onFileSelect(selectedFileItem);
+                        handleFileSelect(selectedFileItem);
                     }
                     setIsOpen(false)
                 }
@@ -120,15 +120,11 @@ export function FileTabSwitcher() {
         }
     }, [isOpen, isAltPressed]);
 
-    function onFileSelect(file: TFileItem) {
-        setSelectedFile(file);
-        setSelectedItem(file);
+    function handleFileSelect(file: TFileItem) {
+        if (!socket) return;
+        
+        onFileSelect({ file, setSelectedFile, setSelectedItem, socket });
         setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
-
-        window.requestAnimationFrame(() => {
-            router.push(`/code/${replId}?path=${file.path}`);
-        });
-
     }
 
     return (
@@ -150,7 +146,7 @@ export function FileTabSwitcher() {
                                         isActive ? "font-medium" : ""
                                     )}
                                     onClick={() => {
-                                        onFileSelect(file);
+                                        handleFileSelect(file);
                                         setIsOpen(false)
                                     }}
                                 >

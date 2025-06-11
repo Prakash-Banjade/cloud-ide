@@ -13,6 +13,7 @@ import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
 import CodingPageLoader from '@/app/code/[replId]/components/coding-page-loader';
+import { SocketEvents } from '@/lib/CONSTANTS';
 
 
 interface CodingStatesContextType {
@@ -108,7 +109,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 const { data, success } = z.array(z.string()).safeParse(parsedData);
 
                 if (success) {
-                    setOpenedFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                    setOpenedFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined, setFileStructure)).filter(f => !!f) as TFileItem[]);
                 }
             }
             if (mruFiles) {
@@ -117,18 +118,18 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 const { data, success } = z.array(z.string()).safeParse(parsedData);
 
                 if (success) {
-                    setMruFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                    setMruFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined, setFileStructure)).filter(f => !!f) as TFileItem[]);
                 }
             }
             if (selectedFile) {
-                const file = findItem(fileStructure, selectedFile);
+                const file = findItem(fileStructure, selectedFile, socket ?? undefined, setFileStructure);
 
                 if (file && file.type === EItemType.FILE) {
-                    socket?.emit("fetchContent", { path: file.path }, (data: string) => { // load data
+                    socket?.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => { // load data
                         file.content = data;
+                        setSelectedFile(file);
+                        setSelectedItem(file);
                     });
-                    setSelectedFile(file);
-                    setSelectedItem(file);
                 }
             }
         } catch (e) {
@@ -148,16 +149,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
 
     useEffect(() => {
         if (!selectedFile) return;
-
-        // load the content if not loaded
-        if (selectedFile.content === undefined) {
-            socket?.emit("fetchContent", { path: selectedFile.path }, (data: string) => {
-                selectedFile.content = data;
-            });
-        }
-
         cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
-
     }, [selectedFile]);
 
     if (isLoading || status === 'loading') return <CodingPageLoader state='loading_project' />;

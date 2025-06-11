@@ -1,4 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, Index, ManyToOne, OneToMany, OneToOne } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index, OneToMany, OneToOne } from "typeorm";
 import { User } from "src/auth-system/users/entities/user.entity";
 import { WebAuthnCredential } from "src/auth-system/webAuthn/entities/webAuthnCredential.entity";
 import { LoginDevice } from "./login-devices.entity";

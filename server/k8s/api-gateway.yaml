@@ -1,10 +1,3 @@
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: qubide-main
-
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,9 +18,11 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: prakashbanjade/cloud-ide-api-gateway:latest
+          image: prakashbanjade/cloud-ide-api-gateway:v1
           imagePullPolicy: Always
           env:
+            - name: PORT
+              value: "3002"
             - name: MINIO_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -106,9 +101,9 @@ spec:
             - name: TWOFACTOR_VERIFICATION_EXPIRATION_SEC
               value: "300"
             - name: CLIENT_URL
-              value: "http://localhost:3000"
+              value: "https://www.qubide.cloud"
             - name: CLIENT_DOMAIN
-              value: "localhost"
+              value: "qubide.cloud"
             - name: BACKEND_URL
               value: "http://api-gateway.qubide.cloud"
             - name: AES_KEY
@@ -170,8 +165,16 @@ kind: Ingress
 metadata:
   name: api-gateway
   namespace: qubide-main
+  # annotations:
+  #   kubernetes.io/ingress.class: nginx
+  #   cert-manager.io/cluster-issuer: letsencrypt-prod
+  #   nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  # tls:
+  #   - hosts:
+  #       - api-gateway.qubide.cloud
+  #     secretName: api-gateway-tls
   rules:
     - host: api-gateway.qubide.cloud
       http:

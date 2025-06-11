@@ -1,12 +1,11 @@
 "use client"
 
 import { cn } from "@/lib/utils";
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { X } from "lucide-react";
+import { MoreHorizontal, X } from "lucide-react";
 import { FileTree, TFileItem, TreeItem } from "./file-tree";
-import { onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
+import { onFileSelect, onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
@@ -17,9 +16,10 @@ import { getFileIcon } from "./file-icons";
 import TopBar from "./top-bar";
 import { FileTabSwitcher } from "./tab-switcher";
 import TermTopBar from "./term-top-bar";
-import { previewLanguages } from "@/lib/CONSTANTS";
+import { previewLanguages, SocketEvents } from "@/lib/CONSTANTS";
 import Preview from "./preview";
 import CodingPageLoader from "./coding-page-loader";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -36,9 +36,6 @@ export default function CodingPageClient() {
 }
 
 export const CodingPagePostPodCreation = () => {
-    const params = useParams();
-    const router = useRouter();
-    const replId = params.replId ?? '';
     const {
         setSelectedItem,
         setFileStructure,
@@ -50,7 +47,7 @@ export const CodingPagePostPodCreation = () => {
         treeLoaded,
         setTreeLoaded
     } = useCodingStates();
-    const [showTerm, setShowTerm] = useState(true);
+    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
 
     const { socket } = useSocket();
     const refreshTree = useRefreshTree();
@@ -58,7 +55,7 @@ export const CodingPagePostPodCreation = () => {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
+        socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
             await refreshTree({
                 content: rootContent,
                 socket,
@@ -66,26 +63,21 @@ export const CodingPagePostPodCreation = () => {
             setTreeLoaded(true);
         });
 
-        socket.on('process:status', (data: { isRunning: boolean }) => {
+        socket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => {
             setProjectRunning(data.isRunning || false);
         });
 
         return () => {
-            socket.off('loaded');
-            socket.off('process:status');
+            socket.off(SocketEvents.TREE_LOADED);
+            socket.off(SocketEvents.PROCESS_STATUS);
         };
     }, [socket]);
 
     // useChokidar(socket);
 
     const onSelect = (file: TreeItem) => {
-        if (socket) {
-            onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
-        }
-
-        if (file.type === 'file') {
-            router.push(`/code/${replId}?path=${file.path}`);
-        }
+        if (!socket) return;
+        onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
     };
 
     const showPreview = project && projectRunning && previewLanguages.includes(project.language);
@@ -158,8 +150,7 @@ export const CodingPagePostPodCreation = () => {
 function OpenedFilesTab() {
     const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
-    const { replId } = useParams();
+    const { socket } = useSocket();
 
     useEffect(() => {
         if (selectedTabRef.current) {
@@ -173,21 +164,23 @@ function OpenedFilesTab() {
     }, [selectedFile]);
 
     function handleRemoveOpenedFile(file: TFileItem) {
-        const newOpenedFiles = openedFiles.filter((f) => f.path !== file.path);
-        setOpenedFiles(newOpenedFiles);
+        setOpenedFiles(prev => prev.filter((f) => f.path !== file.path));
 
         const newMruFiles = mruFiles.filter((f) => f.path !== file.path);
         setMruFiles(newMruFiles);
 
         if (file.path === selectedFile?.path) {
-            selectFile(mruFiles[0]);
+            selectFile(newMruFiles[0]);
         }
     }
 
-    function selectFile(file: TFileItem | undefined) { // for file to be selected both has to be set
+    function selectFile(file: TFileItem | undefined) {
+        if (!socket) return;
+
         if (file) {
-            router.push(`/code/${replId}?path=${file.path}`);
-            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
+            onFileSelect({ file, setSelectedFile, setSelectedItem, socket });
+            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]); // update MRU
+            return;
         }
 
         setSelectedFile(file);
@@ -196,7 +189,7 @@ function OpenedFilesTab() {
 
     return (
         <div className="flex items-center gap-2">
-            <ScrollArea className="overflow-x-auto">
+            <ScrollArea className="overflow-x-auto max-w-[95%]">
                 <div className="flex">
                     {
                         openedFiles.map((file) => {
@@ -236,6 +229,34 @@ function OpenedFilesTab() {
                 </div>
                 <ScrollBar orientation="horizontal" className="h-1" />
             </ScrollArea>
+
+            {
+                openedFiles.length > 0 && (
+                    <section className="ml-auto mr-4">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="p-1 rounded-sm hover:bg-white/10"
+                                >
+                                    <MoreHorizontal size={16} />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-[200px]">
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setOpenedFiles([]);
+                                        setMruFiles([]);
+                                        setSelectedFile(undefined);
+                                    }}
+                                >
+                                    Close All
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </section>
+                )
+            }
         </div>
     );
 }

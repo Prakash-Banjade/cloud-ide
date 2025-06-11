@@ -17,6 +17,8 @@ import ProjectRenameForm from '@/app/workspace/components/project-rename-form';
 import { useState } from 'react';
 import { EItemType, TreeItem } from './file-tree';
 import { useRefreshTree } from '../fns/file-manager-fns';
+import { SocketEvents } from '@/lib/CONSTANTS';
+import DownloadButton from './download-btn';
 
 type Props = {
     socket: Socket
@@ -32,7 +34,7 @@ export default function TopBar({ socket }: Props) {
         if (!socket || !project) return;
 
         // for the first time, packages are being installed so we wait for node_modules to be created but it is not in the fileStructure, so we refresh the tree
-        socket.emit('fetchDir', '', async (data: TreeItem[]) => {
+        socket.emit(SocketEvents.FETCH_DIR, '', async (data: TreeItem[]) => {
             await refreshTree({ content: data, socket });
         });
 
@@ -40,7 +42,7 @@ export default function TopBar({ socket }: Props) {
 
         if (hasDependeiciesNotInstalled) return toast.error("Please install dependencies before running the project.");
 
-        socket.emit("process:run", { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
+        socket.emit(SocketEvents.PROCESS_RUN, { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);
         });
     }
@@ -48,7 +50,7 @@ export default function TopBar({ socket }: Props) {
     function onStop() {
         if (!socket) return;
 
-        socket.emit("process:stop", (res: boolean) => {
+        socket.emit(SocketEvents.PROCESS_STOP, (res: boolean) => {
             if (res) setProjectRunning(false);
         });
     }
@@ -113,6 +115,7 @@ export default function TopBar({ socket }: Props) {
                 </section>
 
                 <div className="flex items-center gap-2">
+                    <DownloadButton />
                     <ThemeToggle />
                     <ProfileDropdown />
                 </div>

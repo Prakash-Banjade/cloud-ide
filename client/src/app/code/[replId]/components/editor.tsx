@@ -3,6 +3,7 @@ import { Socket } from "socket.io-client";
 import { useTheme } from "next-themes";
 import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
 import { useEffect } from "react";
+import { SocketEvents } from "@/lib/CONSTANTS";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
@@ -41,7 +42,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         if (value !== undefined && selectedFile) {
             // TODO: Should send diffs, for now sending the whole file
             setIsSyncing(true);
-            socket.emit("updateContent", { path: selectedFile.path, content: value }, () => {
+            socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
                 setIsSyncing(false);
             });
         }

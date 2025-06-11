@@ -9,6 +9,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { KubernetesModule } from './kubernetes/kubernetes.module';
 import { APP_GUARD } from '@nestjs/core';
 import { WsGuard } from './guard/ws.guard';
+import { ProjectModule } from './project/project.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -20,18 +22,27 @@ import { WsGuard } from './guard/ws.guard';
       secret: process.env.ACCESS_TOKEN_SECRET!,
       signOptions: { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION_SEC! },
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 1000, // 5 req per second
+      limit: 5,
+    }]),
     KubernetesModule,
     ScheduleModule.forRoot(),
     TerminalManagerModule,
     MinioModule,
     FileSystemModule,
     ChokidarModule,
+    ProjectModule,
   ],
-  // providers: [
-  //   {
-  //     provide: APP_GUARD,
-  //     useClass: WsGuard,
-  //   }
-  // ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: WsGuard,
+    }
+  ],
 })
 export class RunnerModule { }

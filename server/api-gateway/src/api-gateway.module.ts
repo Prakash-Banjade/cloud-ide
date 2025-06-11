@@ -50,7 +50,7 @@ import { MailModule } from './mail/mail.module';
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard, // global rate limiting, but can be overriden in route level
+      useClass: ThrottlerGuard,
     },
   ],
 })
