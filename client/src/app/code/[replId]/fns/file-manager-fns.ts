@@ -17,13 +17,15 @@ export function useRefreshTree() {
     const { replId } = useParams();
 
     async function refreshTree({ content, socket }: RefreshTreeProps) {
-        // first show whatever the server gave us at top-level
         let tree = content;
-        setFileStructure(tree)
+        setFileStructure(tree);
 
         // then expand any folders that are in the path
         const path = cookie.get(`selectedFile:${replId}`);
-        if (!path) return
+        if (!path) return;
+
+        // const path = getDeepestPath(getCookieAllPaths(replId as string)); // this is done to fetch to the deepest path of combined openedFiles + mruFiles and selectedFile from cookie
+        // if (!path) return
 
         // break “/a/b/c.txt” into ["a","b","c.txt"]
         const segments = path.split('/').filter(Boolean)
@@ -97,12 +99,12 @@ interface FileSelectProps {
     file: TFileItem,
     setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
     setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
-    socket: Socket
+    socket?: Socket,
 }
 
 export function onFileSelect({ file, setSelectedFile, setSelectedItem, socket }: FileSelectProps) {
-    if (file.content === undefined) { // if true, load content then set the selectedFile
-        socket?.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => {
+    if (file.content === undefined && socket) { // if true, load content then set the selectedFile
+        socket.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => {
             file.content = data;
             setSelectedFile(file);
             setSelectedItem(file);
@@ -142,12 +144,17 @@ export function updateTree(
 }
 
 // helper to recursively find any item by path
-export function findItem(items: TreeItem[], targetPath: string): TreeItem | undefined {
-    for (const item of items) {
+export function findItem(items: TreeItem[], targetPath: string, socket?: Socket, setFileStructure?: Dispatch<SetStateAction<TreeItem[]>>): TreeItem | undefined {
+    let tree = items;
+    let children: TreeItem[] = [];
+
+    for (const item of tree) {
         if (item.path === targetPath) return item
-        if (item.type === EItemType.DIR && Array.isArray(item.children)) {
-            const found = findItem(item.children, targetPath)
-            if (found) return found
+        if (item.type === EItemType.DIR) {
+            if (Array.isArray(item.children)) { // children are already loaded
+                const found = findItem(item.children, targetPath, socket)
+                if (found) return found;
+            }
         }
     }
 }
@@ -240,4 +247,17 @@ export function sortFolderFirst(tree: TreeItem[]): TreeItem[] {
         }
         return item
     })
+}
+
+export function collapseAllDirs(tree: TreeItem[]): TreeItem[] {
+    return tree.map(item => {
+        if (item.type === EItemType.DIR) {
+            return {
+                ...item,
+                expanded: false,
+                children: item.children ? collapseAllDirs(item.children) : [],
+            };
+        }
+        return item;
+    });
 }

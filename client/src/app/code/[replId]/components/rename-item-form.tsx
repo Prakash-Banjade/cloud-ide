@@ -12,7 +12,6 @@ import { EItemType, TreeItem } from "./file-tree"
 import { renameTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
-import { useParams, useRouter } from "next/navigation"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
 
@@ -30,10 +29,8 @@ const renameformSchema = z.object({
 type RenameItemFormValues = z.infer<typeof renameformSchema>;
 
 export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "parentFolderPath">) {
-    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, selectedFile } = useCodingStates();
+    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, selectedFile, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
-    const router = useRouter();
-    const params = useParams();
 
     const form = useForm<RenameItemFormValues>({
         resolver: zodResolver(renameformSchema),
@@ -54,32 +51,73 @@ export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "p
             return;
         }
 
-        socket.emit(SocketEvents.RENAME_ITEM, { newPath, oldPath: item.path, type: item.type }, ({ error, success }: { success: boolean, error: string | null }) => {
-            if (success) {
-                const newTreeItem: TreeItem = {
-                    name: values.itemName,
-                    path: newPath,
-                    type: item.type,
-                    ...(item.type === EItemType.FILE ? {
-                        language: values.itemName.split('.').pop(),
-                        content: item.content,
-                    } : {}),
-                } as TreeItem;
-
-                setFileStructure(prev => renameTreeItem(prev, item.path, newPath));
-
-                setSelectedItem(newTreeItem);
-
-                if (newTreeItem.type === EItemType.FILE && selectedFile?.path === item.path) {
-                    setSelectedFile(newTreeItem);
-                    router.push(`/code/${params.replId}?path=${newTreeItem.path}`);
-                }
-
-                setIsOpen(false);
-            } else {
-                form.setError("itemName", { message: typeof error === 'string' ? error : `Cannot rename ${item.name}` });
+        socket.emit(SocketEvents.RENAME_ITEM, { newPath, oldPath: item.path, type: item.type }, ({ error, success }: { success: boolean; error: string | null }) => {
+            if (!success) {
+                form.setError("itemName", {
+                    message:
+                        typeof error === "string"
+                            ? error
+                            : `Cannot rename ${item.name}`,
+                });
+                return;
             }
+
+            const newTreeItem: TreeItem = {
+                name: values.itemName,
+                path: newPath,
+                type: item.type,
+                ...(item.type === EItemType.FILE
+                    ? {
+                        language: values.itemName.split(".").pop(),
+                        content: item.content,
+                    }
+                    : {}),
+            } as TreeItem;
+
+            setFileStructure((prev) =>
+                renameTreeItem(prev, item.path, newPath)
+            );
+            setSelectedItem(newTreeItem);
+
+            // helper to rewrite paths under a renamed folder
+            const rewritePath = (path: string) => {
+                // exact match → use newTreeItem.path
+                if (path === item.path) return newTreeItem.path;
+                // child of renamed folder → swap prefix
+                if (path.startsWith(item.path + "/")) {
+                    return newTreeItem.path + path.slice(item.path.length);
+                }
+                // unaffected
+                return path;
+            };
+
+            // update MRU
+            setMruFiles((prev) =>
+                prev.map((f) => ({
+                    ...f,
+                    path: rewritePath(f.path),
+                }))
+            );
+
+            // update opened files
+            setOpenedFiles((prev) =>
+                prev.map((f) => ({
+                    ...f,
+                    path: rewritePath(f.path),
+                }))
+            );
+
+            // if the selectedFile was somewhere under the renamed path, update it too
+            if (selectedFile?.path.startsWith(item.path)) {
+                setSelectedFile({
+                    ...selectedFile,
+                    path: rewritePath(selectedFile.path),
+                });
+            }
+
+            setIsOpen(false);
         });
+
     }
 
     return (

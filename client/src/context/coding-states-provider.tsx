@@ -13,6 +13,7 @@ import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
 import CodingPageLoader from '@/app/code/[replId]/components/coding-page-loader';
+import { SocketEvents } from '@/lib/CONSTANTS';
 
 
 interface CodingStatesContextType {
@@ -108,7 +109,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 const { data, success } = z.array(z.string()).safeParse(parsedData);
 
                 if (success) {
-                    setOpenedFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                    setOpenedFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined, setFileStructure)).filter(f => !!f) as TFileItem[]);
                 }
             }
             if (mruFiles) {
@@ -117,14 +118,14 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 const { data, success } = z.array(z.string()).safeParse(parsedData);
 
                 if (success) {
-                    setMruFiles(data.map(f => findItem(fileStructure, f)).filter(f => !!f) as TFileItem[]);
+                    setMruFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined, setFileStructure)).filter(f => !!f) as TFileItem[]);
                 }
             }
             if (selectedFile) {
-                const file = findItem(fileStructure, selectedFile);
+                const file = findItem(fileStructure, selectedFile, socket ?? undefined, setFileStructure);
 
                 if (file && file.type === EItemType.FILE) {
-                    socket?.emit("fetchContent", { path: file.path }, (data: string) => { // load data
+                    socket?.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => { // load data
                         file.content = data;
                         setSelectedFile(file);
                         setSelectedItem(file);

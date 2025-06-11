@@ -13,7 +13,6 @@ import { insertTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
 import { fileNameRgx } from "@/lib/utils"
-import { useParams, useRouter } from "next/navigation"
 import { SocketEvents } from "@/lib/CONSTANTS"
 
 const newItemFormSchema = z.object({
@@ -30,16 +29,14 @@ interface NewItemFormProps {
 }
 
 export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
-    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance } = useCodingStates();
+    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
-    const router = useRouter();
-    const params = useParams();
 
     const form = useForm<NewItemFormType>({
         resolver: zodResolver(newItemFormSchema),
         defaultValues: {
             name: "",
-            type: itemType || EItemType.FILE,
+            type: itemType ?? EItemType.FILE,
         },
     })
 
@@ -72,7 +69,8 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
 
                 if (newTreeItem.type === EItemType.FILE) {
                     setSelectedFile(newTreeItem);
-                    router.push(`/code/${params.replId}?path=${newTreeItem.path}`);
+                    setOpenedFiles(prev => [...prev, newTreeItem]);
+                    setMruFiles(prev => [newTreeItem, ...prev.filter(f => f.path !== newTreeItem.path)]); // place at the beginning
                     window.requestAnimationFrame(() => {
                         editorInstance?.focus();
                     })

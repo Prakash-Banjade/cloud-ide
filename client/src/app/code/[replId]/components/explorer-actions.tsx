@@ -4,7 +4,7 @@ import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
 import { CopyMinus, FilePlus2, FolderPlus, RotateCcw } from 'lucide-react'
 import React, { useState } from 'react'
-import { getParentFolder, useRefreshTree } from '../fns/file-manager-fns'
+import { collapseAllDirs, getParentFolder, useRefreshTree } from '../fns/file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
 import { EItemType, TreeItem } from './file-tree'
@@ -29,13 +29,7 @@ export default function ExplorerActions() {
     }
 
     const collapse = () => {
-        setFileStructure(prev => {
-            return prev.map(item => {
-                return item.type === EItemType.FILE
-                    ? item
-                    : { ...item, expanded: false }
-            });
-        })
+        setFileStructure(prev => collapseAllDirs(prev));
     }
 
     return (
@@ -47,7 +41,6 @@ export default function ExplorerActions() {
                 description={`Location: ${parentFolderPath}`}
             >
                 <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} setIsOpen={setIsOpen} />
-                {/* <NewItemForm /> */}
             </ResponsiveDialog>
 
             <TooltipWrapper label="New file" contentProps={{ side: "bottom" }}>
