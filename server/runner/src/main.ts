@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { RunnerModule } from './runner.module';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(RunnerModule);

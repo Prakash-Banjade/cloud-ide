@@ -9,12 +9,12 @@ type Props = {
     }
 }
 
-export default async function VerifyEmailPage(props: { params: Promise<Props> }) {
-    const { params } = await props.params;
+export default async function VerifyEmailPage(props: { params: Promise<Props["params"]> }) {
+    const { token } = await props.params;
 
     return (
         <Suspense fallback={<div>Loading...</div>}>
-            <Component token={params.token} />
+            <Component token={token} />
         </Suspense>
     )
 }

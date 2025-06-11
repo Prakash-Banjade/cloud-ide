@@ -17,7 +17,7 @@ export enum MailEvents {
     TWOFA_OTP = 'twofa.otp',
 }
 
-const LOGO_URL = "https://www.prakashbanjade.com/_next/image?url=%2Fprofile.jpg"
+const LOGO_URL = "https://res.cloudinary.com/dbj0ffzhn/image/upload/v1749668908/qubide-logo.png"
 
 @Injectable()
 export class MailService {
@@ -28,7 +28,7 @@ export class MailService {
 
     constructor(private readonly configService: ConfigService) {
         this.transport = createTransport(emailConfig);
-        this.email = `"Qubide" <${emailConfig.auth.user}>`;
+        this.email = 'Qubide <noreply@qubide.cloud>';
         this.domain = this.configService.getOrThrow('CLIENT_URL');
 
         this.templates = {
