@@ -2,7 +2,9 @@ import { Socket } from "socket.io-client";
 import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree";
 import { Dispatch, SetStateAction } from "react";
 import { useCodingStates } from "@/context/coding-states-provider";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
+import cookie from 'js-cookie';
+import { SocketEvents } from "@/lib/CONSTANTS";
 
 type RefreshTreeProps = {
     content: TreeItem[],
@@ -12,9 +14,7 @@ type RefreshTreeProps = {
 
 export function useRefreshTree() {
     const { setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles } = useCodingStates();
-    const router = useRouter();
     const { replId } = useParams();
-    const searchParams = useSearchParams();
 
     async function refreshTree({ content, socket }: RefreshTreeProps) {
         // first show whatever the server gave us at top-level
@@ -22,7 +22,7 @@ export function useRefreshTree() {
         setFileStructure(tree)
 
         // then expand any folders that are in the path
-        const path = searchParams.get('path')
+        const path = cookie.get(`selectedFile:${replId}`);
         if (!path) return
 
         // break “/a/b/c.txt” into ["a","b","c.txt"]
@@ -54,12 +54,7 @@ export function useRefreshTree() {
         // now finally select the last segment (could be file or dir)
         const target = findItem(tree, path)
         if (target) {
-            // if it’s a file, fetch its content & mark selected
             onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket)
-            // also push the same URL so router stays in sync
-            if (target.type === 'file') {
-                router.replace(`/code/${replId}?path=${target.path}`)
-            }
         }
     }
 
@@ -67,37 +62,56 @@ export function useRefreshTree() {
 }
 
 export const onItemSelect = (
-    file: TreeItem,
+    item: TreeItem,
     setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
     setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
     setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
     setOpenedFiles: Dispatch<SetStateAction<TFileItem[]>>,
     socket: Socket
 ) => {
-    setSelectedItem(file); // just select what they clicked
-
-    if (file.type === EItemType.DIR) {
+    if (item.type === EItemType.DIR) {
+        setSelectedItem(item);
         // if we already loaded children, just toggle expanded
-        if (Array.isArray(file.children)) {
+        if (Array.isArray(item.children)) {
             setFileStructure(prev =>
-                updateTree(prev, file.path, null)
+                updateTree(prev, item.path, null)
             )
         }
         // otherwise fetch children, then insert & expand
         else {
-            socket?.emit("fetchDir", file.path, (data: TreeItem[]) => {
+            socket.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
                 setFileStructure(prev =>
-                    updateTree(prev, file.path, data)
+                    updateTree(prev, item.path, data)
                 )
             })
         }
     } else {
-        setSelectedFile(file);
+        onFileSelect({ file: item, setSelectedFile, setSelectedItem, socket });
         setOpenedFiles(prev => {
-            return prev.some(f => f.path === file.path) ? prev : [...prev, file];
+            return prev.some(f => f.path === item.path) ? prev : [...prev, item];
         });
     }
 };
+
+interface FileSelectProps {
+    file: TFileItem,
+    setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
+    setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
+    socket: Socket
+}
+
+export function onFileSelect({ file, setSelectedFile, setSelectedItem, socket }: FileSelectProps) {
+    if (file.content === undefined) { // if true, load content then set the selectedFile
+        socket?.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => {
+            file.content = data;
+            setSelectedFile(file);
+            setSelectedItem(file);
+        });
+    } else { // content has already been loaded, just select
+        setSelectedFile(file);
+        setSelectedItem(file);
+    }
+}
 
 export function updateTree(
     items: TreeItem[],
@@ -141,7 +155,7 @@ export function findItem(items: TreeItem[], targetPath: string): TreeItem | unde
 // helper to wrap socket.emit dir-fetch in a Promise
 export function fetchDirAsync(socket: Socket, path: string): Promise<TreeItem[]> {
     return new Promise(resolve => {
-        socket.emit('fetchDir', path, (data: TreeItem[]) => resolve(data))
+        socket.emit(SocketEvents.FETCH_DIR, path, (data: TreeItem[]) => resolve(data))
     })
 }
 

@@ -14,6 +14,7 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
 import { useParams, useRouter } from "next/navigation"
 import { fileNameRgx } from "@/lib/utils"
+import { SocketEvents } from "@/lib/CONSTANTS"
 
 
 interface RenameItemFormProps {
@@ -53,7 +54,7 @@ export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "p
             return;
         }
 
-        socket.emit("renameItem", { newPath, oldPath: item.path, type: item.type }, ({ error, success }: { success: boolean, error: string | null }) => {
+        socket.emit(SocketEvents.RENAME_ITEM, { newPath, oldPath: item.path, type: item.type }, ({ error, success }: { success: boolean, error: string | null }) => {
             if (success) {
                 const newTreeItem: TreeItem = {
                     name: values.itemName,

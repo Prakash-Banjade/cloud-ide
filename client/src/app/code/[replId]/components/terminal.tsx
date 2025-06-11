@@ -9,6 +9,7 @@ import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { EItemType } from "./file-tree";
+import { SocketEvents } from "@/lib/CONSTANTS";
 
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
@@ -53,21 +54,21 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
         fitAddon.fit();
         setTerm(term);
 
-        socket.emit("requestTerminal");
-        socket.on("terminal", ({ data }: { data: string | ArrayBuffer }) => {
+        socket.emit(SocketEvents.REQUEST_TERMINAL);
+        socket.on(SocketEvents.TERMINAL, ({ data }: { data: string | ArrayBuffer }) => {
             const text = typeof data === "string" ? data : decoder.decode(data);
             term.write(text);
         });
 
         term.onData((input) => {
-            socket.emit("terminalData", { data: input });
+            socket.emit(SocketEvents.TERMINAL_DATA, { data: input });
         });
 
         // execute the dependency install command, if there is one
         const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
 
         if (hasDependeiciesNotInstalled) {
-            socket.emit("terminalData", { data: "npm install\n" });
+            socket.emit(SocketEvents.TERMINAL_DATA, { data: "npm install\n" });
         }
 
         // --- observe container resizes and re-fit ---

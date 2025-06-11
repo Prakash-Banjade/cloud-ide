@@ -14,11 +14,12 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
 import { fileNameRgx } from "@/lib/utils"
 import { useParams, useRouter } from "next/navigation"
+import { SocketEvents } from "@/lib/CONSTANTS"
 
 const newItemFormSchema = z.object({
     name: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
     type: z.nativeEnum(EItemType),
-}); 
+});
 
 type NewItemFormType = z.infer<typeof newItemFormSchema>;
 
@@ -54,7 +55,7 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
             return;
         }
 
-        socket.emit("createItem", { path: itemPath, type: values.type }, ({ error, success }: { success: boolean, error: string | null }) => {
+        socket.emit(SocketEvents.CREATE_ITEM, { path: itemPath, type: values.type }, ({ error, success }: { success: boolean, error: string | null }) => {
             if (success) {
                 const newTreeItem: TreeItem = {
                     name: values.name,

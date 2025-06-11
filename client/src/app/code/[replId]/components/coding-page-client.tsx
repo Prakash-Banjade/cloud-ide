@@ -1,12 +1,11 @@
 "use client"
 
 import { cn } from "@/lib/utils";
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { X } from "lucide-react";
 import { FileTree, TFileItem, TreeItem } from "./file-tree";
-import { onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
+import { onFileSelect, onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import ExplorerActions from "./explorer-actions";
@@ -17,7 +16,7 @@ import { getFileIcon } from "./file-icons";
 import TopBar from "./top-bar";
 import { FileTabSwitcher } from "./tab-switcher";
 import TermTopBar from "./term-top-bar";
-import { previewLanguages } from "@/lib/CONSTANTS";
+import { previewLanguages, SocketEvents } from "@/lib/CONSTANTS";
 import Preview from "./preview";
 import CodingPageLoader from "./coding-page-loader";
 
@@ -36,9 +35,6 @@ export default function CodingPageClient() {
 }
 
 export const CodingPagePostPodCreation = () => {
-    const params = useParams();
-    const router = useRouter();
-    const replId = params.replId ?? '';
     const {
         setSelectedItem,
         setFileStructure,
@@ -58,7 +54,7 @@ export const CodingPagePostPodCreation = () => {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('loaded', async ({ rootContent }: { rootContent: TreeItem[] }) => {
+        socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
             await refreshTree({
                 content: rootContent,
                 socket,
@@ -66,26 +62,21 @@ export const CodingPagePostPodCreation = () => {
             setTreeLoaded(true);
         });
 
-        socket.on('process:status', (data: { isRunning: boolean }) => {
+        socket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => {
             setProjectRunning(data.isRunning || false);
         });
 
         return () => {
-            socket.off('loaded');
-            socket.off('process:status');
+            socket.off(SocketEvents.TREE_LOADED);
+            socket.off(SocketEvents.PROCESS_STATUS);
         };
     }, [socket]);
 
     // useChokidar(socket);
 
     const onSelect = (file: TreeItem) => {
-        if (socket) {
-            onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
-        }
-
-        if (file.type === 'file') {
-            router.push(`/code/${replId}?path=${file.path}`);
-        }
+        if (!socket) return;
+        onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
     };
 
     const showPreview = project && projectRunning && previewLanguages.includes(project.language);
@@ -158,8 +149,7 @@ export const CodingPagePostPodCreation = () => {
 function OpenedFilesTab() {
     const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
-    const router = useRouter();
-    const { replId } = useParams();
+    const { socket } = useSocket();
 
     useEffect(() => {
         if (selectedTabRef.current) {
@@ -173,21 +163,23 @@ function OpenedFilesTab() {
     }, [selectedFile]);
 
     function handleRemoveOpenedFile(file: TFileItem) {
-        const newOpenedFiles = openedFiles.filter((f) => f.path !== file.path);
-        setOpenedFiles(newOpenedFiles);
+        setOpenedFiles(prev => prev.filter((f) => f.path !== file.path));
 
         const newMruFiles = mruFiles.filter((f) => f.path !== file.path);
         setMruFiles(newMruFiles);
 
         if (file.path === selectedFile?.path) {
-            selectFile(mruFiles[0]);
+            selectFile(newMruFiles[0]);
         }
     }
 
-    function selectFile(file: TFileItem | undefined) { // for file to be selected both has to be set
+    function selectFile(file: TFileItem | undefined) {
+        if (!socket) return;
+
         if (file) {
-            router.push(`/code/${replId}?path=${file.path}`);
-            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
+            onFileSelect({ file, setSelectedFile, setSelectedItem, socket });
+            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]); // update MRU
+            return;
         }
 
         setSelectedFile(file);

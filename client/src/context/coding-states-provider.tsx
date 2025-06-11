@@ -126,9 +126,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 if (file && file.type === EItemType.FILE) {
                     socket?.emit("fetchContent", { path: file.path }, (data: string) => { // load data
                         file.content = data;
+                        setSelectedFile(file);
+                        setSelectedItem(file);
                     });
-                    setSelectedFile(file);
-                    setSelectedItem(file);
                 }
             }
         } catch (e) {
@@ -148,16 +148,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
 
     useEffect(() => {
         if (!selectedFile) return;
-
-        // load the content if not loaded
-        if (selectedFile.content === undefined) {
-            socket?.emit("fetchContent", { path: selectedFile.path }, (data: string) => {
-                selectedFile.content = data;
-            });
-        }
-
         cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
-
     }, [selectedFile]);
 
     if (isLoading || status === 'loading') return <CodingPageLoader state='loading_project' />;

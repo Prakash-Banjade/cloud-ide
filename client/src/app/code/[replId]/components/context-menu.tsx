@@ -9,6 +9,7 @@ import { updateTree } from "../fns/file-manager-fns"
 import { removeItemFromTree } from "../fns/tree-mutation-fns"
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { RenameItemForm } from "./rename-item-form"
+import { SocketEvents } from "@/lib/CONSTANTS"
 
 type Props = {
     children: React.ReactNode,
@@ -25,7 +26,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
     function handleDelete() {
         if (!socket) return;
 
-        socket.emit('deleteItem', { path: item.path, type: item.type }, (data: boolean) => {
+        socket.emit(SocketEvents.DELETE_ITEM, { path: item.path, type: item.type }, (data: boolean) => {
             if (data) {
                 setFileStructure(prev => removeItemFromTree(prev, item.path));
             }

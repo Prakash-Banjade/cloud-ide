@@ -9,6 +9,7 @@ import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
 import { EItemType, TreeItem } from './file-tree'
 import { NewItemForm } from './item-form'
+import { SocketEvents } from '@/lib/CONSTANTS'
 
 export default function ExplorerActions() {
     const { selectedItem, fileStructure, setFileStructure } = useCodingStates();
@@ -22,7 +23,7 @@ export default function ExplorerActions() {
     const refresh = () => {
         if (!socket) return;
 
-        socket.emit('fetchDir', '', (data: TreeItem[]) => {
+        socket.emit(SocketEvents.FETCH_DIR, '', (data: TreeItem[]) => {
             refreshTree({ content: data, socket });
         })
     }
