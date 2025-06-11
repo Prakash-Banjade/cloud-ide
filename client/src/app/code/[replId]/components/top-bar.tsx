@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { EItemType, TreeItem } from './file-tree';
 import { useRefreshTree } from '../fns/file-manager-fns';
 import { SocketEvents } from '@/lib/CONSTANTS';
+import DownloadButton from './download-btn';
 
 type Props = {
     socket: Socket
@@ -114,6 +115,7 @@ export default function TopBar({ socket }: Props) {
                 </section>
 
                 <div className="flex items-center gap-2">
+                    <DownloadButton />
                     <ThemeToggle />
                     <ProfileDropdown />
                 </div>

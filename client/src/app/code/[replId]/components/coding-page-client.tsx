@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { X } from "lucide-react";
+import { MoreHorizontal, X } from "lucide-react";
 import { FileTree, TFileItem, TreeItem } from "./file-tree";
 import { onFileSelect, onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
@@ -19,6 +19,7 @@ import TermTopBar from "./term-top-bar";
 import { previewLanguages, SocketEvents } from "@/lib/CONSTANTS";
 import Preview from "./preview";
 import CodingPageLoader from "./coding-page-loader";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -46,7 +47,7 @@ export const CodingPagePostPodCreation = () => {
         treeLoaded,
         setTreeLoaded
     } = useCodingStates();
-    const [showTerm, setShowTerm] = useState(true);
+    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
 
     const { socket } = useSocket();
     const refreshTree = useRefreshTree();
@@ -188,7 +189,7 @@ function OpenedFilesTab() {
 
     return (
         <div className="flex items-center gap-2">
-            <ScrollArea className="overflow-x-auto">
+            <ScrollArea className="overflow-x-auto max-w-[95%]">
                 <div className="flex">
                     {
                         openedFiles.map((file) => {
@@ -228,6 +229,34 @@ function OpenedFilesTab() {
                 </div>
                 <ScrollBar orientation="horizontal" className="h-1" />
             </ScrollArea>
+
+            {
+                openedFiles.length > 0 && (
+                    <section className="ml-auto mr-4">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="p-1 rounded-sm hover:bg-white/10"
+                                >
+                                    <MoreHorizontal size={16} />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-[200px]">
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setOpenedFiles([]);
+                                        setMruFiles([]);
+                                        setSelectedFile(undefined);
+                                    }}
+                                >
+                                    Close All
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </section>
+                )
+            }
         </div>
     );
 }

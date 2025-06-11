@@ -24,20 +24,20 @@ export class FileSystemService {
                     reject(err);
                 } else {
                     resolve(files.map(f => {
-                        const objWithKeep = f.isDirectory() && f.name.endsWith('.keep');
+                        const objWithKeep = f.name.endsWith('.keep');
 
                         if (objWithKeep) { // empty folders in minio are saved with .keep prefix but we need to create actual directory in the pod
                             const objName = f.name.replace('.keep', '');
                             const dirExists = !fs.existsSync(`${dir}/${objName}`);
 
                             if (!dirExists) {
-                                mkdir(`${dir}/${objName}`);
+                                mkdir(`${dir}/${objName}`, { recursive: true });
                             }
                         }
 
-                        return f;
+                        return objWithKeep ? null : f;
 
-                    }).map(file => {
+                    }).filter(f => !!f).map(file => {
                         const isDir = file.isDirectory();
 
                         return {

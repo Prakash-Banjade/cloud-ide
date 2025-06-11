@@ -16,6 +16,7 @@ export default function TermTopBar({ setShowTerm, showTerm }: Props) {
             const key = e.key.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === '`') {
                 e.preventDefault();
+                localStorage.setItem("showTerm", String(!showTerm));
                 setShowTerm(prev => !prev);
             }
         }
@@ -35,7 +36,10 @@ export default function TermTopBar({ setShowTerm, showTerm }: Props) {
 
             <button
                 type="button"
-                onClick={() => setShowTerm(!showTerm)}
+                onClick={() => {
+                    localStorage.setItem("showTerm", String(!showTerm));
+                    setShowTerm(prev => !prev);
+                }}
                 title={showTerm ? 'Hide terminal' : 'Show terminal'}
                 className={cn("p-2", !showTerm && "grow flex items-center justify-end")}
             >

@@ -9,6 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { KubernetesModule } from './kubernetes/kubernetes.module';
 import { APP_GUARD } from '@nestjs/core';
 import { WsGuard } from './guard/ws.guard';
+import { ProjectModule } from './project/project.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { WsGuard } from './guard/ws.guard';
     MinioModule,
     FileSystemModule,
     ChokidarModule,
+    ProjectModule,
   ],
   // providers: [
   //   {
