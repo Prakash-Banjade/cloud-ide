@@ -75,7 +75,7 @@ const Hero = () => {
                     >
                         {
                             status === "loading" ? (
-                                <Skeleton className="h-10 w-28 rounded-md" />
+                                <Skeleton className="mx-auto h-12 w-56 rounded-full" />
                             ) : !data ? (
                                 <Button
                                     size="lg"

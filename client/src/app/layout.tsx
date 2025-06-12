@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/context/session-provider";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const montserrat = Montserrat({ subsets: ["latin"] });
 
@@ -25,24 +26,26 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${montserrat.className} antialiased min-h-screen`}
+        className={`${montserrat.className} antialiased h-screen`}
       >
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Toaster
-              position="bottom-right"
-              reverseOrder={false}
-            />
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
+        <ScrollArea className="h-screen overflow-y-auto">
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Toaster
+                position="bottom-right"
+                reverseOrder={false}
+              />
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </ScrollArea>
       </body>
     </html>
   );

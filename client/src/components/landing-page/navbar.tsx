@@ -8,7 +8,6 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "../ui/skeleton";
-import { ThemeToggle } from "../theme-toggle";
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -47,13 +46,9 @@ export default function Navbar() {
 
                     {
                         status === "loading" ? (
-                            <div className="flex items-center space-x-3">
-                                <Skeleton className="size-10" />
-                                <Skeleton className="h-10 w-28 rounded-md" />
-                            </div>
+                            <Skeleton className="h-10 w-28 rounded-md" />
                         ) : !data ? (
                             <div className="flex items-center space-x-3">
-                                <ThemeToggle />
                                 <Button
                                     variant="ghost"
                                     className="text-foreground hover:text-dodgerblue hover:bg-dodgerblue/10"
@@ -74,7 +69,6 @@ export default function Navbar() {
                             </div>
                         ) : (
                             <div className="flex items-center space-x-3">
-                                <ThemeToggle />
                                 <Button
                                     className="bg-dodgerblue hover:bg-dodgerblue/90 text-white"
                                     asChild
