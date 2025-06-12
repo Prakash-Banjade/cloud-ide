@@ -6,6 +6,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-dodgerblue: #1E90FF;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -115,6 +116,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scroll-padding-top: 4.5rem;
   }
 
   body {
@@ -145,4 +147,12 @@
 
 button {
   cursor: pointer !important;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, var(--foreground) 0%, #a0a0a0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

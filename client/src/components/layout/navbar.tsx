@@ -13,7 +13,9 @@ export default function Navbar() {
     return (
         <section className='border-b h-20 flex items-center bg-card/50'>
             <section className='container py-4 mx-auto flex items-center gap-6'>
-                <Logo className='rounded-full' />
+                <Link href="/">
+                    <Logo />
+                </Link>
 
                 <nav>
                     <ul className='flex items-center gap-2'>
