@@ -54,7 +54,11 @@ export default function ProfileDropdown() {
             <DropdownMenuContent side='bottom' align='end'>
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={() => router.push("/settings")}
+                >
+                    Settings
+                </DropdownMenuItem>
                 <DropdownMenuItem>Subscription</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
