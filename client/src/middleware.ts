@@ -25,6 +25,6 @@ export const config = {
          * - auth (auth routes)
          * - root path (/)
          */
-        "/((?!api|_next/static|_next/image|favicon.ico|public|auth|$).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|public|auth|docs|support|$).*)",
     ],
 }; 

@@ -2,11 +2,11 @@ import LandingPageLayout from "@/components/landing-page/landing-page.layout";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: 'Docs',
-    description: 'Read our documentation for more information about Qubide.',
+    title: 'Support',
+    description: 'Get help with Qubide.',
 }
 
-export default function DocsLayout({ children }: { children: React.ReactNode }) {
+export default function SupportLayout({ children }: { children: React.ReactNode }) {
     return (
         <LandingPageLayout>
             <div className="container mx-auto">

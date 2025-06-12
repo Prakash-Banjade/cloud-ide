@@ -38,7 +38,7 @@ async function refreshToken(token: JWT): Promise<JWT> {
 export const authOptions: NextAuthOptions = {
     pages: {
         signIn: '/auth/login',
-        signOut: '/workspace',
+        signOut: '/',
     },
     session: {
         strategy: "jwt",

@@ -9,12 +9,12 @@ export default function AuthSideView() {
                 <ThemeToggle />
             </div>
             <Link
-                href="/auth/login"
+                href="/"
                 className="absolute left-4 top-4 md:left-8 md:top-8 z-20 flex items-center font-medium"
             >
                 <div className="flex aspect-square size-12 items-center justify-center rounded-lg bg-primary mr-2">
                     <Image
-                        src="/logo.png"
+                        src="/logo-dark.png"
                         alt='Qubide Logo'
                         width={32}
                         height={32}
