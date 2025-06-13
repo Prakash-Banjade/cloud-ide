@@ -120,6 +120,10 @@ To ge the ingress-controller external IP, run the following command:
 kubectl get svc -n ingress-nginx
 ```
 
+## References
+
+Huge thanks to [Piyush Garg](https://www.linkedin.com/in/piyushgarg195) for the idea and [Harkirat Singh](https://www.linkedin.com/in/kirat-li) for the guidance and implementation.
+
 ## Contributing
 
 Contributions are welcome. Please fork the repository and submit pull requests for:

@@ -1,10 +1,13 @@
 {
-  "name": "qubide-cloud-ide",
+  "name": "api-gateway",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "author": {
+    "name": "Prakash Banjade",
+    "email": "prakashbanjade191@gmail.com",
+    "url": "https://github.com/prakash-banjade"
+  },
+  "private": false,
+  "license": "../LICENSE",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

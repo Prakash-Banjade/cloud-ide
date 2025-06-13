@@ -1,7 +1,13 @@
 {
   "name": "client",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "author": {
+    "name": "Prakash Banjade",
+    "email": "prakashbanjade191@gmail.com",
+    "url": "https://github.com/prakash-banjade"
+  },
+  "license": "../LICENSE",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
