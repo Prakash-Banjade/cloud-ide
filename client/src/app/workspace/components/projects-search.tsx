@@ -54,7 +54,7 @@ export default function ProjectsSearch() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-wrap gap-4 mb-6">
             <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <SearchInput
@@ -62,56 +62,54 @@ export default function ProjectsSearch() {
                     className="pl-8"
                 />
             </div>
-            <div className="flex gap-4">
-                <Select value={searchState.language} onValueChange={val => handleChange("language", val)}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter by language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        {
-                            languageFields.map((field, ind) => {
-                                return (
-                                    <SelectItem key={ind} value={field.value}>
-                                        <field.icon />
-                                        {field.label}
-                                    </SelectItem>
-                                )
-                            })
-                        }
-                    </SelectContent>
-                </Select>
+            <Select value={searchState.language} onValueChange={val => handleChange("language", val)}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by language" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {
+                        languageFields.map((field, ind) => {
+                            return (
+                                <SelectItem key={ind} value={field.value}>
+                                    <field.icon />
+                                    {field.label}
+                                </SelectItem>
+                            )
+                        })
+                    }
+                </SelectContent>
+            </Select>
 
-                <Select value={searchState.sortBy} onValueChange={val => handleChange("sortBy", val)}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="lastOpened">Last Opened</SelectItem>
-                        <SelectItem value="createdAt">Creation Date</SelectItem>
-                        <SelectItem value="name">Name</SelectItem>
-                    </SelectContent>
-                </Select>
+            <Select value={searchState.sortBy} onValueChange={val => handleChange("sortBy", val)}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="lastOpened">Last Opened</SelectItem>
+                    <SelectItem value="createdAt">Creation Date</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                </SelectContent>
+            </Select>
 
-                <section>
-                    <Button
-                        variant={searchState.view === "grid" ? "secondary" : "ghost"}
-                        onClick={() => handleChange("view", "grid")}
-                        type="button"
-                        size={"icon"}
-                    >
-                        <LayoutGrid />
-                    </Button>
-                    <Button
-                        variant={searchState.view === "list" ? "secondary" : "ghost"}
-                        onClick={() => handleChange("view", "list")}
-                        type="button"
-                        size={"icon"}
-                    >
-                        <List />
-                    </Button>
-                </section>
-            </div>
+            <section className='flex'>
+                <Button
+                    variant={searchState.view === "grid" ? "secondary" : "ghost"}
+                    onClick={() => handleChange("view", "grid")}
+                    type="button"
+                    size={"icon"}
+                >
+                    <LayoutGrid />
+                </Button>
+                <Button
+                    variant={searchState.view === "list" ? "secondary" : "ghost"}
+                    onClick={() => handleChange("view", "list")}
+                    type="button"
+                    size={"icon"}
+                >
+                    <List />
+                </Button>
+            </section>
         </div>
     )
 }

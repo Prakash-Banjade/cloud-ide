@@ -44,7 +44,7 @@ spec:
       serviceAccountName: runner-sa
       containers:
         - name: runner
-          image: prakashbanjade/cloud-ide-runner:latest
+          image: prakashbanjade/cloud-ide-runner:v1.1
           imagePullPolicy: Always
           env:
             - name: MINIO_ACCESS_KEY
@@ -83,11 +83,11 @@ spec:
             requests:
               cpu: "300m"       # 0.3 core
               memory: "512Mi"
-              ephemeral-storage: "500Mi"
+              ephemeral-storage: "2Gi"
             limits:
               cpu: "1"          # 1 full core
               memory: "1Gi"
-              ephemeral-storage: "3Gi"
+              ephemeral-storage: "5Gi"
 
 ---
 apiVersion: v1

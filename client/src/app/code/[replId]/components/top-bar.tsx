@@ -28,19 +28,19 @@ export default function TopBar({ socket }: Props) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, fileStructure } = useCodingStates();
-    const refreshTree = useRefreshTree();
+    // const refreshTree = useRefreshTree();
 
     function onRun() {
         if (!socket || !project) return;
 
         // for the first time, packages are being installed so we wait for node_modules to be created but it is not in the fileStructure, so we refresh the tree
-        socket.emit(SocketEvents.FETCH_DIR, '', async (data: TreeItem[]) => {
-            await refreshTree({ content: data, socket });
-        });
+        // socket.emit(SocketEvents.FETCH_DIR, '', async (data: TreeItem[]) => {
+        //     await refreshTree({ content: data, socket });
+        // });
 
-        const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
+        // const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
 
-        if (hasDependeiciesNotInstalled) return toast.error("Please install dependencies before running the project.");
+        // if (hasDependeiciesNotInstalled) return toast.error("Please install dependencies before running the project.");
 
         socket.emit(SocketEvents.PROCESS_RUN, { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);

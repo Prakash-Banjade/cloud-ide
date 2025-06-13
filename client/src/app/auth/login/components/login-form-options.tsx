@@ -6,6 +6,7 @@ import { KeyRound, SquareAsterisk } from "lucide-react"
 import { useState } from "react"
 import { useCustomSearchParams } from "@/hooks/useCustomSearchParams"
 import Link from "next/link"
+import LoginByPasskeyForm from "./login-by-passkey-form"
 
 type Props = {
     method: "password" | "passkey";
@@ -21,8 +22,7 @@ export default function LoginFormOptions({ method }: Props) {
                 method === "password" ? (
                     <LoginByPasswordForm setIsFormSubmitting={setIsFormSubmitting} />
                 ) : (
-                    // <LoginByPasskeyForm setIsFormSubmitting={setIsFormSubmitting} />
-                    <></>
+                    <LoginByPasskeyForm setIsFormSubmitting={setIsFormSubmitting} />
                 )
             }
 

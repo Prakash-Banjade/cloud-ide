@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Button } from '../ui/button'
 import { usePathname } from 'next/navigation'
 import ProfileDropdown from './profile-dropdown'
-import { ThemeToggle } from '../theme-toggle'
 import Logo from '../logo'
 
 export default function Navbar() {
@@ -33,7 +32,6 @@ export default function Navbar() {
                 </nav>
 
                 <section className='ml-auto flex items-center gap-4'>
-                    <ThemeToggle />
                     <ProfileDropdown />
                 </section>
             </section>

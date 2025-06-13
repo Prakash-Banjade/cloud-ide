@@ -78,7 +78,7 @@ export class AuthService extends BaseRepository {
       where: {
         deviceId,
         account: { id: account.id },
-        isTrusted: true,
+        isTrusted: true, 
       },
       select: { id: true },
     });

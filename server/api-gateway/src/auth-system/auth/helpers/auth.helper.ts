@@ -254,7 +254,7 @@ export class AuthHelper extends BaseRepository {
         });
         if (!account?.password) return { verified: false }; // TODO: fix, verify sudo requires password
 
-        const isPasswordValid = bcrypt.compare(password, account.password);
+        const isPasswordValid = await bcrypt.compare(password, account.password);
 
         if (!isPasswordValid) return { verified: false };
 

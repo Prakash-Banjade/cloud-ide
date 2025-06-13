@@ -16,8 +16,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         });
 
         if (selectedFile && getLanguageFromName(selectedFile.name) === 'typescript') {
-            const modelUri = monaco.Uri.file(selectedFile.name ?? "");
-
+            const modelUri = monaco.Uri.file(selectedFile.path ?? "");
 
             const codeModel = monaco.editor.createModel(
                 selectedFile.content ?? "",
@@ -65,9 +64,33 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
     }, [selectedFile]);
 
     if (!selectedFile) return (
-        <div className="h-full flex items-center justify-center text-muted-foreground">
-            Select a file and start coding
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+            <img src="/logo-white.png" alt="logo" className="opacity-5 hidden dark:block h-[30%] w-auto select-none" />
+            <img src="/logo-dark.png" alt="logo" className="opacity-5 block dark:hidden h-[30%] w-auto select-none" />
+            <table className="text-sm">
+                <tbody>
+                    <tr>
+                        <td className="p-2 text-right">Toggle Terminal</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">`</kbd>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="p-2 text-right">Tab Switching</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Alt</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">e</kbd>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="p-2 text-right">Manual Save</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">s</kbd>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+
     );
 
     return (

@@ -6,6 +6,17 @@ metadata:
   labels:
     name: minio-dev # Change this value to match metadata.name
 ---
+# Secret: contains custom MinIO access and secret keys
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-creds
+  namespace: minio-dev
+stringData:
+  MINIO_ACCESS_KEY: "prakash-banjade"
+  MINIO_SECRET_KEY: "prakash-banjade-secret"
+type: Opaque
+---
 # Deploys a new MinIO Pod into the metadata.namespace Kubernetes namespace
 #
 # The `spec.containers[0].args` contains the command run on the pod
@@ -28,6 +39,17 @@ spec:
         - -c
       args:
         - minio server /data --console-address :9090
+      env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-creds
+              key: MINIO_SECRET_KEY
       volumeMounts:
         - mountPath: /data
           name: localvolume # Corresponds to the `spec.volumes` Persistent Volume

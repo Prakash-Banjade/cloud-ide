@@ -1,5 +1,6 @@
 import { Icons } from "@/components/icons";
 import { ELanguage, TLoginResponse, TUser } from "@/types";
+import { AxiosError } from "axios";
 import { clsx, type ClassValue } from "clsx"
 import { jwtDecode } from "jwt-decode";
 import { twMerge } from "tailwind-merge"
@@ -9,6 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
+export const API_URL_DEV = 'http://localhost:3002/api';
 
 export const fileNameRgx = new RegExp(
   // 1) forbid reserved Windows device names (CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9)
@@ -96,4 +98,23 @@ export function createQueryString(params: Record<string, string | boolean | unde
   );
 
   return new URLSearchParams(filteredParams).toString();
+}
+
+export function getErrMsg(error: unknown): string | null {
+  if (error instanceof AxiosError) {
+
+    const err = error.response?.data?.message;
+
+    if (err instanceof Object && 'message' in err) {
+      const msg = err.message;
+      if (Array.isArray(msg)) return msg[0];
+      return err.message;
+    } else if (typeof err === 'string') {
+      return err;
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
 }

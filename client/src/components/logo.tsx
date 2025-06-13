@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import logoDark from '@/assets/logo-dark.png'
+import logoWhite from '@/assets/logo-white.png'
 
 type Props = {
     width?: number,
@@ -11,7 +13,7 @@ export default function Logo({ height = 40, width = 40, className }: Props) {
     return (
         <>
             <Image
-                src={"/logo-white.png"}
+                src={logoWhite}
                 alt="logo"
                 width={width}
                 height={height}
@@ -19,7 +21,7 @@ export default function Logo({ height = 40, width = 40, className }: Props) {
                 priority
             />
             <Image
-                src={"/logo-dark.png"}
+                src={logoDark}
                 alt="logo"
                 width={width}
                 height={height}
