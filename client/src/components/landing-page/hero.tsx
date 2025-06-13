@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Code } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "../ui/skeleton";
@@ -52,7 +52,7 @@ const Hero = () => {
                         transition={{ duration: 0.8, delay: 0.4 }}
                         className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6 gradient-text lg:leading-[105px] md:leading-[80px] leading-[60px]"
                     >
-                        Code Anywhere,
+                        C<Code className="inline text-dodgerblue sm:size-12 md:size-16 lg:size-20 stroke-[4px]" />de Anywhere,
                         <br />
                         Build Everything
                     </motion.h2>

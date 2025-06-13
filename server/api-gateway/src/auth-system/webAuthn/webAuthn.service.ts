@@ -169,14 +169,11 @@ export class WebAuthnService extends BaseRepository {
             .where('account.email = :email', { email: dto.email })
             .andWhere('account.verifiedAt IS NOT NULL')
             .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: dto.authenticationResponse?.id })
-            .leftJoin('account.branch', 'branch')
-            .leftJoin('account.profileImage', 'profileImage')
             .select([
                 'account.id',
                 'account.email',
                 'account.firstName',
                 'account.lastName',
-                'account.role',
                 'account.verifiedAt',
                 'account.twoFaEnabledAt',
                 'webAuthnCredentials.id',
@@ -184,10 +181,6 @@ export class WebAuthnService extends BaseRepository {
                 'webAuthnCredentials.publicKey',
                 'webAuthnCredentials.transports',
                 'webAuthnCredentials.counter',
-                'branch.id',
-                'branch.name',
-                'profileImage.id',
-                'profileImage.url',
             ]).getOne();
         if (!account) throw new BadRequestException('Invalid email');
 
@@ -300,19 +293,16 @@ export class WebAuthnService extends BaseRepository {
             .send({ verified: true })
     }
 
-    async verify2faPasskey(dto: AuthVerifyDto, reply: FastifyReply, req: FastifyRequest) {
+    async verify2faPasskey(dto: AuthVerifyDto, req: FastifyRequest) {
         const account = await this.getRepository(Account).createQueryBuilder('account')
             .where('account.email = :email', { email: dto.email })
             .andWhere('account.verifiedAt IS NOT NULL')
             .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: dto.authenticationResponse?.id })
-            .leftJoin('account.branch', 'branch')
-            .leftJoin('account.profileImage', 'profileImage')
             .select([
                 'account.id',
                 'account.email',
                 'account.firstName',
                 'account.lastName',
-                'account.role',
                 'account.verifiedAt',
                 'account.twoFaEnabledAt',
                 'webAuthnCredentials.id',
@@ -320,10 +310,6 @@ export class WebAuthnService extends BaseRepository {
                 'webAuthnCredentials.publicKey',
                 'webAuthnCredentials.transports',
                 'webAuthnCredentials.counter',
-                'branch.id',
-                'branch.name',
-                'profileImage.id',
-                'profileImage.url',
             ]).getOne();
         if (!account) throw new BadRequestException('Invalid email');
 

@@ -24,8 +24,8 @@ export default function ProfileDropdown() {
     });
 
     const handleLogout = async () => {
-        await mutateAsync();
         signOut();
+        await mutateAsync();
     }
 
     if (status === "unauthenticated") router.push("/auth/login");

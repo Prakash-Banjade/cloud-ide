@@ -78,8 +78,8 @@ export class WebAuthnController {
     @ApiResponse({ status: 403, description: "Invalid Passkey" })
     @ApiResponse({ status: 200, description: "User will be logged in" })
     @UseInterceptors(TransactionInterceptor)
-    verify2faPasskey(@Body() dto: AuthVerifyDto, @Res({ passthrough: true }) reply: FastifyReply, @Req() req: FastifyRequest) {
-        return this.webAuthnService.verify2faPasskey(dto, reply, req);
+    verify2faPasskey(@Body() dto: AuthVerifyDto, @Req() req: FastifyRequest) {
+        return this.webAuthnService.verify2faPasskey(dto, req);
     }
 
     @Patch(':id')

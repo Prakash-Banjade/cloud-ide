@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AuthMessage, REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
-import { API_URL } from "@/lib/utils";
+import { API_URL, API_URL_DEV } from "@/lib/utils";
 import { useMemo, useRef } from "react";
 
 export const useAxiosPrivate = (): AxiosInstance => {
@@ -16,7 +16,7 @@ export const useAxiosPrivate = (): AxiosInstance => {
     // A single shared instance, memoized so it’s not recreated on each render.
     const axiosInstance = useMemo(() => {
         return axios.create({
-            baseURL: API_URL,
+            baseURL: API_URL_DEV,
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },

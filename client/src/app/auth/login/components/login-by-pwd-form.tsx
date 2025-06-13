@@ -13,6 +13,10 @@ import Link from "next/link"
 import LoadingButton from "@/components/loading-button"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import axiosClient from "@/lib/axios-client"
+import { TLoginResponse } from "@/types"
+import { AuthMessage } from "@/lib/CONSTANTS"
+import { pwdLogin } from "@/lib/actions/login.action"
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
     setIsFormSubmitting: React.Dispatch<React.SetStateAction<boolean>>
@@ -40,9 +44,16 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
     function onSubmit(values: loginFormSchemaType) {
         startTransition(async () => {
             try {
+                const data = await pwdLogin(values);
+
+                if ('message' in data && 'hasPasskey' in data && data.message === AuthMessage.DEVICE_NOT_FOUND) {
+                    sessionStorage.setItem("loginChallengeDto", JSON.stringify({ email: values.email, hasPasskey: !!data.hasPasskey })); // required in challenge page
+                    router.replace("/auth/login/challenge");
+                    return;
+                }
+
                 const result = await signIn("credentials", {
-                    email: values.email,
-                    password: values.password,
+                    ...data,
                     redirect: false,
                 });
 

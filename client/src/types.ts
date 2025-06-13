@@ -60,3 +60,10 @@ export type TLoginDevice = {
     current: boolean,
     signedIn: boolean,
 }
+
+export enum EPasskeyChallengeType {
+    Register = 'register',
+    Login = 'login',
+    Sudo = 'sudo',
+    TwoFaVerify = 'twofa_verify'
+}

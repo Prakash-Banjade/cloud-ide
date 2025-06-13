@@ -4,8 +4,9 @@ import { getUserFromLoginResponse } from "@/lib/utils";
 import { TLoginResponse } from "@/types";
 import { JWT } from "next-auth/jwt";
 import axiosServer from "@/lib/axios-server";
-import { REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
+import { AuthMessage, REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
 import { signOut } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 async function refreshToken(token: JWT): Promise<JWT> {
     const refreshToken = token.backendTokens.refresh_token;
@@ -47,26 +48,22 @@ export const authOptions: NextAuthOptions = {
         CredentialsProvider({
             name: "Credentials",
             credentials: {
-                email: { label: "Email", type: "email", placeholder: "name@example.com" },
-                password: { label: "Password", type: "password" }
+                access_token: { label: "Access Token", type: "text", required: true },
+                refresh_token: { label: "Refresh Token", type: "text", required: true },
             },
             async authorize(credentials) {
+                if (!credentials) return null;
+
                 try {
-                    const res = await axiosServer.post<TLoginResponse>(`/auth/login`, {
-                        email: credentials?.email,
-                        password: credentials?.password,
+                    const { user, exp } = getUserFromLoginResponse({
+                        access_token: credentials.access_token,
+                        refresh_token: credentials.refresh_token
                     });
-
-                    const data = res.data;
-
-                    if (!data) throw new Error("Invalid credentials");
-
-                    const { user, exp } = getUserFromLoginResponse(data);
                     return {
                         user,
                         backendTokens: {
-                            access_token: data.access_token,
-                            refresh_token: data.refresh_token,
+                            access_token: credentials.access_token,
+                            refresh_token: credentials.refresh_token,
                             expiresIn: exp
                         }
                     } as unknown as User;
@@ -76,7 +73,7 @@ export const authOptions: NextAuthOptions = {
                     return null;
                 }
             }
-        })
+        }),
     ],
     callbacks: {
         async jwt({ token, user }) {

@@ -2,14 +2,16 @@ import axiosClient from '@/lib/axios-client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { AxiosError } from 'axios';
-import { jwtDecode } from 'jwt-decode';
 import { KeyRound } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useTransition } from 'react'
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { z } from 'zod'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from '@/components/ui/input';
 import LoadingButton from '@/components/loading-button';
+import { signIn } from 'next-auth/react';
+import { webauthnVerifyLogin } from '@/lib/actions/login.action';
+import { useRouter } from 'next/navigation';
 
 type Props = {
     setIsFormSubmitting: React.Dispatch<React.SetStateAction<boolean>>
@@ -24,6 +26,8 @@ type loginFormSchemaType = z.infer<typeof loginFormSchema>;
 export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [loadingText, setLoadingText] = useState<string>('Validating email...')
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     const form = useForm<loginFormSchemaType>({
         resolver: zodResolver(loginFormSchema),
@@ -35,52 +39,52 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
     async function onSubmit({ email }: loginFormSchemaType) {
         setError(null);
 
-        try {
-            const response = await axiosClient.post(`/web-authn/auth-challenge`, {
-                email: form.getValues('email')
-            });
-
-            const challengePayload = response.data?.challengePayload;
-
-            if (!challengePayload) throw new Error('Failed to login with passkey');
-
+        startTransition(async () => {
             try {
-                setLoadingText('Waiting for input from browser interaction...');
-                const authenticationResponse = await startAuthentication({ optionsJSON: challengePayload });
-                setLoadingText('Signing in...');
-
-                const response = await axiosClient.post(`/web-authn/verify-login`, {
-                    authenticationResponse,
-                    email,
+                const response = await axiosClient.post(`/web-authn/auth-challenge`, {
+                    email: form.getValues('email')
                 });
 
-                if (!response.data) throw new Error('Failed to login with passkey');
+                const challengePayload = response.data?.challengePayload;
 
-                if ('access_token' in response.data) {
-                    console.log(response.data);
-                    // setAuth({
-                    //     accessToken: response.data.access_token,
-                    //     user: response.data.user,
-                    // });
-                    // const payload: TAuthPayload = jwtDecode(response.data.access_token);
+                if (!challengePayload) throw new Error('Failed to login with passkey');
 
-                    // navigate(location.state?.from?.pathname || `/${payload.role}/dashboard`, { replace: true });
+                try {
+                    setLoadingText('Waiting for input from browser interaction...');
+                    const authenticationResponse = await startAuthentication({ optionsJSON: challengePayload });
+                    setLoadingText('Signing in...');
+
+                    const data = await webauthnVerifyLogin(authenticationResponse, email);
+
+                    if (data.access_token) {
+                        const res = await signIn("credentials", {
+                            ...data,
+                            redirect: false,
+                        });
+
+                        if (res?.status === 401) {
+                            setErrorMsg("Unable to sign in", setError, form)
+                        }
+
+                        router.replace("/workspace");
+                        router.refresh();
+                    }
+
+                } catch (e) {
+                    setErrorMsg(e, setError, form);
                 }
 
             } catch (e) {
                 setErrorMsg(e, setError, form);
+            } finally {
+                setLoadingText('Validating email...');
             }
-
-        } catch (e) {
-            setErrorMsg(e, setError, form);
-        } finally {
-            setLoadingText('Validating email...');
-        }
+        })
     };
 
     useEffect(() => {
-        setIsFormSubmitting(form.formState.isSubmitting);
-    }, [form.formState.isSubmitting]);
+        setIsFormSubmitting(isPending);
+    }, [isPending]);
 
     return (
         <Form {...form}>
@@ -102,8 +106,8 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
                 <section className='flex flex-col gap-1'>
                     <LoadingButton
                         type='submit'
-                        isLoading={form.formState.isSubmitting}
-                        disabled={form.formState.isSubmitting}
+                        isLoading={isPending}
+                        disabled={isPending}
                         loadingText={loadingText}
                     >
                         <KeyRound className="h-4 w-4" />
