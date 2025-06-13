@@ -1,7 +1,7 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayDisconnect, MessageBody, ConnectedSocket, OnGatewayConnection } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
-import { getRunCommand } from './run-commands';
+import { getRunCommand, longRunningProcesses } from './run-commands';
 import { ELanguage } from 'src/global-types';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { UseGuards } from '@nestjs/common';
@@ -109,6 +109,12 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
       error: 'Language not supported',
     }
 
+    if (!longRunningProcesses[payload.lang]) {
+      this.terminalManager.write(socket.id, cmd);
+      return;
+    }
+
+    // this is for long running processes like react, next
     this.terminalManager.run(cmd, (data, id) => {
       socket.emit('terminal', { data: Buffer.from(data, 'utf-8'), id });
       this.server.to(this.replId).emit('process:status', { isRunning: this.terminalManager.isRunning() }); // send the status to all clients
