@@ -87,7 +87,7 @@ function TwoFaSection() {
             <h2 className="text-2xl font-medium mb-4">2-Step Verification</h2>
 
             <p className="@lg:text-sm text-xs text-muted-foreground">
-                Add an extra layer of security to your account with 2-Step Verification. When a new device is detected, you'll be asked prompted to go through an extra layer of security via email or passkey.
+                Add an extra layer of security to your account with 2-Step Verification. When a new device is detected, you&apos;ll be asked prompted to go through an extra layer of security via email or passkey.
             </p>
 
             <ResponsiveAlertDialog

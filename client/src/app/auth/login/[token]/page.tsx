@@ -13,8 +13,6 @@ export default function Confirm2FAOTPPage() {
     const router = useRouter();
     const loginChallenge = sessionStorage.getItem("login-challenge");
 
-    if (!loginChallenge) return router.replace('/auth/login');
-
     useEffect(() => {
         try {
             const { success } = locationSchema.safeParse(JSON.parse(sessionStorage.getItem("login-challenge") ?? ""));
@@ -23,6 +21,8 @@ export default function Confirm2FAOTPPage() {
             return router.replace('/auth/login');
         }
     }, []);
+
+    if (!loginChallenge) return router.replace('/auth/login');
 
     const data = JSON.parse(sessionStorage.getItem("login-challenge") ?? "") as { expiresIn: number };
 
