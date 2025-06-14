@@ -16,7 +16,6 @@ import { useRouter } from "next/navigation"
 import axiosClient from "@/lib/axios-client"
 import { TLoginResponse } from "@/types"
 import { AuthMessage } from "@/lib/CONSTANTS"
-import { pwdLogin } from "@/lib/actions/login.action"
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
     setIsFormSubmitting: React.Dispatch<React.SetStateAction<boolean>>
@@ -44,7 +43,11 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
     function onSubmit(values: loginFormSchemaType) {
         startTransition(async () => {
             try {
-                const data = await pwdLogin(values);
+                const res = await axiosClient.post<TLoginResponse>(`/auth/login`, values);
+
+                if (!res.data) throw new Error("Invalid credentials");
+
+                const data = res.data;
 
                 if ('message' in data && 'hasPasskey' in data && data.message === AuthMessage.DEVICE_NOT_FOUND) {
                     sessionStorage.setItem("loginChallengeDto", JSON.stringify({ email: values.email, hasPasskey: !!data.hasPasskey })); // required in challenge page

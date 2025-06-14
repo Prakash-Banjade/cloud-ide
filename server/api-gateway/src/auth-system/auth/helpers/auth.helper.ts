@@ -139,8 +139,6 @@ export class AuthHelper extends BaseRepository {
             .update(verificationToken) // this is supposed to be encrypted token, if not, it's invalid
             .digest('hex')
 
-        console.log(verificationTokenHash)
-
         // comapre the token has with found request hash
         if (verificationTokenHash !== foundRequest.hashedVerificationToken) throw new BadRequestException('Invalid token received');
 

@@ -7,7 +7,7 @@ import { REGEXP_ONLY_DIGITS } from "input-otp"
 import axios, { AxiosError } from "axios"
 import { useMutation } from "@tanstack/react-query"
 import toast from "react-hot-toast"
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { API_URL, getErrMsg } from "@/lib/utils"
 import { useParams, useRouter } from "next/navigation"
@@ -15,6 +15,7 @@ import useTimer from "@/hooks/useTimer"
 import { AuthMessage, RESEND_OTP_TIME_SEC } from "@/lib/CONSTANTS"
 import { TLoginResponse } from "@/types"
 import LoadingButton from "@/components/loading-button"
+import { signIn } from "next-auth/react"
 
 const FormSchema = z.object({
     otp: z.string().min(6, {
@@ -29,6 +30,7 @@ export function TwoFactorAuthOTPVerificationForm() {
     const { token } = useParams();
     const router = useRouter();
     const [resendMessage, setResendMessage] = useState('');
+    const [isPending, startTransition] = useTransition();
     const { resetTimer, timeLeft, startTimer, isRunning } = useTimer(RESEND_OTP_TIME_SEC, { startOnMount: true });
 
     const form = useForm<FormValues>({
@@ -39,7 +41,7 @@ export function TwoFactorAuthOTPVerificationForm() {
         },
     });
 
-    const { mutateAsync, isPending } = useMutation({
+    const { mutateAsync } = useMutation({
         mutationFn: (data: FormValues) => axios.post<TLoginResponse>(`${API_URL}/auth/verify-two-fa-otp`, data, { withCredentials: true }),
         onError: (error) => {
             if (error instanceof AxiosError) {
@@ -60,20 +62,26 @@ export function TwoFactorAuthOTPVerificationForm() {
                 toast.error(error.message);
             }
         },
-        onSuccess(res) { // after successful handle, login the user
-            if ('access_token' in res) {
-                console.log(res)
+        async onSuccess(res) { // after successful handle, login the user
+            const data = res.data;
 
-                // setAuth({
-                //     accessToken: response.access_token,
-                //     user: response.user,
-                // });
-                // const payload: TAuthPayload = jwtDecode(response.access_token);
-
-                // navigate(`/${payload.role}/dashboard`, { replace: true });
-            } else {
+            if (!data.access_token) {
                 toast.error("An error occurred during sign in");
+                return;
             }
+
+            const result = await signIn("credentials", {
+                ...data,
+                redirect: false,
+            });
+
+            if (result?.status === 401) {
+                toast.error("Invalid email or password");
+                return;
+            }
+
+            router.push("/workspace");
+            router.refresh();
         }
     });
 
@@ -103,7 +111,10 @@ export function TwoFactorAuthOTPVerificationForm() {
 
     function onSubmit(data: FormValues) {
         if (isResendPending) return;
-        mutateAsync(data);
+
+        startTransition(() => {
+            mutateAsync(data);
+        })
     }
 
     function resendOtp() {

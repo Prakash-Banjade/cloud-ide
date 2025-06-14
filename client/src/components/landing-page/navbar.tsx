@@ -1,17 +1,12 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
-import { FileText, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import Logo from "../logo";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
-import { Skeleton } from "../ui/skeleton";
+import LandingPageNavLinks from "./landing-page-nav-links";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
-export default function Navbar() {
-    const pathname = usePathname();
-    const { data, status } = useSession();
+export default async function Navbar() {
+    const session = await getServerSession(authOptions);
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -21,33 +16,10 @@ export default function Navbar() {
                         <Logo />
                     </Link>
 
-                    <div className="hidden md:flex items-center space-x-8">
-                        <Link
-                            href="/docs"
-                            className={cn(
-                                "flex items-center space-x-2 text-foreground hover:text-dodgerblue transition-colors",
-                                pathname === "/docs" && "text-dodgerblue"
-                            )}
-                        >
-                            <FileText className="w-4 h-4" />
-                            <span>Documentation</span>
-                        </Link>
-                        <Link
-                            href="/support"
-                            className={cn(
-                                "flex items-center space-x-2 text-foreground hover:text-dodgerblue transition-colors",
-                                pathname === "/support" && "text-dodgerblue"
-                            )}
-                        >
-                            <HelpCircle className="w-4 h-4" />
-                            <span>Support</span>
-                        </Link>
-                    </div>
+                    <LandingPageNavLinks />
 
                     {
-                        status === "loading" ? (
-                            <Skeleton className="h-10 w-28 rounded-md" />
-                        ) : !data ? (
+                        !session ? (
                             <div className="flex items-center space-x-3">
                                 <Button
                                     variant="ghost"

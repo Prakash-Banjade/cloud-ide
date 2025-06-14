@@ -10,8 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from '@/components/ui/input';
 import LoadingButton from '@/components/loading-button';
 import { signIn } from 'next-auth/react';
-import { webauthnVerifyLogin } from '@/lib/actions/login.action';
 import { useRouter } from 'next/navigation';
+import { TLoginResponse } from '@/types';
 
 type Props = {
     setIsFormSubmitting: React.Dispatch<React.SetStateAction<boolean>>
@@ -54,7 +54,14 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
                     const authenticationResponse = await startAuthentication({ optionsJSON: challengePayload });
                     setLoadingText('Signing in...');
 
-                    const data = await webauthnVerifyLogin(authenticationResponse, email);
+                    const response = await axiosClient.post<TLoginResponse>(`/web-authn/verify-login`, {
+                        authenticationResponse,
+                        email,
+                    });
+
+                    if (!response.data) throw new Error('Failed to login with passkey');
+
+                    const data = response.data;
 
                     if (data.access_token) {
                         const res = await signIn("credentials", {
