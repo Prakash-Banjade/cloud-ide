@@ -1,6 +1,7 @@
 import { ThemeToggle } from '@/components/theme-toggle'
 import Image from 'next/image'
 import Link from 'next/link'
+import logoDark from '@/assets/logo-dark.png'
 
 export default function AuthSideView() {
     return (
@@ -14,7 +15,7 @@ export default function AuthSideView() {
             >
                 <div className="flex aspect-square size-12 items-center justify-center rounded-lg bg-primary mr-2">
                     <Image
-                        src="/logo-dark.png"
+                        src={logoDark}
                         alt='Qubide Logo'
                         width={32}
                         height={32}
