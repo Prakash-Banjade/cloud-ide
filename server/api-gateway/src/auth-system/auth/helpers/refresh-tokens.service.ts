@@ -32,7 +32,7 @@ export class RefreshTokenService {
     async get() {
         const cacheKey = `user:${this.email}:${this.deviceId}`
 
-        const token: string | null = await this.cacheManager.get(cacheKey);
+        const token: string | null | undefined = await this.cacheManager.get(cacheKey);
 
         return token ? JSON.parse(token) as TRefreshToken : null
     }
