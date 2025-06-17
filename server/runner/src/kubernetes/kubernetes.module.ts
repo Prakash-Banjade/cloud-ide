@@ -20,7 +20,7 @@ import { KubernetesService } from './kubernetes.service';
                 }
 
                 // 2️⃣ Else, assume in-cluster:
-                kc.loadFromDefault();
+                kc.loadFromCluster();
                 return kc;
             },
             inject: [ConfigService],
