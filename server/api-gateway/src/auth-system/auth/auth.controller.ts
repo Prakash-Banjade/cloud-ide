@@ -27,7 +27,7 @@ export class AuthController {
     @ApiConflictResponse({ description: 'User with email already exists.' })
     @UseInterceptors(TransactionInterceptor)
     @Public()
-    @Post('register')
+    // @Post('register')
     register(@Body() registerDto: RegisterDto) {
         return this.authService.register(registerDto);
     }
