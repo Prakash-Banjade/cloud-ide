@@ -73,6 +73,11 @@ spec:
               value: "9000"
             - name: REPL_ID
               value: "service_name"
+            - name: CLIENT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: runner-env
+                  key: CLIENT_URL
           ports:
             - containerPort: 3003 # expose ws port
             - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
@@ -111,7 +116,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: service-name
+  name: service_name
   namespace: qubide
   annotations:
     kubernetes.io/ingress.class: "nginx" # Use the NGINX Ingress controller
@@ -126,12 +131,12 @@ spec:
   # Terminate TLS for both hostnames into one Kubernetes Secret
   tls:
     - hosts:
-        - service-name.prakashbanjade.com
-        - service-name.qubide.cloud
-      secretName: service-name-tls
+        - service_name.prakashbanjade.com
+        - service_name.qubide.cloud
+      secretName: service_name-tls
 
   rules:
-    - host: service-name.prakashbanjade.com # ws endpoint
+    - host: service_name.prakashbanjade.com # ws endpoint
       http:
         paths:
           - path: /
@@ -142,7 +147,7 @@ spec:
                 port:
                   number: 3003
 
-    - host: service-name.qubide.cloud # long running process (react, next) endpoint
+    - host: service_name.qubide.cloud # long running process (react, next) endpoint
       http:
         paths:
           - path: /

@@ -9,7 +9,9 @@ export default function DownloadButton() {
     const { replId } = useParams();
 
     // const podUrl = "http://localhost:3003";
-    const podUrl = `http://${replId}.prakashbanjade.com`;
+    const podUrl = process.env.NODE_ENV === 'production'
+        ? `https://${replId}.prakashbanjade.com`
+        : `http://${replId}.prakashbanjade.com`;
 
     async function handleDownload() {
         const res = await fetch(`${podUrl}/project/download`, {
@@ -19,7 +21,7 @@ export default function DownloadButton() {
             },
         });
         if (!res.ok) {
-            toast((t) => (
+            toast(() => (
                 <div className="flex items-center">
                     <span className="self-start mr-1">
                         <CircleX size={22} className="fill-red-500 stroke-white" />
