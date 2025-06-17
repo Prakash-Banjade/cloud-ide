@@ -110,7 +110,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     if (!longRunningProcesses[payload.lang]) {
-      this.terminalManager.write(socket.id, cmd);
+      this.terminalManager.write(socket.id, cmd + '\r');
       return;
     }
 

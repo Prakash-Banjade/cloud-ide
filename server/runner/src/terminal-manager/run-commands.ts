@@ -9,23 +9,29 @@ export const longRunningProcesses: Partial<Record<ELanguage, string>> = {
 export const getRunCommand = (language: ELanguage, filePath?: string) => {
     if (language in longRunningProcesses) return longRunningProcesses[language];
 
-    if (!filePath) return;
-    const filename = filePath.replaceAll('/', '');
+    const filename = filePath?.replaceAll('/', '') || defaultFilePath[language];
     const filenameWithoutExt = filename.split('.')[0];
 
     if (language === ELanguage.C) {
-        return `gcc ${filename} -o ../tmp/${filenameWithoutExt} && ./../tmp/${filenameWithoutExt} && echo`; // echo is done to get a new line bcz the output is showing in same line
+        return `gcc ${filename} -o ../tmp/${filenameWithoutExt} && ./../tmp/${filenameWithoutExt}`;
     }
 
     if (language === ELanguage.CPP) {
-        return `g++ ${filename} -o ../tmp/${filenameWithoutExt} && ./../tmp/${filenameWithoutExt} && echo`;
+        return `g++ ${filename} -o ../tmp/${filenameWithoutExt} && ./../tmp/${filenameWithoutExt}`;
     }
 
     if (language === ELanguage.PYTHON) {
-        return `python3 ${filename} && echo`;
+        return `python3 ${filename}`;
     }
 
     if (language === ELanguage.NODE_JS) {
-        return `node ${filename} && echo`;
+        return `node ${filename}`;
     }
 };
+
+const defaultFilePath = {
+    [ELanguage.C]: 'main.c',
+    [ELanguage.CPP]: 'main.cpp',
+    [ELanguage.PYTHON]: 'main.py',
+    [ELanguage.NODE_JS]: 'index.js',
+}

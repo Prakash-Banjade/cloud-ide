@@ -44,7 +44,7 @@ spec:
       serviceAccountName: runner-sa
       containers:
         - name: runner
-          image: prakashbanjade/cloud-ide-runner:v1.1
+          image: prakashbanjade/cloud-ide-runner:latest
           imagePullPolicy: Always
           env:
             - name: MINIO_ACCESS_KEY
@@ -111,12 +111,27 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: service_name
+  name: service-name
   namespace: qubide
+  annotations:
+    kubernetes.io/ingress.class: "nginx" # Use the NGINX Ingress controller
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Tell cert‑manager which ClusterIssuer to use
+
+    # Redirect all HTTP traffic to HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+
+  # Terminate TLS for both hostnames into one Kubernetes Secret
+  tls:
+    - hosts:
+        - service-name.prakashbanjade.com
+        - service-name.qubide.cloud
+      secretName: service-name-tls
+
   rules:
-    - host: service_name.prakashbanjade.com # ws endpoint
+    - host: service-name.prakashbanjade.com # ws endpoint
       http:
         paths:
           - path: /
@@ -126,7 +141,8 @@ spec:
                 name: service_name
                 port:
                   number: 3003
-    - host: service_name.qubide.cloud # node/python app endpoint
+
+    - host: service-name.qubide.cloud # long running process (react, next) endpoint
       http:
         paths:
           - path: /
@@ -135,4 +151,5 @@ spec:
               service:
                 name: service_name
                 port:
-                  number: LANG_PORT
+                  number: LANG_PORT  # e.g. replace with 3000 or your configured port
+

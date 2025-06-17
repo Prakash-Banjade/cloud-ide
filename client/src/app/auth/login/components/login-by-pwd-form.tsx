@@ -1,11 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn, getErrMsg } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import toast from "react-hot-toast"
 import { buttonVariants } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -31,12 +30,13 @@ export type loginFormSchemaType = z.infer<typeof loginFormSchema>;
 export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFormProps) {
     const router = useRouter();
     const [isPending, startTransition] = React.useTransition();
+    const [errMsg, setErrMsg] = React.useState<string | null>(null);
 
     const form = useForm<loginFormSchemaType>({
         resolver: zodResolver(loginFormSchema),
         defaultValues: {
-            email: "prakash@gmail.com",
-            password: "Prakash@122",
+            email: "",
+            password: "",
         },
     })
 
@@ -61,18 +61,15 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                 });
 
                 if (result?.status === 401) {
-                    toast.error("Invalid email or password");
+                    setErrMsg(AuthMessage.INVALID_AUTH_CREDENTIALS_MSG);
                     return;
                 }
 
                 router.push("/workspace");
                 router.refresh();
             } catch (error) {
-                if (error instanceof Error) {
-                    toast.error(error.message);
-                } else {
-                    toast.error("An error occurred during sign in");
-                }
+                const errMsg = getErrMsg(error);
+                setErrMsg(errMsg ?? "Failed to login");
             }
         })
     };
@@ -82,7 +79,15 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
     }, [isPending]);
 
     return (
-        <div className={cn("grid gap-6", className)} {...props}>
+        <div className={cn("space-y-6", className)} {...props}>
+            {
+                errMsg && (
+                    <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20">
+                        {errMsg}
+                    </p>
+                )
+            }
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 

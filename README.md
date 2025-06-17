@@ -35,6 +35,7 @@ kind create cluster --name qubide
 Apply the ingress-nginx manifest:
 
 ```bash
+kubectl create ns ingress-nginx
 kubectl apply -f server/k8s/ingress-nginx-controller.yaml
 ```
 
@@ -46,11 +47,10 @@ kubectl create namespace qubide
 
 ### 4. Setup MinIO
 
-Install the MinIO manifest and apply necessary secrets in the `qubide` namespace:
+Install the MinIO:
 
 ```bash
 kubectl apply -f server/k8s/minio/minio-dev.yaml
-kubectl apply -f server/k8s/minio/runner.secrets.example.yaml
 ```
 
 ### 5. Apply `ServiceAccount` for runner
@@ -60,6 +60,12 @@ kubectl apply -f server/k8s/runner-sa.yaml
 ```
 
 **Note**: The manifest for resources is kept in server/api-gateway/src/kubernetes/manifest/service.yaml. This is applied automatically when a user creates app.
+
+### 6. Apply runner secrets
+
+```bash
+kubectl apply -f server/k8s/runner.secrets.example.yaml
+```
 
 ## Development Workflow
 

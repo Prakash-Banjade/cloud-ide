@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: prakashbanjade/cloud-ide-api-gateway:v1
+          image: prakashbanjade/cloud-ide-api-gateway:latest
           imagePullPolicy: Always
           env:
             - name: PORT
@@ -105,7 +105,7 @@ spec:
             - name: CLIENT_DOMAIN
               value: "qubide.cloud"
             - name: BACKEND_URL
-              value: "http://api-gateway.qubide.cloud"
+              value: "https://api-gateway.qubide.cloud"
             - name: AES_KEY
               valueFrom:
                 secretKeyRef:
@@ -165,16 +165,17 @@ kind: Ingress
 metadata:
   name: api-gateway
   namespace: qubide-main
-  # annotations:
-  #   kubernetes.io/ingress.class: nginx
-  #   cert-manager.io/cluster-issuer: letsencrypt-prod
-  #   nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # should match with letsencrypt-issuer.yaml -> spec.acme.privateKeySecretRef.name
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
-  # tls:
-  #   - hosts:
-  #       - api-gateway.qubide.cloud
-  #     secretName: api-gateway-tls
+  tls:
+    - hosts:
+        - api-gateway.qubide.cloud
+      secretName: api-gateway-tls
   rules:
     - host: api-gateway.qubide.cloud
       http:

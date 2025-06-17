@@ -10,7 +10,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
-export const API_URL_DEV = 'http://localhost:3002/api';
 
 export const fileNameRgx = new RegExp(
   // 1) forbid reserved Windows device names (CON, PRN, AUX, NUL, COM1–COM9, LPT1–LPT9)
