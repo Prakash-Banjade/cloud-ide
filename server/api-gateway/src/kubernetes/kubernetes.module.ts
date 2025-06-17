@@ -19,7 +19,7 @@ import { KubeConfig, CoreV1Api, AppsV1Api, NetworkingV1Api } from '@kubernetes/c
                 }
 
                 // 2️⃣ Else, assume in-cluster:
-                kc.loadFromDefault();
+                kc.loadFromCluster();
                 return kc;
             },
             inject: [ConfigService],

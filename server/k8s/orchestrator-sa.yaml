@@ -1,0 +1,42 @@
+# 1) Create a dedicated ServiceAccount for your orchestrator
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator-sa
+  namespace: qubide-main
+---
+# 2) In the “qubide” namespace, define a Role that covers
+#    Deployments (apps/), Services (core/) and Ingresses (networking.k8s.io/)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestrator-role
+  namespace: qubide
+rules:
+  # Deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get","list","watch","create","update","patch","delete"]
+  # Services
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get","list","watch","create","update","patch","delete"]
+  # Ingresses
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get","list","watch","create","update","patch","delete"]
+---
+# 3) Bind that Role to orchestrator-sa (in qubide-main)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: orchestrator-bind
+  namespace: qubide
+subjects:
+  - kind: ServiceAccount
+    name: orchestrator-sa
+    namespace: qubide-main
+roleRef:
+  kind: Role
+  name: orchestrator-role
+  apiGroup: rbac.authorization.k8s.io

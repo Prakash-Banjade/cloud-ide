@@ -25,9 +25,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     useEffect(() => {
         if (!replId || !data) return;
 
+        const url = process.env.NODE_ENV === 'production'
+            ? `wss://${replId}.prakashbanjade.com`
+            : `ws://${replId}.prakashbanjade.com`
+            // : `ws://127.0.0.1:3003`;
+
         const newSocket = io(
-            // `ws://127.0.0.1:3003`,
-            `ws://${replId}.prakashbanjade.com`,
+            url,
             {
                 auth: {
                     access_token: data.backendTokens.access_token

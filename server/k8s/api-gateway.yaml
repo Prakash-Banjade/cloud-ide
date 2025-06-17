@@ -16,6 +16,7 @@ spec:
       labels:
         app: api-gateway
     spec:
+      serviceAccountName: orchestrator-sa
       containers:
         - name: api-gateway
           image: prakashbanjade/cloud-ide-api-gateway:latest
@@ -138,9 +139,17 @@ spec:
                 secretKeyRef:
                   name: gateway-env
                   key: MAIL_PASSWORD  
-            
           ports:
             - containerPort: 3002
+          resources:
+            requests:
+              cpu: "300m"       # 0.3 core
+              memory: "512Mi"
+              ephemeral-storage: "2Gi"
+            limits:
+              cpu: "1"          # 1 full core
+              memory: "1Gi"
+              ephemeral-storage: "5Gi"
 
 ---
 

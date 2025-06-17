@@ -19,7 +19,7 @@ import { MinioService } from './minio.service';
                     port: +configService.getOrThrow("MINIO_PORT"),
                     accessKey: configService.getOrThrow("MINIO_ACCESS_KEY"),
                     secretKey: configService.getOrThrow("MINIO_SECRET_KEY"),
-                    useSSL: configService.get("NODE_ENV") === "production",
+                    useSSL: false, // necessary, bcz the internal communicatio will be over http
                 });
                 return client;
             },
