@@ -35,6 +35,7 @@ kind create cluster --name qubide
 Apply the ingress-nginx manifest:
 
 ```bash
+kubectl create ns ingress-nginx
 kubectl apply -f server/k8s/ingress-nginx-controller.yaml
 ```
 

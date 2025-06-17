@@ -105,7 +105,7 @@ spec:
             - name: CLIENT_DOMAIN
               value: "qubide.cloud"
             - name: BACKEND_URL
-              value: "http://api-gateway.qubide.cloud"
+              value: "https://api-gateway.qubide.cloud"
             - name: AES_KEY
               valueFrom:
                 secretKeyRef:
