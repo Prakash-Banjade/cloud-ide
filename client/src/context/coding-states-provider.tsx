@@ -35,7 +35,9 @@ interface CodingStatesContextType {
     mruFiles: TFileItem[];
     setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
     treeLoaded: boolean;
-    setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>
+    setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+    treePanelOpen: boolean;
+    setTreePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -53,6 +55,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
+    const [treePanelOpen, setTreePanelOpen] = useState(false);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
@@ -92,7 +95,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         mruFiles,
         setMruFiles,
         treeLoaded,
-        setTreeLoaded
+        setTreeLoaded,
+        treePanelOpen,
+        setTreePanelOpen
     };
 
     useEffect(() => {

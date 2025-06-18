@@ -12,6 +12,7 @@ import { Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAppMutation } from "@/hooks/useAppMutation"
 import { languageFields } from "@/lib/utils"
+import { useTransition } from "react"
 
 const formSchema = z.object({
     projectName: z
@@ -25,6 +26,7 @@ type formSchemaType = z.infer<typeof formSchema>;
 
 export function NewProjectForm() {
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     const form = useForm<formSchemaType>({
         resolver: zodResolver(formSchema),
@@ -33,26 +35,28 @@ export function NewProjectForm() {
         },
     });
 
-    const { mutateAsync, isPending } = useAppMutation<formSchemaType, { message: string, replId: string }>();
+    const { mutateAsync } = useAppMutation<formSchemaType, { message: string, replId: string }>();
 
     async function onSubmit(values: formSchemaType) {
-        const res = await mutateAsync({
-            endpoint: `/projects`,
-            method: 'post',
-            data: values
-        });
+        startTransition(async () => {
+            const res = await mutateAsync({
+                endpoint: `/projects`,
+                method: 'post',
+                data: values
+            });
 
-        if (res.status === 201) {
-            const replId = res.data.replId;
+            if (res.status === 201) {
+                const replId = res.data.replId;
 
-            router.push(`/code/${replId}`);
-        }
+                router.push(`/code/${replId}`);
+            }
+        })
     }
 
     return (
         <section>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" autoComplete="off">
                     <FormField
                         control={form.control}
                         name="projectName"
@@ -60,7 +64,7 @@ export function NewProjectForm() {
                             <FormItem>
                                 <FormLabel>Project Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="My awesome project" {...field} />
+                                    <Input placeholder="My awesome project" autoComplete="off" {...field} />
                                 </FormControl>
                                 <FormDescription>This will be the unique identifier for your project.</FormDescription>
                                 <FormMessage />

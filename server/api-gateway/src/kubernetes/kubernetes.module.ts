@@ -11,15 +11,16 @@ import { KubeConfig, CoreV1Api, AppsV1Api, NetworkingV1Api } from '@kubernetes/c
             useFactory: (cfg: ConfigService) => {
                 const kc = new KubeConfig();
 
-                // 1️⃣ If you have a KUBECONFIG path, load from file:
                 const kubeconfigPath = cfg.get<string>('KUBECONFIG');
                 if (kubeconfigPath) {
                     kc.loadFromFile(kubeconfigPath);
                     return kc;
                 }
 
-                // 2️⃣ Else, assume in-cluster:
-                kc.loadFromCluster();
+                cfg.get('NODE_ENV') === 'production'
+                    ? kc.loadFromCluster()
+                    : kc.loadFromDefault();
+
                 return kc;
             },
             inject: [ConfigService],

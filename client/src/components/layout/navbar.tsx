@@ -16,7 +16,7 @@ export default function Navbar() {
                     <Logo />
                 </Link>
 
-                <nav>
+                <nav className='sm:block hidden'>
                     <ul className='flex items-center gap-2'>
                         <li>
                             <Button asChild variant={pathname === "/workspace" ? "secondary" : "link"}>

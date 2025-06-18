@@ -7,10 +7,16 @@ import { useMutation } from '@tanstack/react-query'
 import { REFRESH_TOKEN_HEADER } from '@/lib/CONSTANTS'
 import { useRouter } from 'next/navigation'
 import { Skeleton } from '../ui/skeleton'
+import { EllipsisVertical } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
+import Link from "next/link"
+import useDownload from "@/hooks/useDownload"
 
 export default function ProfileDropdown() {
     const { data, status } = useSession();
     const router = useRouter();
+    const isMobile = useIsMobile();
+    const handleDownload = useDownload();
 
     const { mutateAsync, isPending } = useMutation({
         mutationFn: async () => {
@@ -28,19 +34,26 @@ export default function ProfileDropdown() {
         await mutateAsync();
     }
 
-    if (status === "unauthenticated") router.push("/auth/login");
-
     if (status === "loading") return (
         <div className='p-1 flex items-center'>
             <Skeleton className='size-10 rounded-full' />
         </div>
     )
 
+    if (status === "unauthenticated" || !data) {
+        router.push("/auth/login")
+        return;
+    }
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 {
-                    data && (
+                    isMobile ? (
+                        <Button variant={'ghost'} size={"icon"}>
+                            <EllipsisVertical />
+                        </Button>
+                    ) : (
                         <Button variant='ghost' className='rounded-full size-12' size={"icon"}>
                             <ProfileAvatar
                                 name={data?.user.firstName + " " + data?.user.lastName}
@@ -52,8 +65,22 @@ export default function ProfileDropdown() {
                 }
             </DropdownMenuTrigger>
             <DropdownMenuContent side='bottom' align='end'>
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel className="truncate max-w-[20ch]" title={data?.user.email}>{data?.user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDownload}>
+                    Download
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/workspace">
+                        Workspace
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/docs">
+                        Documentation
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => router.push("/settings")}
                 >

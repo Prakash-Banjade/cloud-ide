@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service_name
+  namespace: qubide
+  labels:
+    app: service_name
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service_name
+  template:
+    metadata:
+      labels:
+        app: service_name
+    spec:
+      serviceAccountName: runner-sa
+
+      # ----------------------------------------------------
+      # 1) Pod-level securityContext
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      # ----------------------------------------------------
+
+      volumes:
+        - name: workspace-volume
+          emptyDir: {}
+        - name: runner-env
+          secret:
+            secretName: runner-env
+            items:
+              - key: MINIO_ACCESS_KEY
+                path: minio_access_key
+              - key: MINIO_SECRET_KEY
+                path: minio_secret_key
+              - key: ACCESS_TOKEN_SECRET
+                path: access_token_secret
+              - key: ACCESS_TOKEN_EXPIRATION_SEC
+                path: access_token_expiration_sec
+              - key: CLIENT_URL
+                path: client_url
+
+      initContainers:
+        - name: copy-minio-resources
+          image: minio/mc
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              # read credentials from files
+              MC_ACCESS_KEY=$(cat /etc/runner-env/minio_access_key)
+              MC_SECRET_KEY=$(cat /etc/runner-env/minio_secret_key)
+              mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 \
+                "$MC_ACCESS_KEY" "$MC_SECRET_KEY"
+              mc cp --recursive minio/cloud-ide/code/service_name/ /workspace/
+          volumeMounts:
+            - name: workspace-volume
+              mountPath: /workspace
+            - name: runner-env
+              mountPath: /etc/runner-env
+              readOnly: true
+
+      containers:
+        - name: runner
+          image: prakashbanjade/cloud-ide-runner:latest
+          imagePullPolicy: Always
+
+          # ----------------------------------------------------
+          # 2) Container-level securityContext
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # ----------------------------------------------------
+
+          # wrapper to export file‑based secrets into env before launching your app
+          command: ["sh","-c"]
+          args:
+            - |
+              export MINIO_ACCESS_KEY=$(cat /etc/runner-env/minio_access_key)
+              export MINIO_SECRET_KEY=$(cat /etc/runner-env/minio_secret_key)
+              export ACCESS_TOKEN_SECRET=$(cat /etc/runner-env/access_token_secret)
+              export ACCESS_TOKEN_EXPIRATION_SEC=$(cat /etc/runner-env/access_token_expiration_sec)
+              export CLIENT_URL=$(cat /etc/runner-env/client_url)
+              exec node /usr/src/app/dist/main.js
+
+          # Non‑sensitive config can still be env vars:
+          env:
+            - name: MINIO_ENDPOINT
+              value: minio.minio-dev.svc.cluster.local
+            - name: MINIO_PORT
+              value: "9000"
+            - name: REPL_ID
+              value: "service_name"
+
+          volumeMounts:
+            - name: workspace-volume
+              mountPath: /workspace
+            - name: runner-env
+              mountPath: /etc/runner-env
+              readOnly: true
+
+          ports:
+            - name: ws
+              containerPort: 3003
+            - name: user
+              containerPort: LANG_PORT
+
+          resources:
+            requests:
+              cpu: "300m"
+              memory: "512Mi"
+              ephemeral-storage: "2Gi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: "5Gi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service_name
+  namespace: qubide
+spec:
+  selector:
+    app: service_name
+  ports:
+    - protocol: TCP
+      name: ws
+      port: 3003
+      targetPort: 3003
+    - protocol: TCP
+      name: user
+      port: LANG_PORT
+      targetPort: LANG_PORT
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: service_name
+  namespace: qubide
+  annotations:
+    kubernetes.io/ingress.class: "nginx" # Use the NGINX Ingress controller
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: service_name.prakashbanjade.com # ws endpoint
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: service_name
+                port:
+                  number: 3003
+
+    - host: service_name.qubide.cloud # long running process (react, next) endpoint
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: service_name
+                port:
+                  number: LANG_PORT  # e.g. replace with 3000 or your configured port
+

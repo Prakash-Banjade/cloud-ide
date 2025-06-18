@@ -21,6 +21,7 @@ export default async function CodePage({ params }: { params: Promise<Props> }) {
     });
 
     if (!res.ok) {
+        console.log(res);
         redirect('/workspace');
     };
 

@@ -1,10 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { CircleX, Download, X } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { useParams } from "next/navigation";
-import toast from "react-hot-toast";
+import { Button } from '@/components/ui/button';
+import { CircleX } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useParams } from 'next/navigation';
+import React from 'react'
+import toast from 'react-hot-toast';
 
-export default function DownloadButton() {
+export default function useDownload() {
     const { data } = useSession();
     const { replId } = useParams();
 
@@ -48,15 +49,5 @@ export default function DownloadButton() {
         URL.revokeObjectURL(url);
     }
 
-
-    return (
-        <Button
-            variant={'outline'}
-            type="button"
-            onClick={handleDownload}
-        >
-            <Download />
-            Download
-        </Button>
-    )
+    return handleDownload;
 }
