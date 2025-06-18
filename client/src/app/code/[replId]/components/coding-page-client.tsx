@@ -51,7 +51,7 @@ export const CodingPagePostPodCreation = () => {
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
     const isMobile = useIsMobile();
 
-    const { socket } = useSocket();
+    const { socket, ptySocket } = useSocket();
     const refreshTree = useRefreshTree();
 
     useEffect(() => {
@@ -85,12 +85,12 @@ export const CodingPagePostPodCreation = () => {
 
     if (isLoadingFiles) return <CodingPageLoader state="loading_files" />;
 
-    if (!socket) return null;
+    if (!socket || !ptySocket) return null;
 
     return (
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
-            <TopBar socket={socket} />
+            <TopBar socket={ptySocket} />
             <FileTabSwitcher />
 
             {/* Main content */}
@@ -137,7 +137,7 @@ export const CodingPagePostPodCreation = () => {
                         {/* Terminal panel */}
                         <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
                         <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
-                            <XTerminalNoSSR socket={socket} showTerm={showTerm} />
+                            <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
                         </ResizablePanel>
 
                     </ResizablePanelGroup>

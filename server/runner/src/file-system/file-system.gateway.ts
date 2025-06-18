@@ -22,6 +22,8 @@ export class FileSystemGateway implements OnGatewayConnection {
   ) { }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
+    console.log(`✅ CONNECTED - ${socket.id}`);
+    
     const replId = socket.handshake.headers.host?.split('.')[0] || "";
     this.replId = replId;
 
