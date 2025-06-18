@@ -1,11 +1,9 @@
 import { MinioService } from "src/minio/minio.service";
-import { TerminalManagerService } from "src/terminal-manager/terminal-manager.service";
 import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
+import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { UseGuards } from "@nestjs/common";
 import { WsGuard } from "src/guard/ws.guard";
-import { ConfigService } from "@nestjs/config";
 
 @WebSocketGateway({
     cors: {
@@ -14,7 +12,7 @@ import { ConfigService } from "@nestjs/config";
     },
 })
 // @UseGuards(WsGuard)
-export class FileSystemCRUDGateway {
+export class FileSystemCRUDGateway implements OnGatewayConnection {
     @WebSocketServer()
     server: Server;
 
@@ -23,11 +21,11 @@ export class FileSystemCRUDGateway {
     constructor(
         private readonly minioService: MinioService,
         private readonly fileSystemService: FileSystemService,
-        private readonly terminalManager: TerminalManagerService,
-        private readonly configService: ConfigService,
-    ) {
-        this.replId = this.configService.get('REPL_ID') as string;
-        // this.replId = "node-node";
+    ) { }
+
+    handleConnection(@ConnectedSocket() socket: Socket) {
+        const replId = socket.handshake.headers.host?.split('.')[0] || "";
+        this.replId = replId;
     }
 
     /**

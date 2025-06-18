@@ -4,10 +4,7 @@ import { TerminalManagerService } from '../terminal-manager/terminal-manager.ser
 import { getRunCommand, longRunningProcesses } from './run-commands';
 import { ELanguage } from 'src/global-types';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { UseGuards } from '@nestjs/common';
-import { WsGuard } from 'src/guard/ws.guard';
 import { KubernetesService } from 'src/kubernetes/kubernetes.service';
-import { ConfigService } from '@nestjs/config';
 
 @WebSocketGateway({
   cors: {
@@ -27,11 +24,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly kubernetesService: KubernetesService,
     // private readonly chokidarService: ChokidarService,
-    private readonly configService: ConfigService,
-  ) {
-    this.replId = this.configService.get('REPL_ID') as string;
-    // this.replId = "node-node";
-  }
+  ) { }
 
   private INACTIVITY_TIMEOUT_MS = 1000 * 60 * 30; // 30 minutes
   private connectedSocketsIds = new Set<string>();
@@ -41,8 +34,11 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id}`);
 
-    socket.join(this.replId); // join project room
-    this.server.to(this.replId).emit('process:status', { isRunning: this.terminalManager.isRunning() });
+    const replId = socket.handshake.headers.host?.split('.')[0] || "";
+    this.replId = replId;
+
+    socket.join(replId); // join project room
+    this.server.to(replId).emit('process:status', { isRunning: this.terminalManager.isRunning() });
 
     this.connectedSocketsIds.add(socket.id);
 

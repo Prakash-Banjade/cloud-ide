@@ -46,38 +46,9 @@ spec:
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
           imagePullPolicy: Always
-          env:
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: MINIO_ACCESS_KEY
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: MINIO_SECRET_KEY
-            - name: ACCESS_TOKEN_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: ACCESS_TOKEN_SECRET
-            - name: ACCESS_TOKEN_EXPIRATION_SEC
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: ACCESS_TOKEN_EXPIRATION_SEC
-            - name: MINIO_ENDPOINT
-              value: minio.minio-dev.svc.cluster.local
-            - name: MINIO_PORT
-              value: "9000"
-            - name: REPL_ID
-              value: "service_name"
-            - name: CLIENT_URL
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: CLIENT_URL
+          envFrom:
+          - secretRef:
+            name: runner-env
           ports:
             - containerPort: 3003 # expose ws port
             - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000

@@ -12,115 +12,56 @@ spec:
       app: service_name
   template:
     metadata:
+      namespace: qubide
       labels:
         app: service_name
     spec:
-      serviceAccountName: runner-sa
-
-      # ----------------------------------------------------
-      # 1) Pod-level securityContext
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 2000
-      # ----------------------------------------------------
-
       volumes:
         - name: workspace-volume
           emptyDir: {}
-        - name: runner-env
-          secret:
-            secretName: runner-env
-            items:
-              - key: MINIO_ACCESS_KEY
-                path: minio_access_key
-              - key: MINIO_SECRET_KEY
-                path: minio_secret_key
-              - key: ACCESS_TOKEN_SECRET
-                path: access_token_secret
-              - key: ACCESS_TOKEN_EXPIRATION_SEC
-                path: access_token_expiration_sec
-              - key: CLIENT_URL
-                path: client_url
-
       initContainers:
         - name: copy-minio-resources
           image: minio/mc
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
           command: ["sh", "-c"]
           args:
             - |
               set -e
-              # read credentials from files
-              MC_ACCESS_KEY=$(cat /etc/runner-env/minio_access_key)
-              MC_SECRET_KEY=$(cat /etc/runner-env/minio_secret_key)
-              mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 \
-                "$MC_ACCESS_KEY" "$MC_SECRET_KEY"
-              mc cp --recursive minio/cloud-ide/code/service_name/ /workspace/
+              mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc cp --recursive minio/cloud-ide/code/service_name/ /workspace/
+          env:
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: runner-env
+                  key: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: runner-env
+                  key: MINIO_SECRET_KEY
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
-            - name: runner-env
-              mountPath: /etc/runner-env
-              readOnly: true
-
+      serviceAccountName: runner-sa
       containers:
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
           imagePullPolicy: Always
-
-          # ----------------------------------------------------
-          # 2) Container-level securityContext
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
-          # ----------------------------------------------------
-
-          # wrapper to export file‑based secrets into env before launching your app
-          command: ["sh","-c"]
-          args:
-            - |
-              export MINIO_ACCESS_KEY=$(cat /etc/runner-env/minio_access_key)
-              export MINIO_SECRET_KEY=$(cat /etc/runner-env/minio_secret_key)
-              export ACCESS_TOKEN_SECRET=$(cat /etc/runner-env/access_token_secret)
-              export ACCESS_TOKEN_EXPIRATION_SEC=$(cat /etc/runner-env/access_token_expiration_sec)
-              export CLIENT_URL=$(cat /etc/runner-env/client_url)
-              exec node /usr/src/app/dist/main.js
-
-          # Non‑sensitive config can still be env vars:
-          env:
-            - name: MINIO_ENDPOINT
-              value: minio.minio-dev.svc.cluster.local
-            - name: MINIO_PORT
-              value: "9000"
-            - name: REPL_ID
-              value: "service_name"
-
+          envFrom:
+          - secretRef:
+            name: runner-env
+          ports:
+            - containerPort: 3003 # expose ws port
+            - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
-            - name: runner-env
-              mountPath: /etc/runner-env
-              readOnly: true
-
-          ports:
-            - name: ws
-              containerPort: 3003
-            - name: user
-              containerPort: LANG_PORT
-
           resources:
             requests:
-              cpu: "300m"
+              cpu: "300m"       # 0.3 core
               memory: "512Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "1"
+              cpu: "1"          # 1 full core
               memory: "1Gi"
               ephemeral-storage: "5Gi"
 
@@ -152,6 +93,7 @@ metadata:
     kubernetes.io/ingress.class: "nginx" # Use the NGINX Ingress controller
 spec:
   ingressClassName: nginx
+
   rules:
     - host: service_name.prakashbanjade.com # ws endpoint
       http:
