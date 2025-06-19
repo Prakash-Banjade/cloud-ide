@@ -38,6 +38,8 @@ interface CodingStatesContextType {
     setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
     treePanelOpen: boolean;
     setTreePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
+    showTerm: boolean;
+    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -60,6 +62,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const [treeLoaded, setTreeLoaded] = useState(false);
+    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
     const { status } = useSession();
@@ -97,7 +100,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         treeLoaded,
         setTreeLoaded,
         treePanelOpen,
-        setTreePanelOpen
+        setTreePanelOpen,
+        showTerm,
+        setShowTerm
     };
 
     useEffect(() => {

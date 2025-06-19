@@ -53,6 +53,19 @@ spec:
               value: "service_name"
           ports:
             - containerPort: 3004 # ws for terminal
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    # only install if package.json exists and node_modules is absent
+                    if [ -f /workspace/package.json ] && [ ! -d /workspace/node_modules ]; then
+                      echo "Installing dependencies…"
+                      cd /workspace
+                      npm install
+                    fi
           resources:
             requests:
               cpu: "100m"
@@ -75,11 +88,11 @@ spec:
               mountPath: /workspace
           resources:
             requests:
-              cpu: "300m"       # 0.3 core
+              cpu: "100m"       # 0.1 core
               memory: "512Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "1"          # 1 full core
+              cpu: "300m"          # 0.3 core
               memory: "1Gi"
               ephemeral-storage: "5Gi"
 

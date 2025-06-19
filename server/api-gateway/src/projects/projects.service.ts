@@ -113,7 +113,9 @@ export class ProjectsService {
 
     if (!existingProject) throw new NotFoundException('Project not found');
 
-    await this.orchestratorService.removeResources(existingProject.replId);
+    await this.orchestratorService.removeResources(existingProject.replId); // remove k8s resources
+
+    await this.minioService.removePrefix(`code/${existingProject.replId}`); // remove from Minio
 
     await this.projectRepo.delete({
       id,

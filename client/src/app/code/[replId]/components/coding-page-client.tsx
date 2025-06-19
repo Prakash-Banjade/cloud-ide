@@ -45,9 +45,10 @@ export const CodingPagePostPodCreation = () => {
         treeLoaded,
         setTreeLoaded,
         treePanelOpen,
-        setTreePanelOpen
+        setTreePanelOpen,
+        showTerm,
+        setShowTerm,
     } = useCodingStates();
-    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
     const isMobile = useIsMobile();
 

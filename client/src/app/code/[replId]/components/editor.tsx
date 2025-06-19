@@ -7,7 +7,7 @@ import { SocketEvents } from "@/lib/CONSTANTS";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
-    const { setIsSyncing, selectedFile, setEditorInstance } = useCodingStates();
+    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance } = useCodingStates();
 
     async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
         setEditorInstance(editor);
@@ -38,15 +38,14 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
     }
 
     const syncFileContent = debounce((value: string | undefined) => {
-        if (value !== undefined && selectedFile) {
-            selectedFile.content = value;
-            
-            // TODO: Should send diffs, for now sending the whole file
-            setIsSyncing(true);
-            socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
-                setIsSyncing(false);
-            });
-        }
+        if (!selectedFile || value === undefined) return;
+
+        // TODO: Should send diffs, for now sending the whole file
+        setIsSyncing(true);
+        socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
+            setIsSyncing(false);
+        });
+
     }, 1000);
 
     // Sync file content on ctrl+s
@@ -57,6 +56,8 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
                 e.preventDefault();
                 if (!selectedFile) return;
 
+                console.log(editorInstance?.getValue())
+                
                 syncFileContent(selectedFile.content);
             }
         };

@@ -22,7 +22,7 @@ type Props = {
 export default function TopBar({ socket }: Props) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
-    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, setTreePanelOpen } = useCodingStates();
+    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, setTreePanelOpen, setShowTerm } = useCodingStates();
     const isMobile = useIsMobile();
     const handleDownload = useDownload();
     // const refreshTree = useRefreshTree();
@@ -30,15 +30,8 @@ export default function TopBar({ socket }: Props) {
     function onRun() {
         if (!socket || !project) return;
 
-        // for the first time, packages are being installed so we wait for node_modules to be created but it is not in the fileStructure, so we refresh the tree
-        // socket.emit(SocketEvents.FETCH_DIR, '', async (data: TreeItem[]) => {
-        //     await refreshTree({ content: data, socket });
-        // });
-
-        // const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
-
-        // if (hasDependeiciesNotInstalled) return toast.error("Please install dependencies before running the project.");
-
+        setShowTerm(true); // need to show the terminal when running the project
+        
         socket.emit(SocketEvents.PROCESS_RUN, { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);
         });
