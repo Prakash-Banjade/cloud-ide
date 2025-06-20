@@ -20,9 +20,9 @@ export class JwtService {
         });
     }
 
-    async createRefreshToken(payload: Pick<AuthUser, 'accountId'>): Promise<string> {
+    async createRefreshToken(payload: Pick<AuthUser, 'accountId' | 'deviceId'>): Promise<string> {
         return await this.jwtService.signAsync(
-            { accountId: payload.accountId },
+            { accountId: payload.accountId, deviceId: payload.deviceId },
             {
                 secret: this.envService.REFRESH_TOKEN_SECRET,
                 expiresIn: this.envService.REFRESH_TOKEN_EXPIRATION_SEC,
@@ -46,7 +46,7 @@ export class JwtService {
      * @returns the access and refresh tokens
      */
     async getAuthTokens(account: Account, req: FastifyRequest) {
-        const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
+        const deviceId = req.deviceId || generateDeviceId(req.headers['user-agent'], req.ip);
 
         const payload = {
             accountId: account.id,

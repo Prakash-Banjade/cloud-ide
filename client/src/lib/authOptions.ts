@@ -4,36 +4,56 @@ import { getUserFromLoginResponse } from "@/lib/utils";
 import { TLoginResponse } from "@/types";
 import { JWT } from "next-auth/jwt";
 import axiosServer from "@/lib/axios-server";
-import { AuthMessage, REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
+import { REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";
 import { signOut } from "next-auth/react";
-import { redirect } from "next/navigation";
+
+
+// a module‑scope map to dedupe refreshes per refresh token
+export const ongoingRefreshes = new Map<string, Promise<JWT>>();
 
 async function refreshToken(token: JWT): Promise<JWT> {
-    const refreshToken = token.backendTokens.refresh_token;
-
-    if (!refreshToken) signOut();
-
-    const res = await axiosServer.post<TLoginResponse>(`/auth/refresh`, {}, {
-        headers: {
-            [REFRESH_TOKEN_HEADER]: token.backendTokens.refresh_token
-        }
-    });
-
-    const data = res.data;
-
-    if (!data) throw new Error("Invalid credentials");
-
-    const { user, exp } = getUserFromLoginResponse(data);
-
-    return {
-        ...token,
-        user,
-        backendTokens: {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            expiresIn: exp
-        }
+    const { refresh_token } = token.backendTokens;
+    if (!refresh_token) {
+        // no refresh token → force sign out
+        await signOut();
+        throw new Error("No refresh token");
     }
+
+    // if someone else already started refreshing with the same refresh_token,
+    // just wait for them:
+    if (ongoingRefreshes.has(refresh_token)) {
+        return ongoingRefreshes.get(refresh_token)!;
+    }
+
+    // otherwise, start a new one and store it
+    const p = (async () => {
+        try {
+            const res = await axiosServer.post<TLoginResponse>(
+                `/auth/refresh`,
+                {},
+                { headers: { [REFRESH_TOKEN_HEADER]: refresh_token } }
+            );
+            const data = res.data;
+            if (!data) throw new Error("Invalid credentials");
+
+            const { user, exp } = getUserFromLoginResponse(data);
+            return {
+                ...token,
+                user,
+                backendTokens: {
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                    expiresIn: exp,
+                },
+            };
+        } finally {
+            // no matter success or error, clear the map entry
+            ongoingRefreshes.delete(refresh_token);
+        }
+    })();
+
+    ongoingRefreshes.set(refresh_token, p);
+    return p;
 }
 
 export const authOptions: NextAuthOptions = {

@@ -1,7 +1,7 @@
 import { CircleCheckBig, LoaderCircle } from "lucide-react"
 
 type Props = {
-    state: 'booting' | 'loading_project' | 'setup' | 'loading_files'
+    state: 'booting' | 'loading_project' | 'setup'
 }
 
 export default function CodingPageLoader({ state }: Props) {
@@ -24,10 +24,6 @@ export default function CodingPageLoader({ state }: Props) {
                                 <div className="size-5"></div>
                                 <span className="text-muted-foreground">Setting up the environment</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="size-5"></div>
-                                <span className="text-muted-foreground">Loading files</span>
-                            </div>
                         </section>
                     ) : state === 'loading_project' ? (
                         <section className="space-y-3 min-w-[300px]">
@@ -42,10 +38,6 @@ export default function CodingPageLoader({ state }: Props) {
                             <div className="flex items-center gap-2">
                                 <div className="size-5"></div>
                                 <span className="text-muted-foreground">Setting up the environment</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="size-5"></div>
-                                <span className="text-muted-foreground">Loading files</span>
                             </div>
                         </section>
                     ) : state === 'setup' ? (
@@ -62,31 +54,8 @@ export default function CodingPageLoader({ state }: Props) {
                                 <LoaderCircle size={20} className="animate-spin" />
                                 <span>Setting up the environment...</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="size-5"></div>
-                                <span className="text-muted-foreground">Loading files</span>
-                            </div>
                         </section>
-                    ) : (
-                        <section className="space-y-3 min-w-[300px]">
-                            <div className="flex items-center gap-2">
-                                <CircleCheckBig size={20} className="text-green-500" />
-                                <span>Boot Success</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <CircleCheckBig size={20} className="text-green-500" />
-                                <span>Project Loaded</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <LoaderCircle size={20} className="animate-spin" />
-                                <span>Setup success</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <LoaderCircle size={20} className="animate-spin" />
-                                <span>Loading files...</span>
-                            </div>
-                        </section>
-                    )
+                    ) : null
             }
         </div>
     )

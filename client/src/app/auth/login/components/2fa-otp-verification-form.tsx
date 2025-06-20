@@ -112,8 +112,8 @@ export function TwoFactorAuthOTPVerificationForm() {
     function onSubmit(data: FormValues) {
         if (isResendPending) return;
 
-        startTransition(() => {
-            mutateAsync(data);
+        startTransition(async () => {
+            await mutateAsync(data);
         })
     }
 
