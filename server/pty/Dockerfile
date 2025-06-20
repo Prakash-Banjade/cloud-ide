@@ -27,6 +27,8 @@ RUN npm install --only=production && npm cache clean --force
 # Remove package json files
 RUN rm -rf package*.json
 
-# Expose port and set the start command
+# Expose ports and set the start command
 EXPOSE 3004
+EXPOSE 3000
+EXPOSE 5173
 CMD ["node", "dist/main.js"]

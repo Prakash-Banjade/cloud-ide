@@ -49,7 +49,6 @@ export function NewProjectForm() {
                 const replId = res.data.replId;
 
                 router.push(`/code/${replId}`);
-                router.refresh();
             }
         })
     }

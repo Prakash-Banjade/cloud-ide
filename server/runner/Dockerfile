@@ -28,6 +28,4 @@ RUN rm -rf package*.json
 
 # Expose port and set the start command
 EXPOSE 3003
-EXPOSE 3000
-EXPOSE 5173
 CMD ["node", "dist/main.js"]

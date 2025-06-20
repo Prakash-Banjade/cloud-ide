@@ -48,7 +48,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
         const ptySocket = io(
             ptyUrl,
-            // "ws://localhost:3005",
             {
                 auth: {
                     access_token: data.backendTokens.access_token

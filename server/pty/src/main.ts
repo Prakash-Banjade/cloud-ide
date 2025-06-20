@@ -14,7 +14,7 @@ async function bootstrap() {
 
   const PORT = 3004;
   await app.listen(PORT);
-  console.log(`Runner listening on ${await app.getUrl()}`);
+  console.log(`PTY listening on ${await app.getUrl()}`);
 }
 
 bootstrap();

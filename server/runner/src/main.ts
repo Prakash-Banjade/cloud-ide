@@ -12,8 +12,9 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
 
-  const PORT = configService.get("PORT") || 3003;
+  const PORT = 3003;
   await app.listen(PORT);
   console.log(`Runner listening on ${await app.getUrl()}`);
 }
+
 bootstrap();

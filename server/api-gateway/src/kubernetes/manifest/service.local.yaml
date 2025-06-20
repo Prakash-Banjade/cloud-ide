@@ -51,28 +51,6 @@ spec:
                   key: CLIENT_URL
             - name: REPL_ID
               value: "service_name"
-          ports:
-            - containerPort: 3004 # ws for terminal
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "250m"
-              memory: "256Mi"
-      
-        - name: runner
-          image: prakashbanjade/cloud-ide-runner:latest
-          imagePullPolicy: Always
-          envFrom:
-            - secretRef:
-                name: runner-env
-          ports:
-            - containerPort: 3003 # expose ws port
-            - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
-          volumeMounts:
-            - name: workspace-volume
-              mountPath: /workspace
           lifecycle:
             postStart:
               exec:
@@ -86,15 +64,39 @@ spec:
                       cd /workspace
                       npm install
                     fi
+          ports:
+            - containerPort: 3004 # ws for terminal
+            - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
           resources:
             requests:
-              cpu: "100m"       # 0.1 core
+              cpu: "500m"
+              memory: "256Mi"
+              ephemeral-storage: "2Gi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: "5Gi"
+      
+        - name: runner
+          image: prakashbanjade/cloud-ide-runner:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: runner-env
+          ports:
+            - containerPort: 3003 # ws for runner
+          volumeMounts:
+            - name: workspace-volume
+              mountPath: /workspace
+          resources:
+            requests:
+              cpu: "100m"
               memory: "512Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "300m"          # 0.3 core
+              cpu: "300m"
               memory: "1Gi"
-              ephemeral-storage: "5Gi"
+              ephemeral-storage: "3Gi"
 
 ---
 apiVersion: v1

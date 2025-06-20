@@ -56,7 +56,7 @@ export const CodingPagePostPodCreation = () => {
     const refreshTree = useRefreshTree();
 
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !ptySocket) return;
 
         socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
             setIsLoadingFiles(true);
@@ -68,15 +68,15 @@ export const CodingPagePostPodCreation = () => {
             setIsLoadingFiles(false);
         });
 
-        socket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => {
+        ptySocket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => { // this event is emitted by pty not runner
             setProjectRunning(data.isRunning || false);
         });
 
         return () => {
             socket.off(SocketEvents.TREE_LOADED);
-            socket.off(SocketEvents.PROCESS_STATUS);
+            ptySocket.off(SocketEvents.PROCESS_STATUS);
         };
-    }, [socket]);
+    }, [socket, ptySocket]);
 
     // useChokidar(socket);
 
