@@ -7,6 +7,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { KubernetesService } from 'src/kubernetes/kubernetes.service';
 import { ConfigService } from '@nestjs/config';
 import { Logger, OnModuleInit } from '@nestjs/common';
+import { SocketEvents } from 'src/CONSTANTS';
 
 @WebSocketGateway({
   path: '/',
@@ -43,7 +44,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     console.log(`✅ CONNECTED - ${socket.id}`);
 
     socket.join(this.replId); // join project room
-    this.server.to(this.replId).emit('process:status', { isRunning: this.terminalManager.isRunning() });
+    this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: this.terminalManager.isRunning() });
 
     this.connectedSocketsIds.add(socket.id);
 
@@ -91,39 +92,40 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
-  @SubscribeMessage('requestTerminal')
+  @SubscribeMessage(SocketEvents.REQUEST_TERMINAL)
   onRequestTerminal(@ConnectedSocket() socket: Socket) {
     // this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
 
-    this.terminalManager.createPty(socket, this.replId, (data) => {
-      socket.emit('terminal', { data: Buffer.from(data, 'utf-8') });
+    this.terminalManager.createPty(
+      socket,
+      (data) => {
+        socket.emit(SocketEvents.TERMINAL, { data: Buffer.from(data, 'utf-8') });
 
-      const isProjectRunning = this.terminalManager.isRunning();
+        const isProjectRunning = this.terminalManager.isRunning();
 
-      if (isProjectRunning) {
-        socket.emit('terminal', { data: this.terminalManager.getRunScrollback() });
+        if (isProjectRunning) {
+          socket.emit(SocketEvents.TERMINAL, { data: this.terminalManager.getRunScrollback() });
+        }
+      },
+      () => {
+        this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: true });
       }
-    });
+    );
   }
 
-  @SubscribeMessage('hi')
-  test() {
-    return "hello there"
-  }
-
-  @SubscribeMessage('terminalData')
+  @SubscribeMessage(SocketEvents.TERMINAL_DATA)
   onTerminalData(@MessageBody() payload: { data: string }, @ConnectedSocket() socket: Socket) {
     // Check for Ctrl+C (0x03)
     if (payload.data === '\x03') {
       // kill the runPty
       this.terminalManager.stopProcess();
-      this.server.to(this.replId).emit('process:status', { isRunning: false });
+      this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: false });
     }
 
     this.terminalManager.write(socket.id, payload.data);
   }
 
-  @SubscribeMessage('process:run')
+  @SubscribeMessage(SocketEvents.PROCESS_RUN)
   onRun(@MessageBody() payload: { lang: ELanguage, path?: string }, @ConnectedSocket() socket: Socket) {
     const cmd = getRunCommand(payload.lang, payload.path);
 
@@ -138,19 +140,19 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // this is for long running processes like react, next
     this.terminalManager.run(cmd, (data, id) => {
-      socket.emit('terminal', { data: Buffer.from(data, 'utf-8'), id });
-      this.server.to(this.replId).emit('process:status', { isRunning: this.terminalManager.isRunning() }); // send the status to all clients
+      socket.emit(SocketEvents.TERMINAL, { data: Buffer.from(data, 'utf-8'), id });
+      this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: this.terminalManager.isRunning() }); // send the status to all clients
     });
   }
 
-  @SubscribeMessage('process:stop')
+  @SubscribeMessage(SocketEvents.PROCESS_STOP)
   onStop(@ConnectedSocket() socket: Socket) {
     this.terminalManager.stopProcess();
 
     this.terminalManager.write(socket.id, '\x03'); // write Ctrl+C in the terminal to get a new line
     this.terminalManager.write(socket.id, 'clear\r'); // clear the terminal
 
-    this.server.to(this.replId).emit('process:status', { isRunning: false });
+    this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: false });
 
     return true;
   }
