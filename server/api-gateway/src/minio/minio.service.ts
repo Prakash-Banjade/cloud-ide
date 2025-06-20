@@ -40,4 +40,14 @@ export class MinioService {
         );
     }
 
+    async removePrefix(prefix: string): Promise<void> {
+        // list all matching objects recursively
+        const objects = this.minioClient.listObjectsV2(this._bucketName, prefix, true);
+        const toDelete = [];
+        for await (const obj of objects) {
+            toDelete.push(obj.name! as never);
+        }
+        // batch remove
+        await this.minioClient.removeObjects(this._bucketName, toDelete.map(n => n));  // removeObjects :contentReference[oaicite:9]{index=9}
+    }
 }

@@ -1,9 +1,6 @@
 "use client"
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
@@ -14,13 +11,12 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { findItem } from "../fns/file-manager-fns"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
+import { useState } from "react"
 
 const newItemFormSchema = z.object({
     name: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
     type: z.nativeEnum(EItemType),
 });
-
-type NewItemFormType = z.infer<typeof newItemFormSchema>;
 
 interface NewItemFormProps {
     parentFolderPath: string,
@@ -31,24 +27,30 @@ interface NewItemFormProps {
 export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
     const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
+    const [error, setError] = useState<string | null>(null);
+    const [itemName, setItemName] = useState<string>('');
 
-    const form = useForm<NewItemFormType>({
-        resolver: zodResolver(newItemFormSchema),
-        defaultValues: {
-            name: "",
-            type: itemType ?? EItemType.FILE,
-        },
-    })
+    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
 
-    const onSubmit = (values: NewItemFormType) => {
         if (!parentFolderPath || !socket) return;
+
+        const { success, data: values, error } = newItemFormSchema.safeParse({
+            name: itemName,
+            type: itemType
+        });
+
+        if (!success) {
+            setError(error?.message);
+            return;
+        }
 
         const itemPath = (!!parentFolderPath && parentFolderPath !== "/") ? `${parentFolderPath}/${values.name}` : `/${values.name}`;
 
         const existing = findItem(fileStructure, itemPath);
 
         if (existing) {
-            form.setError("name", { message: `A file or folder ${values.name} already exists at this location. Please choose a different name.` });
+            setError(`A file or folder ${values.name} already exists at this location. Please choose a different name.`);
             return;
         }
 
@@ -78,42 +80,33 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
 
                 setIsOpen(false);
             } else {
-                form.setError("name", { message: typeof error === 'string' ? error : `Cannot create ${itemType}` });
+                setError(typeof error === 'string' ? error : `Cannot create ${itemType}`);
             }
         });
     }
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormControl>
-                                <section className='relative flex items-center'>
-                                    <div className='absolute left-2'>
-                                        {
-                                            itemType === EItemType.FILE
-                                                ? getFileIcon(form.watch('name'))
-                                                : <Folder size={16} />
-                                        }
-                                    </div>
-                                    <Input
-                                        className='pl-8 w-full'
-                                        placeholder={itemType === EItemType.FILE ? 'filename.ext' : 'folder name'}
-                                        autoComplete="off"
-                                        {...field}
-                                    />
-                                </section>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </form>
-        </Form>
+        <form onSubmit={onSubmit} className="space-y-8">
+            <section className="space-y-2">
+                <section className='relative flex items-center'>
+                    <div className='absolute left-2'>
+                        {
+                            itemType === EItemType.FILE
+                                ? getFileIcon(itemName)
+                                : <Folder size={16} />
+                        }
+                    </div>
+                    <Input
+                        className='pl-8 w-full'
+                        placeholder={itemType === EItemType.FILE ? 'filename.ext' : 'folder name'}
+                        autoComplete="off"
+                        value={itemName}
+                        onChange={(e) => setItemName(e.target.value)}
+                    />
+                </section>
+                {error && <p className="text-destructive text-sm">{error}</p>}
+            </section>
+        </form>
     )
 }
 

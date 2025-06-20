@@ -1,15 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Code } from "lucide-react";
-import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { Skeleton } from "../ui/skeleton";
+import { Code } from "lucide-react";
 
-const Hero = () => {
-    const { data, status } = useSession();
-
+const Hero = ({ children }: { children: React.ReactNode }) => {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
             {/* Background gradient */}
@@ -73,33 +67,7 @@ const Hero = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.8 }}
                     >
-                        {
-                            status === "loading" ? (
-                                <Skeleton className="mx-auto h-12 w-56 rounded-full" />
-                            ) : !data ? (
-                                <Button
-                                    size="lg"
-                                    className="bg-dodgerblue hover:bg-dodgerblue/90 text-white px-8 py-6 text-lg font-semibold rounded-full group transition-all duration-300 transform hover:scale-105"
-                                    asChild
-                                >
-                                    <Link href="/auth/login">
-                                        Get Started Free
-                                        <ArrowRight className="size-5 group-hover:translate-x-1 transition-transform" />
-                                    </Link>
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="lg"
-                                    className="bg-dodgerblue hover:bg-dodgerblue/90 group text-white !px-12 !py-7 text-lg font-semibold rounded-full transition-all"
-                                    asChild
-                                >
-                                    <Link href="/workspace">
-                                        Workspace
-                                        <ArrowRight className="size-5 group-hover:translate-x-2 transition-transform duration-300" />
-                                    </Link>
-                                </Button>
-                            )
-                        }
+                        {children}
                     </motion.div>
 
                     {/* Stats */}

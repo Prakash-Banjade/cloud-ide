@@ -1,5 +1,4 @@
-# Base image with build dependencies, no alpine because to include Python, make needed by 'node-pty' as build dependency
-FROM node:latest AS build
+FROM node:22-alpine AS build
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -13,7 +12,7 @@ COPY . .
 RUN npm run build
 
 # Production image
-FROM node:latest AS production
+FROM node:22-alpine AS production
 
 WORKDIR /usr/src/app
 
@@ -29,6 +28,5 @@ RUN rm -rf package*.json
 
 # Expose port and set the start command
 EXPOSE 3003
-EXPOSE 3000
-EXPOSE 5173
+USER runner
 CMD ["node", "dist/main.js"]

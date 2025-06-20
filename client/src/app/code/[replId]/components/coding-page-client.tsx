@@ -4,11 +4,10 @@ import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { MoreHorizontal, X } from "lucide-react";
-import { FileTree, TFileItem, TreeItem } from "./file-tree";
-import { onFileSelect, onItemSelect, useRefreshTree } from "../fns/file-manager-fns";
+import { TFileItem, TreeItem } from "./file-tree";
+import { onFileSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
-import ExplorerActions from "./explorer-actions";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
 import dynamic from "next/dynamic";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -20,6 +19,9 @@ import { previewLanguages, SocketEvents } from "@/lib/CONSTANTS";
 import Preview from "./preview";
 import CodingPageLoader from "./coding-page-loader";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import FileTreePanel from "./file-tree-panel";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -37,80 +39,92 @@ export default function CodingPageClient() {
 
 export const CodingPagePostPodCreation = () => {
     const {
-        setSelectedItem,
-        setFileStructure,
-        setSelectedFile,
-        setOpenedFiles,
         setProjectRunning,
         projectRunning,
         project,
         treeLoaded,
-        setTreeLoaded
+        setTreeLoaded,
+        treePanelOpen,
+        setTreePanelOpen,
+        showTerm,
+        setShowTerm,
     } = useCodingStates();
-    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
+    const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+    const isMobile = useIsMobile();
 
-    const { socket } = useSocket();
+    const { socket, ptySocket } = useSocket();
     const refreshTree = useRefreshTree();
 
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !ptySocket) return;
 
         socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
+            setIsLoadingFiles(true);
             await refreshTree({
                 content: rootContent,
                 socket,
             });
             setTreeLoaded(true);
+            setIsLoadingFiles(false);
         });
 
-        socket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => {
+        ptySocket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => { // this event is emitted by pty not runner
             setProjectRunning(data.isRunning || false);
         });
 
         return () => {
             socket.off(SocketEvents.TREE_LOADED);
-            socket.off(SocketEvents.PROCESS_STATUS);
+            ptySocket.off(SocketEvents.PROCESS_STATUS);
         };
-    }, [socket]);
+    }, [socket, ptySocket]);
 
     // useChokidar(socket);
 
-    const onSelect = (file: TreeItem) => {
-        if (!socket) return;
-        onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
-    };
-
     const showPreview = project && projectRunning && previewLanguages.includes(project.language);
 
-    if (!treeLoaded) return <CodingPageLoader state="loading_files" />;
+    if (!treeLoaded) return <CodingPageLoader state="initializing" />;
 
-    if (!socket) return null;
+    if (isLoadingFiles) return <CodingPageLoader state="loading_files" />;
+
+    if (!socket || !ptySocket) return null;
 
     return (
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
-            <TopBar socket={socket} />
+            <TopBar socket={ptySocket} />
             <FileTabSwitcher />
 
             {/* Main content */}
             <ResizablePanelGroup direction="horizontal" className="flex-1">
                 {/* File tree panel */}
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-sidebar">
-                    <section className="p-2 pl-4 flex justify-between items-center gap-4">
-                        <div className="text-sm font-medium uppercase">Explorer</div>
-                        <div className="flex items-center gap-0.5 text-muted-foreground">
-                            <ExplorerActions />
-                        </div>
-                    </section>
-                    <FileTree onSelectFile={onSelect} />
-                </ResizablePanel>
+                {
+                    isMobile ? (
+                        <Sheet open={treePanelOpen} onOpenChange={setTreePanelOpen}>
+                            <SheetContent
+                                side="left"
+                                aria-describedby="explorer-description"
+                                className="[&>button]:hidden data-[state=open]:duration-150 data-[state=closed]:duration-150 w-screen max-w-[400px]"
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                            >
+                                <SheetHeader className="sr-only">
+                                    <SheetTitle>Explorer</SheetTitle>
+                                </SheetHeader>
+                                <FileTreePanel socket={socket} />
+                            </SheetContent>
+                        </Sheet>
+                    ) : (
+                        <ResizablePanel order={1} defaultSize={20} minSize={15} maxSize={30}>
+                            <FileTreePanel socket={socket} />
+                        </ResizablePanel>
+                    )
+                }
 
                 <ResizableHandle />
 
-                <ResizablePanel defaultSize={showPreview ? 50 : 80} minSize={40} className="relative">
+                <ResizablePanel order={2} defaultSize={showPreview ? 50 : 80} minSize={40} className="relative">
                     <ResizablePanelGroup direction="vertical" className="flex-1">
                         {/* Code editor panel */}
-                        <ResizablePanel defaultSize={70} minSize={30}>
+                        <ResizablePanel order={1} defaultSize={70} minSize={30}>
                             <div className="h-full flex flex-col">
                                 <OpenedFilesTab />
                                 <CodeEditor socket={socket} />
@@ -123,8 +137,8 @@ export const CodingPagePostPodCreation = () => {
 
                         {/* Terminal panel */}
                         <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
-                        <ResizablePanel defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
-                            <XTerminalNoSSR socket={socket} showTerm={showTerm} />
+                        <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
+                            <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
                         </ResizablePanel>
 
                     </ResizablePanelGroup>
@@ -135,7 +149,7 @@ export const CodingPagePostPodCreation = () => {
                         <>
                             <ResizableHandle />
 
-                            <ResizablePanel defaultSize={30} minSize={20}>
+                            <ResizablePanel order={3} defaultSize={30} minSize={20}>
                                 <Preview />
                             </ResizablePanel>
 

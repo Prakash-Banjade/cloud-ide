@@ -19,6 +19,7 @@ spec:
       volumes:
         - name: workspace-volume
           emptyDir: {}
+
       initContainers:
         - name: copy-minio-resources
           image: minio/mc
@@ -27,72 +28,87 @@ spec:
             - |
               set -e
               mc alias set minio http://minio.minio-dev.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc cp --recursive minio/cloud-ide/code/service_name/ /workspace/
-          env:
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: MINIO_ACCESS_KEY
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: MINIO_SECRET_KEY
+          envFrom:
+            - secretRef:
+                name: runner-env
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
       serviceAccountName: runner-sa
+
       containers:
-        - name: runner
-          image: prakashbanjade/cloud-ide-runner:latest
+        - name: pty
+          image: prakashbanjade/cloud-ide-pty:latest
           imagePullPolicy: Always
+          volumeMounts:
+            - name: workspace-volume
+              mountPath: /workspace
           env:
-            - name: MINIO_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: MINIO_ACCESS_KEY
-            - name: MINIO_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: MINIO_SECRET_KEY
-            - name: ACCESS_TOKEN_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: ACCESS_TOKEN_SECRET
-            - name: ACCESS_TOKEN_EXPIRATION_SEC
-              valueFrom:
-                secretKeyRef:
-                  name: runner-env
-                  key: ACCESS_TOKEN_EXPIRATION_SEC
-            - name: MINIO_ENDPOINT
-              value: minio.minio-dev.svc.cluster.local
-            - name: MINIO_PORT
-              value: "9000"
-            - name: REPL_ID
-              value: "service_name"
             - name: CLIENT_URL
               valueFrom:
                 secretKeyRef:
                   name: runner-env
                   key: CLIENT_URL
+            - name: REPL_ID
+              value: "service_name"
+            - name: LANG
+              value: "PROJ_LANG" # will be replace with the actual language, e.g. "java", "python", etc.
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    set -e
+
+                    # If Node project, install deps
+                    if [ -f /workspace/package.json ] && [ ! -d /workspace/node_modules ]; then
+                      echo "Installing npm dependencies…"
+                      cd /workspace
+                      npm install --production
+                    fi
+
+                    # If Java project, install JDK
+                    if [ "$LANG" = "java" ]; then
+                      echo "Installing JDK for Java project…"
+                      apt-get update \
+                        && DEBIAN_FRONTEND=noninteractive apt-get install -y default-jdk \
+                        && rm -rf /var/lib/apt/lists/*
+                    fi
           ports:
-            - containerPort: 3003 # expose ws port
+            - containerPort: 3004 # ws for terminal
             - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+              ephemeral-storage: "2Gi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: "5Gi"
+      
+        - name: runner
+          image: prakashbanjade/cloud-ide-runner:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: runner-env
+          ports:
+            - containerPort: 3003 # ws for runner
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
           resources:
             requests:
-              cpu: "300m"       # 0.3 core
+              cpu: "100m"
               memory: "512Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "1"          # 1 full core
+              cpu: "300m"
               memory: "1Gi"
-              ephemeral-storage: "5Gi"
+              ephemeral-storage: "3Gi"
 
 ---
 apiVersion: v1
@@ -105,11 +121,15 @@ spec:
     app: service_name
   ports:
     - protocol: TCP
-      name: ws
+      name: ws-pty
+      port: 3004
+      targetPort: 3004
+    - protocol: TCP
+      name: ws-runner
       port: 3003
       targetPort: 3003
     - protocol: TCP
-      name: user
+      name: user-app
       port: LANG_PORT
       targetPort: LANG_PORT
 ---
@@ -131,12 +151,24 @@ spec:
   # Terminate TLS for both hostnames into one Kubernetes Secret
   tls:
     - hosts:
+        - pty.service_name.prakashbanjade.com
         - service_name.prakashbanjade.com
         - service_name.qubide.cloud
       secretName: service_name-tls
 
   rules:
-    - host: service_name.prakashbanjade.com # ws endpoint
+    - host: pty.service_name.prakashbanjade.com # ws for pty
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: service_name
+                port:
+                  number: 3004
+  
+    - host: service_name.prakashbanjade.com # ws for runner
       http:
         paths:
           - path: /

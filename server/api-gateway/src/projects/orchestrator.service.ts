@@ -9,6 +9,7 @@ import { LANG_PORT } from 'src/common/utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 
 const namespace = "qubide" as const;
 
@@ -20,7 +21,8 @@ export class OrchestratorService {
         @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
         private readonly coreV1Api: CoreV1Api,
         private readonly appsV1Api: AppsV1Api,
-        private readonly networkingV1Api: NetworkingV1Api
+        private readonly networkingV1Api: NetworkingV1Api,
+        private readonly cfg: ConfigService,
     ) { }
 
     async startResource(dto: ResourceStartDto, currentUser: AuthUser) {
@@ -34,8 +36,12 @@ export class OrchestratorService {
 
         if (!project) throw new ForbiddenException('Access denied.');
 
+        const filePath = this.cfg.getOrThrow('NODE_ENV') === 'production'
+            ? path.join(__dirname, '../kubernetes/manifest/service.yaml')
+            : path.join(__dirname, '../kubernetes/manifest/service.local.yaml')
+
         const manifests = this.readAndParseKubeYaml({
-            filePath: path.join(__dirname, '../kubernetes/manifest/service.yaml'),
+            filePath,
             replId: dto.replId,
             language: project.language
         });
@@ -141,7 +147,8 @@ export class OrchestratorService {
             let docString = doc.toString();
             docString = docString
                 .replace(new RegExp(`service_name`, 'g'), replId)
-                .replace(new RegExp(`LANG_PORT`, 'g'), LANG_PORT[language] ?? 3000);
+                .replace(new RegExp(`LANG_PORT`, 'g'), LANG_PORT[language] ?? 3000)
+                .replace(new RegExp(`PROJ_LANG`, 'g'), language);
             return yaml.parse(docString);
         });
         return docs;

@@ -64,13 +64,6 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
             socket.emit(SocketEvents.TERMINAL_DATA, { data: input });
         });
 
-        // execute the dependency install command, if there is one
-        const hasDependeiciesNotInstalled = fileStructure.find(item => item.type === EItemType.FILE && item.name === "package.json") && !fileStructure.find(item => item.type === EItemType.DIR && item.name === "node_modules");
-
-        if (hasDependeiciesNotInstalled) {
-            socket.emit(SocketEvents.TERMINAL_DATA, { data: "npm install\n" });
-        }
-
         // --- observe container resizes and re-fit ---
         const ro = new ResizeObserver(() => {
             fitAddon.fit();

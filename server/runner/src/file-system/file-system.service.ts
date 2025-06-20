@@ -14,16 +14,24 @@ export interface File {
     language?: string
 }
 
+const excludeItems = [
+    /vite\.config\.(ts|js)/, // Vite config files
+]
+
 @Injectable()
 export class FileSystemService {
 
     fetchDir(dir: string, baseDir: string): Promise<File[]> {
         return new Promise((resolve, reject) => {
-            fs.readdir(dir, { withFileTypes: true }, (err, files) => {
+            fs.readdir(dir, { withFileTypes: true }, async (err, files) => {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(files.map(f => {
+                    resolve((await Promise.all(files.map(async f => {
+                        if (excludeItems.some(regex => regex.test(f.name))) {
+                            return null; // skip excluded items
+                        }
+
                         const objWithKeep = f.name.endsWith('.keep');
 
                         if (objWithKeep) { // empty folders in minio are saved with .keep prefix but we need to create actual directory in the pod
@@ -31,13 +39,13 @@ export class FileSystemService {
                             const dirExists = !fs.existsSync(`${dir}/${objName}`);
 
                             if (!dirExists) {
-                                mkdir(`${dir}/${objName}`, { recursive: true });
+                                await mkdir(`${dir}/${objName}`, { recursive: true });
                             }
                         }
 
                         return objWithKeep ? null : f;
 
-                    }).filter(f => !!f).map(file => {
+                    }))).filter(f => !!f).map(file => {
                         const isDir = file.isDirectory();
 
                         return {

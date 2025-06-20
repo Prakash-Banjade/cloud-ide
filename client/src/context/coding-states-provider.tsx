@@ -35,7 +35,11 @@ interface CodingStatesContextType {
     mruFiles: TFileItem[];
     setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
     treeLoaded: boolean;
-    setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>
+    setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+    treePanelOpen: boolean;
+    setTreePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
+    showTerm: boolean;
+    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -53,10 +57,12 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
+    const [treePanelOpen, setTreePanelOpen] = useState(false);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const [treeLoaded, setTreeLoaded] = useState(false);
+    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
     const { status } = useSession();
@@ -92,7 +98,11 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         mruFiles,
         setMruFiles,
         treeLoaded,
-        setTreeLoaded
+        setTreeLoaded,
+        treePanelOpen,
+        setTreePanelOpen,
+        showTerm,
+        setShowTerm
     };
 
     useEffect(() => {

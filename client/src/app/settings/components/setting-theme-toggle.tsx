@@ -38,9 +38,9 @@ export function SettingThemeToggle() {
                             <RadioGroup
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
-                                className="grid max-w-2xl grid-cols-3 gap-8"
+                                className="flex flex-wrap max-w-2xl gap-8"
                             >
-                                <FormItem >
+                                <FormItem>
                                     <FormLabel className="[&:has([data-state=checked])>div]:border-primary flex flex-col">
                                         <FormControl>
                                             <RadioGroupItem value="system" className="sr-only" />

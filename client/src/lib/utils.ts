@@ -87,6 +87,11 @@ export const languageFields = [
     label: "C++",
     icon: Icons.cpp
   },
+  {
+    value: ELanguage.JAVA,
+    label: "Java",
+    icon: Icons.java
+  },
 ]
 
 export function createQueryString(params: Record<string, string | boolean | undefined | null>) {

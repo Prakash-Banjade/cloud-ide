@@ -7,7 +7,7 @@ import { SocketEvents } from "@/lib/CONSTANTS";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
-    const { setIsSyncing, selectedFile, setEditorInstance } = useCodingStates();
+    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance } = useCodingStates();
 
     async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
         setEditorInstance(editor);
@@ -38,13 +38,14 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
     }
 
     const syncFileContent = debounce((value: string | undefined) => {
-        if (value !== undefined && selectedFile) {
-            // TODO: Should send diffs, for now sending the whole file
-            setIsSyncing(true);
-            socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
-                setIsSyncing(false);
-            });
-        }
+        if (!selectedFile || value === undefined) return;
+
+        // TODO: Should send diffs, for now sending the whole file
+        setIsSyncing(true);
+        socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
+            setIsSyncing(false);
+        });
+
     }, 1000);
 
     // Sync file content on ctrl+s
@@ -55,13 +56,13 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
                 e.preventDefault();
                 if (!selectedFile) return;
 
-                syncFileContent(selectedFile.content);
+                syncFileContent(editorInstance?.getValue());
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedFile]);
+    }, [selectedFile, editorInstance]);
 
     if (!selectedFile) return (
         <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
@@ -109,7 +110,12 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             }}
             onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}
-            onChange={syncFileContent}
+            onChange={val => {
+                syncFileContent(val);
+                if (selectedFile) {
+                    selectedFile.content = val ?? "";
+                }
+            }}
         />
     )
 }
@@ -139,7 +145,8 @@ const langObj = {
     "c": "c",
     "cpp": "cpp",
     "c++": "cpp",
-    "mjs": "javascript"
+    "mjs": "javascript",
+    "java": "java",
 }
 
 function getLanguageFromName(name: string) {
