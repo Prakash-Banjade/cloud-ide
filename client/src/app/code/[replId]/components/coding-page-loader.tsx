@@ -1,7 +1,7 @@
 import { CircleCheckBig, LoaderCircle } from "lucide-react"
 
 type Props = {
-    state: 'booting' | 'loading_project' | 'initializing' | 'loading_files'
+    state: 'booting' | 'loading_project' | 'setup' | 'loading_files'
 }
 
 export default function CodingPageLoader({ state }: Props) {
@@ -22,7 +22,7 @@ export default function CodingPageLoader({ state }: Props) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="size-5"></div>
-                                <span className="text-muted-foreground">Intializing IDE</span>
+                                <span className="text-muted-foreground">Setting up the environment</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="size-5"></div>
@@ -41,14 +41,14 @@ export default function CodingPageLoader({ state }: Props) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="size-5"></div>
-                                <span className="text-muted-foreground">Intialize IDE</span>
+                                <span className="text-muted-foreground">Setting up the environment</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="size-5"></div>
                                 <span className="text-muted-foreground">Loading files</span>
                             </div>
                         </section>
-                    ) : state === 'initializing' ? (
+                    ) : state === 'setup' ? (
                         <section className="space-y-3 min-w-[300px]">
                             <div className="flex items-center gap-2">
                                 <CircleCheckBig size={20} className="text-green-500" />
@@ -60,7 +60,7 @@ export default function CodingPageLoader({ state }: Props) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <LoaderCircle size={20} className="animate-spin" />
-                                <span>Initializing...</span>
+                                <span>Setting up the environment...</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="size-5"></div>
@@ -79,7 +79,7 @@ export default function CodingPageLoader({ state }: Props) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <LoaderCircle size={20} className="animate-spin" />
-                                <span>Initializing IDE</span>
+                                <span>Setup success</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <LoaderCircle size={20} className="animate-spin" />

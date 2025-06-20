@@ -66,7 +66,7 @@ spec:
                     if [ -f /workspace/package.json ] && [ ! -d /workspace/node_modules ]; then
                       echo "Installing npm dependencies…"
                       cd /workspace
-                      npm install --production
+                      npm install
                     fi
 
                     # If Java project, install JDK

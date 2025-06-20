@@ -23,9 +23,8 @@ export default function TopBar({ socket }: Props) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, setTreePanelOpen, setShowTerm } = useCodingStates();
-    const isMobile = useIsMobile();
+    const isMobile = useIsMobile(1000);
     const handleDownload = useDownload();
-    // const refreshTree = useRefreshTree();
 
     function onRun() {
         if (!socket || !project) return;

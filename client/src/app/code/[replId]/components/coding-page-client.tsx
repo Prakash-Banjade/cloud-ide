@@ -50,7 +50,7 @@ export const CodingPagePostPodCreation = () => {
         setShowTerm,
     } = useCodingStates();
     const [isLoadingFiles, setIsLoadingFiles] = useState(false);
-    const isMobile = useIsMobile();
+    const isMobile = useIsMobile(1000);
 
     const { socket, ptySocket } = useSocket();
     const refreshTree = useRefreshTree();
@@ -80,9 +80,9 @@ export const CodingPagePostPodCreation = () => {
 
     // useChokidar(socket);
 
-    const showPreview = project && projectRunning && previewLanguages.includes(project.language);
+    const showPreview = project && !isMobile && projectRunning && previewLanguages.includes(project.language);
 
-    if (!treeLoaded) return <CodingPageLoader state="initializing" />;
+    if (!treeLoaded) return <CodingPageLoader state="setup" />;
 
     if (isLoadingFiles) return <CodingPageLoader state="loading_files" />;
 

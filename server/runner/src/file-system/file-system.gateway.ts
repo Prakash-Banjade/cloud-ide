@@ -2,6 +2,7 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
+import { SocketEvents } from 'src/CONSTANTS';
 
 @WebSocketGateway({
   cors: {
@@ -29,10 +30,10 @@ export class FileSystemGateway implements OnGatewayConnection {
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
-    socket.emit('loaded', { rootContent });
+    socket.emit(SocketEvents.TREE_LOADED, { rootContent });
   }
 
-  @SubscribeMessage('fetchDir')
+  @SubscribeMessage(SocketEvents.FETCH_DIR)
   async onFetchDir(@MessageBody() dir: string): Promise<File[]> {
     const dirPath = dir?.length ? `/workspace/${dir}` : '/workspace';
     const contents = await this.fileSystemService.fetchDir(dirPath, dir);
@@ -40,7 +41,7 @@ export class FileSystemGateway implements OnGatewayConnection {
     return contents; // the data is returned in the cb function in the client
   }
 
-  @SubscribeMessage('fetchContent')
+  @SubscribeMessage(SocketEvents.FETCH_CONTENT)
   async onFetchContent(@MessageBody() payload: { path: string }) {
     const fullPath = `/workspace${payload.path}`;
     const data = await this.fileSystemService.fetchFileContent(fullPath);
@@ -48,7 +49,7 @@ export class FileSystemGateway implements OnGatewayConnection {
     return data; // the data is returned in the cb function in the client
   }
 
-  @SubscribeMessage('updateContent')
+  @SubscribeMessage(SocketEvents.UPDATE_CONTENT)
   async onUpdateContent(@MessageBody() payload: { path: string; content: string }, @ConnectedSocket() socket: Socket) {
     const { path: filePath, content } = payload;
     const fullPath = `/workspace/${filePath}`;

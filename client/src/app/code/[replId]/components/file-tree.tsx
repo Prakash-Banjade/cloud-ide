@@ -142,7 +142,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
 }
 
 function FileItem({ item, level, onSelectFile }: FileItemProps) {
-    const { selectedFile, selectedItem, setMruFiles } = useCodingStates();
+    const { selectedFile, selectedItem, setMruFiles, setTreePanelOpen } = useCodingStates();
     const isSelected = item.path === selectedFile?.path && item.path === selectedItem?.path; // for file to be selected, both path must match
 
     const paddingLeft = `${level * 12 + 8}px`;
@@ -155,6 +155,7 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
                 onClick={() => {
                     onSelectFile(item);
                     setMruFiles(prev => [item, ...prev.filter(f => f.path !== item.path)]); // place at the beginning
+                    setTreePanelOpen(false); // close the tree panel on file selection
                 }}
             >
                 <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
