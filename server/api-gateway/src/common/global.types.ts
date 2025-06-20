@@ -12,5 +12,6 @@ export enum ELanguage {
     CPP = "cpp",
     REACT_JS = "react-js",
     REACT_TS = "react-ts",
-    NEXT_TS = "next-ts"
+    NEXT_TS = "next-ts",
+    JAVA = "java",
 }

@@ -147,7 +147,8 @@ export class OrchestratorService {
             let docString = doc.toString();
             docString = docString
                 .replace(new RegExp(`service_name`, 'g'), replId)
-                .replace(new RegExp(`LANG_PORT`, 'g'), LANG_PORT[language] ?? 3000);
+                .replace(new RegExp(`LANG_PORT`, 'g'), LANG_PORT[language] ?? 3000)
+                .replace(new RegExp(`PROJ_LANG`, 'g'), language);
             return yaml.parse(docString);
         });
         return docs;

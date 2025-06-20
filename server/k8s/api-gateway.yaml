@@ -23,7 +23,7 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - secretRef:
-              name: gateway-env
+                name: gateway-env
           ports:
             - containerPort: 3002
           resources:

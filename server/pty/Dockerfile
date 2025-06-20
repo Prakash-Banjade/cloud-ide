@@ -31,4 +31,6 @@ RUN rm -rf package*.json
 EXPOSE 3004
 EXPOSE 3000
 EXPOSE 5173
+
+USER runner
 CMD ["node", "dist/main.js"]
