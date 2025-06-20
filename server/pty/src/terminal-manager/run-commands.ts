@@ -38,4 +38,5 @@ const defaultFilePath = {
     [ELanguage.CPP]: 'main.cpp',
     [ELanguage.PYTHON]: 'main.py',
     [ELanguage.NODE_JS]: 'index.js',
+    [ELanguage.JAVA]: 'Main.java',
 }
