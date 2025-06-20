@@ -18,8 +18,6 @@ const newItemFormSchema = z.object({
     type: z.nativeEnum(EItemType),
 });
 
-type NewItemFormType = z.infer<typeof newItemFormSchema>;
-
 interface NewItemFormProps {
     parentFolderPath: string,
     itemType: EItemType,

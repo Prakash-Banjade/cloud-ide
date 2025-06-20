@@ -51,8 +51,8 @@ spec:
                   key: CLIENT_URL
             - name: REPL_ID
               value: "service_name"
-          ports:
-            - containerPort: 3004 # ws for terminal
+            - name: LANG
+              value: "PROJ_LANG" # will be replace with the actual language, e.g. "java", "python", etc.
           lifecycle:
             postStart:
               exec:
@@ -60,19 +60,34 @@ spec:
                   - sh
                   - -c
                   - |
-                    # only install if package.json exists and node_modules is absent
+                    set -e
+
+                    # If Node project, install deps
                     if [ -f /workspace/package.json ] && [ ! -d /workspace/node_modules ]; then
-                      echo "Installing dependencies…"
+                      echo "Installing npm dependencies…"
                       cd /workspace
-                      npm install
+                      npm install --production
                     fi
+
+                    # If Java project, install JDK
+                    if [ "$LANG" = "java" ]; then
+                      echo "Installing JDK for Java project…"
+                      apt-get update \
+                        && DEBIAN_FRONTEND=noninteractive apt-get install -y default-jdk \
+                        && rm -rf /var/lib/apt/lists/*
+                    fi
+          ports:
+            - containerPort: 3004 # ws for terminal
+            - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "250m"
+              cpu: "500m"
               memory: "256Mi"
+              ephemeral-storage: "2Gi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: "5Gi"
       
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
@@ -81,20 +96,19 @@ spec:
             - secretRef:
                 name: runner-env
           ports:
-            - containerPort: 3003 # expose ws port
-            - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
+            - containerPort: 3003 # ws for runner
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
           resources:
             requests:
-              cpu: "100m"       # 0.1 core
+              cpu: "100m"
               memory: "512Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "300m"          # 0.3 core
+              cpu: "300m"
               memory: "1Gi"
-              ephemeral-storage: "5Gi"
+              ephemeral-storage: "3Gi"
 
 ---
 apiVersion: v1

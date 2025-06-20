@@ -27,6 +27,10 @@ export const getRunCommand = (language: ELanguage, filePath?: string) => {
     if (language === ELanguage.NODE_JS) {
         return `node ${filename}`;
     }
+
+    if (language === ELanguage.JAVA) {
+        return `javac ${filename} && java ${filenameWithoutExt}`;
+    }
 };
 
 const defaultFilePath = {

@@ -56,15 +56,13 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
                 e.preventDefault();
                 if (!selectedFile) return;
 
-                console.log(editorInstance?.getValue())
-                
-                syncFileContent(selectedFile.content);
+                syncFileContent(editorInstance?.getValue());
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedFile]);
+    }, [selectedFile, editorInstance]);
 
     if (!selectedFile) return (
         <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
@@ -112,7 +110,12 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             }}
             onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}
-            onChange={syncFileContent}
+            onChange={val => {
+                syncFileContent(val);
+                if (selectedFile) {
+                    selectedFile.content = val ?? "";
+                }
+            }}
         />
     )
 }
@@ -142,7 +145,8 @@ const langObj = {
     "c": "c",
     "cpp": "cpp",
     "c++": "cpp",
-    "mjs": "javascript"
+    "mjs": "javascript",
+    "java": "java",
 }
 
 function getLanguageFromName(name: string) {
