@@ -5,6 +5,7 @@ export const enum AuthMessage {
     DEVICE_NOT_FOUND = 'Invalid device identity',
     TOKEN_EXPIRED = "TokenExpiredError",
     REPORT_NOT_PUBLISHED = "Report not published yet",
+    OTP_SENT_MESSAGE = "An OTP has been sent to your email. Please use the OTP to verify your account."
 };
 
 export const REFRESH_TOKEN_HEADER = 'x-refresh-token' as const;

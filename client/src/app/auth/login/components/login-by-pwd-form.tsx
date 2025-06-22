@@ -41,9 +41,11 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
     })
 
     function onSubmit(values: loginFormSchemaType) {
+        setErrMsg(null);
+        
         startTransition(async () => {
             try {
-                const res = await axiosClient.post<TLoginResponse>(`/auth/login`, values);
+                const res = await axiosClient.post<TLoginResponse | { message: string }>(`/auth/login`, values);
 
                 if (!res.data) throw new Error("Invalid credentials");
 
@@ -52,6 +54,12 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                 if ('message' in data && 'hasPasskey' in data && data.message === AuthMessage.DEVICE_NOT_FOUND) {
                     sessionStorage.setItem("loginChallengeDto", JSON.stringify({ email: values.email, hasPasskey: !!data.hasPasskey })); // required in challenge page
                     router.replace("/auth/login/challenge");
+                    return;
+                }
+
+                if ('message' in data && data.message === AuthMessage.OTP_SENT_MESSAGE) {
+                    setErrMsg("This account is not been verified yet. Please check your email for the verification OTP and use the OTP to verify your account.");
+                    form.reset();
                     return;
                 }
 
