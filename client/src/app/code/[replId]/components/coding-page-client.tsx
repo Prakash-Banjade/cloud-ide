@@ -49,7 +49,6 @@ export const CodingPagePostPodCreation = () => {
         showTerm,
         setShowTerm,
     } = useCodingStates();
-    const [isLoadingFiles, setIsLoadingFiles] = useState(false);
     const isMobile = useIsMobile(1000);
 
     const { socket, ptySocket } = useSocket();
@@ -59,13 +58,12 @@ export const CodingPagePostPodCreation = () => {
         if (!socket || !ptySocket) return;
 
         socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
-            setIsLoadingFiles(true);
+            setTreeLoaded(true);
+            
             await refreshTree({
                 content: rootContent,
                 socket,
             });
-            setTreeLoaded(true);
-            setIsLoadingFiles(false);
         });
 
         ptySocket.on(SocketEvents.PROCESS_STATUS, (data: { isRunning: boolean }) => { // this event is emitted by pty not runner
@@ -83,8 +81,6 @@ export const CodingPagePostPodCreation = () => {
     const showPreview = project && !isMobile && projectRunning && previewLanguages.includes(project.language);
 
     if (!treeLoaded) return <CodingPageLoader state="setup" />;
-
-    if (isLoadingFiles) return <CodingPageLoader state="loading_files" />;
 
     if (!socket || !ptySocket) return null;
 

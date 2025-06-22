@@ -9,6 +9,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: configService.getOrThrow<string>('CLIENT_URL'),
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
 

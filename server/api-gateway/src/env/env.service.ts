@@ -30,12 +30,6 @@ export class EnvService implements OnModuleInit {
     AES_KEY: string;
     AES_IV: string;
     NODE_ENV: TNodeEnv;
-    MAIL_OUTGOING_SERVER: string;
-    MAIL_SMTP_PORT: number;
-    MAIL_USERNAME: string;
-    MAIL_PASSWORD: string;
-    STREAM_VIDEO_API_KEY: string;
-    STREAM_VIDEO_API_SECRET: string;
 
     onModuleInit() {
         this.DATABASE_URL = this.configService.getOrThrow<string>('DATABASE_URL');
@@ -59,12 +53,6 @@ export class EnvService implements OnModuleInit {
         this.AES_KEY = this.configService.getOrThrow<string>('AES_KEY');
         this.AES_IV = this.configService.getOrThrow<string>('AES_IV');
         this.NODE_ENV = this.configService.getOrThrow<TNodeEnv>('NODE_ENV');
-        this.MAIL_OUTGOING_SERVER = this.configService.getOrThrow<string>('MAIL_OUTGOING_SERVER');
-        this.MAIL_SMTP_PORT = +this.configService.getOrThrow<string>('MAIL_SMTP_PORT');
-        this.MAIL_USERNAME = this.configService.getOrThrow<string>('MAIL_USERNAME');
-        this.MAIL_PASSWORD = this.configService.getOrThrow<string>('MAIL_PASSWORD');
-        // this.STREAM_VIDEO_API_KEY = this.configService.getOrThrow<string>('STREAM_VIDEO_API_KEY');
-        // this.STREAM_VIDEO_API_SECRET = this.configService.getOrThrow<string>('STREAM_VIDEO_API_SECRET');
     }
 
 }

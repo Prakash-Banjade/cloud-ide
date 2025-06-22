@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, HttpStatus, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException, Scope, UnauthorizedException } from '@nestjs/common';
 import { DataSource, IsNull, Not } from 'typeorm';
 import { PasswordChangeRequest } from './entities/password-change-request.entity';
 import { REQUEST } from '@nestjs/core';
@@ -18,7 +18,7 @@ import { WebAuthnCredential } from '../webAuthn/entities/webAuthnCredential.enti
 import { EOptVerificationType, OtpVerificationPending } from './entities/otp-verification-pending.entity';
 import { ChangePasswordDto, OtpVerificationDto, ResetPasswordDto, UpdateEmailDto } from './dto/auth.dtos';
 import { BaseRepository } from '../../common/base.repository';
-import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, REFRESH_TOKEN_HEADER, Tokens } from '../../common/CONSTANTS';
+import { AuthMessage, MAX_PREV_PASSWORDS, PASSWORD_SALT_COUNT, REFRESH_TOKEN_HEADER } from '../../common/CONSTANTS';
 import { generateDeviceId } from '../../common/utils';
 import { AuthUser } from '../../common/global.types';
 import { User } from '../users/entities/user.entity';
@@ -78,7 +78,7 @@ export class AuthService extends BaseRepository {
       where: {
         deviceId,
         account: { id: account.id },
-        isTrusted: true, 
+        isTrusted: true,
       },
       select: { id: true },
     });
@@ -184,6 +184,8 @@ export class AuthService extends BaseRepository {
   }
 
   async refresh(req: FastifyRequest) {
+    // accountId and deviceId are set in the refresh token guard
+
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
       relations: { user: true },
@@ -194,29 +196,28 @@ export class AuthService extends BaseRepository {
         lastName: true,
         user: { id: true }
       },
-    }); // accountId is validated in the refresh token guard
+    });
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
-    // const refreshToken = req.headers[REFRESH_TOKEN_HEADER];
+    const refreshToken = req.headers[REFRESH_TOKEN_HEADER];
 
-    const deviceId = generateDeviceId(req.headers['user-agent'], req.ip);
-    this.refreshTokenService.init({ email: account.email, deviceId });
+    // this.refreshTokenService.init({ email: account.email, deviceId: req.deviceId });
 
-    // TODO: should check for existing, but not working when opening project after access token expired from frontend
+    // TODO: must be checked for true
     // // check if refreshtoken exists
     // const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
     // if (!rtPayload || (rtPayload && rtPayload.refreshToken !== refreshToken)) throw new UnauthorizedException('Invalid refresh token');
 
-    // set new refresh_token
-    const { access_token, refresh_token } = await this.jwtService.getAuthTokens(account, req);
-    await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache for the current device
+    // set new tokens
+    const { access_token } = await this.jwtService.getAuthTokens(account, req);
+    // await this.refreshTokenService.set(refresh_token); // set the new refresh_token to the redis cache for the current device
 
     // emit the event to update device activity
-    this.eventEmitter.emit(EAuthEvents.DEVICE_ACTIVITY_UPDATE, { deviceId });
+    this.eventEmitter.emit(EAuthEvents.DEVICE_ACTIVITY_UPDATE, { deviceId: req.deviceId });
 
     return {
       access_token,
-      refresh_token
+      refresh_token: refreshToken, // return the existing refresh token
     }
   }
 
@@ -372,7 +373,7 @@ export class AuthService extends BaseRepository {
     await this.getRepository(PasswordChangeRequest).remove(passwordChangeRequest);
 
     // logout of all devices
-    this.refreshTokenService.init({ email: account.email });
+    this.refreshTokenService.init({ email: account.email, deviceId: "" });
     await this.refreshTokenService.removeAll();
 
     // Return success response

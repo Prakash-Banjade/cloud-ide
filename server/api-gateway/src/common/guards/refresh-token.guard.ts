@@ -19,11 +19,12 @@ export class RefreshTokenGuard implements CanActivate {
         if (!refreshToken) throw new ForbiddenException();
 
         try {
-            const { accountId } = await this.jwtService.verifyAsync(refreshToken, {
+            const { accountId, deviceId } = await this.jwtService.verifyAsync(refreshToken, {
                 secret: this.envService.REFRESH_TOKEN_SECRET,
             });
 
             request.accountId = accountId;
+            request.deviceId = deviceId;
         } catch {
             throw new UnauthorizedException();
         }

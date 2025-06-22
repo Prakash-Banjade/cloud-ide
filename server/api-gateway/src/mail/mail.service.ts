@@ -1,15 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { createTransport, Transporter } from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import { emailConfig, ITemplates } from './mail-service.config';
+import { Injectable, Logger } from '@nestjs/common';
+import { ITemplates } from './mail-service.config';
 import { readFileSync } from 'fs';
-import * as nodemailer from 'nodemailer';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { EmailVerificationMailDto, ResetPasswordMailEventDto, TwoFAMailEventDto, UserCredentialsEventDto } from './dto/events.dto';
-import Mail from 'nodemailer/lib/mailer';
+import { EmailVerificationMailDto, ResetPasswordMailEventDto, TwoFAMailEventDto } from './dto/events.dto';
 import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
 
 export enum MailEvents {
     EMAIL_VERIFICATION = 'mail.email-verification',
@@ -21,14 +18,13 @@ const LOGO_URL = "https://res.cloudinary.com/dbj0ffzhn/image/upload/v1749668908/
 
 @Injectable()
 export class MailService {
-    private readonly transport: Transporter<SMTPTransport.SentMessageInfo>;
-    private readonly email: string;
+    private readonly logger = new Logger(MailService.name);
+    private readonly resend: Resend;
     private readonly domain: string;
     private readonly templates: ITemplates;
 
     constructor(private readonly configService: ConfigService) {
-        this.transport = createTransport(emailConfig);
-        this.email = 'Qubide <noreply@qubide.cloud>';
+        this.resend = new Resend(this.configService.getOrThrow("RESEND_API_KEY"));
         this.domain = this.configService.getOrThrow('CLIENT_URL');
 
         this.templates = {
@@ -38,35 +34,31 @@ export class MailService {
         };
     }
 
-    private static parseTemplate<T>(
+    private static parseTemplate(
         templateName: string,
-    ): Handlebars.TemplateDelegate<T> {
+    ): Handlebars.TemplateDelegate {
         const templateText = readFileSync(
             join(__dirname, 'templates', templateName),
             'utf-8',
         );
-        return Handlebars.compile<T>(templateText, { strict: true });
+        return Handlebars.compile(templateText, { strict: true });
     }
 
     public async sendEmail(
         to: string,
         subject: string,
         html: string,
-        attachments?: Mail.Attachment[]
-    ): Promise<SMTPTransport.SentMessageInfo> {
-        const result = await this.transport.sendMail({
-            from: this.email,
+    ) {
+        const { error } = await this.resend.emails.send({
+            from: 'Qubide <noreply@qubide.cloud>',
             to,
             subject,
             html,
-            attachments,
         });
 
-        const previewUrl = nodemailer.getTestMessageUrl(result);
-
-        console.log(previewUrl)
-
-        return result;
+        if (error) {
+            this.logger.error(error);
+        }
     }
 
     @OnEvent(MailEvents.EMAIL_VERIFICATION)

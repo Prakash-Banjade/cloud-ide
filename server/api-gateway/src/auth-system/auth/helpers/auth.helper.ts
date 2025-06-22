@@ -93,7 +93,7 @@ export class AuthHelper extends BaseRepository {
         }));
 
         return {
-            message: "An OTP has been sent to your email. Please use the OTP to verify your account."
+            message: AuthMessage.OTP_SENT_MESSAGE
         }
     }
 
@@ -143,7 +143,7 @@ export class AuthHelper extends BaseRepository {
         if (verificationTokenHash !== foundRequest.hashedVerificationToken) throw new BadRequestException('Invalid token received');
 
         // CHECK IF OTP IS VALID
-        const isOtpValid = bcrypt.compareSync(String(otp), foundRequest.otp);
+        const isOtpValid = await bcrypt.compare(String(otp), foundRequest.otp);
         if (!isOtpValid) throw new BadRequestException('Invalid OTP');
 
         return foundRequest;
@@ -191,7 +191,7 @@ export class AuthHelper extends BaseRepository {
         // if account is not verified, send confirmation email
         if (!foundAccount.verifiedAt) return await this.sendEmailConfirmation(foundAccount);
 
-        const isPasswordValid = bcrypt.compare(
+        const isPasswordValid = await bcrypt.compare(
             password,
             foundAccount.password,
         );

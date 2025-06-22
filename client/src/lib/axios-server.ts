@@ -2,7 +2,7 @@
 
 import { API_URL } from "./utils";
 import axios from "axios";
-import auth from "./auth";
+import { auth } from "./auth";
 
 export async function serverFetch(path: string, init?: RequestInit) {
     const session = await auth();

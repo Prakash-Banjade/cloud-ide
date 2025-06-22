@@ -15,13 +15,6 @@ import { Global, Module } from '@nestjs/common';
                         url: process.env.DATABASE_URL,
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`],
                         synchronize: process.env.DB_SYNCHRONIZE === 'true',
-                        cache: {
-                            type: 'redis',
-                            duration: 60000,
-                            options: {
-                                url: process.env.REDIS_URL,
-                            }
-                        },
                         // logger: 'advanced-console',
                         // logging: 'all'
                     });

@@ -1,4 +1,4 @@
-import auth from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 export default async function PersonalInfo() {
     const session = await auth();
