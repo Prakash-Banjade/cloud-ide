@@ -5,7 +5,7 @@ import { signOut, useSession } from 'next-auth/react'
 import axiosClient from '@/lib/axios-client'
 import { useMutation } from '@tanstack/react-query'
 import { REFRESH_TOKEN_HEADER } from '@/lib/CONSTANTS'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Skeleton } from '../ui/skeleton'
 import { EllipsisVertical } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -17,6 +17,7 @@ export default function ProfileDropdown() {
     const router = useRouter();
     const isMobile = useIsMobile();
     const handleDownload = useDownload();
+    const pathname = usePathname();
 
     const { mutateAsync, isPending } = useMutation({
         mutationFn: async () => {
@@ -67,20 +68,32 @@ export default function ProfileDropdown() {
             <DropdownMenuContent side='bottom' align='end'>
                 <DropdownMenuLabel className="truncate max-w-[20ch]" title={data?.user.email}>{data?.user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleDownload}>
-                    Download
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/workspace">
-                        Workspace
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/docs">
-                        Documentation
-                    </Link>
-                </DropdownMenuItem>
+                {
+                    pathname.startsWith("/code") && (
+                        <>
+                            <DropdownMenuItem onClick={handleDownload}>
+                                Download
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                        </>
+                    )
+                }
+                {
+                    isMobile && (
+                        <>
+                            <DropdownMenuItem asChild>
+                                <Link href="/workspace">
+                                    Workspace
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/docs">
+                                    Documentation
+                                </Link>
+                            </DropdownMenuItem>
+                        </>
+                    )
+                }
                 <DropdownMenuItem
                     onClick={() => router.push("/settings")}
                 >

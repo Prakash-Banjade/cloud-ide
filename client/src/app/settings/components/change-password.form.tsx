@@ -135,7 +135,7 @@ export default function ChangePasswordForm() {
                 <LoadingButton
                     type="submit"
                     isLoading={isPending}
-                    loadingText="Signing in..."
+                    loadingText="Changing..."
                 >
                     Change Password
                 </LoadingButton>

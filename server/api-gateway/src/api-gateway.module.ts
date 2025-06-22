@@ -13,6 +13,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './common/guards/auth.guard';
 import { MailModule } from './mail/mail.module';
 import { RedisModule } from './redis/redis.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { createKeyv } from '@keyv/redis';
 
 @Module({
   imports: [
@@ -26,7 +29,17 @@ import { RedisModule } from './redis/redis.module';
     KubernetesModule,
     UtilitiesModule,
     ScheduleModule.forRoot(),
-    RedisModule,
+    // RedisModule,
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      isGlobal: true,
+      useFactory: async (configService: ConfigService) => {
+        return {
+          stores: [createKeyv(configService.getOrThrow('REDIS_URL'))],
+        };
+      },
+      inject: [ConfigService],
+    }),
     TypeOrmModule,
     AuthSystemModule,
     ProjectsModule,

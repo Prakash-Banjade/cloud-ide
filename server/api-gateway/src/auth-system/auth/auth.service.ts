@@ -185,7 +185,7 @@ export class AuthService extends BaseRepository {
 
   async refresh(req: FastifyRequest) {
     // accountId and deviceId are set in the refresh token guard
-    
+
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
       relations: { user: true },
@@ -373,7 +373,7 @@ export class AuthService extends BaseRepository {
     await this.getRepository(PasswordChangeRequest).remove(passwordChangeRequest);
 
     // logout of all devices
-    this.refreshTokenService.init({ email: account.email });
+    this.refreshTokenService.init({ email: account.email, deviceId: "" });
     await this.refreshTokenService.removeAll();
 
     // Return success response
