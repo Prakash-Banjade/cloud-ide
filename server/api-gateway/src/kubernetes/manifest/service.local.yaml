@@ -90,11 +90,14 @@ spec:
               ephemeral-storage: "5Gi"
       
         - name: runner
-          image: prakashbanjade/cloud-ide-runner:latest
+          image: prakashbanjade/cloud-ide-runner:v1.2
           imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: runner-env
+          env:
+            - name: REPL_ID
+              value: "service_name"
           ports:
             - containerPort: 3003 # ws for runner
           volumeMounts:

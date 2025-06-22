@@ -1,13 +1,15 @@
 import { ArrowLeft, ArrowRight, ExternalLink, LoaderCircle, RotateCw } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { use, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Preview() {
     const params = useParams();
     const replId = params.replId ?? '';
 
     const previewRef = useRef<HTMLIFrameElement>(null);
-    const link = `http://${replId}.qubide.cloud`;
+    const link = process.env.NODE_ENV === 'production'
+        ? `https://${replId}.qubide.cloud`
+        : `http://${replId}.qubide.cloud`;
 
     const [isServerReady, setIsServerReady] = useState(false);
     const [key, setKey] = useState(0); // forces iframe reload

@@ -184,6 +184,8 @@ export class AuthService extends BaseRepository {
   }
 
   async refresh(req: FastifyRequest) {
+    // accountId and deviceId are set in the refresh token guard
+    
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },
       relations: { user: true },
@@ -194,16 +196,17 @@ export class AuthService extends BaseRepository {
         lastName: true,
         user: { id: true }
       },
-    }); // accountId is validated in the refresh token guard
+    });
     if (!account) throw new UnauthorizedException('Invalid refresh token');
 
     const refreshToken = req.headers[REFRESH_TOKEN_HEADER];
 
-    this.refreshTokenService.init({ email: account.email, deviceId: req.deviceId });
+    // this.refreshTokenService.init({ email: account.email, deviceId: req.deviceId });
 
+    // TODO: must be checked for true
     // // check if refreshtoken exists
-    const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
-    if (!rtPayload || (rtPayload && rtPayload.refreshToken !== refreshToken)) throw new UnauthorizedException('Invalid refresh token');
+    // const rtPayload = await this.refreshTokenService.get(); // refreshToken Payload
+    // if (!rtPayload || (rtPayload && rtPayload.refreshToken !== refreshToken)) throw new UnauthorizedException('Invalid refresh token');
 
     // set new tokens
     const { access_token } = await this.jwtService.getAuthTokens(account, req);
@@ -214,7 +217,7 @@ export class AuthService extends BaseRepository {
 
     return {
       access_token,
-      refresh_token: rtPayload.refreshToken, // return the existing refresh token
+      refresh_token: refreshToken, // return the existing refresh token
     }
   }
 
