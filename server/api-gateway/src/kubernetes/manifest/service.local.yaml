@@ -90,7 +90,7 @@ spec:
               ephemeral-storage: "5Gi"
       
         - name: runner
-          image: prakashbanjade/cloud-ide-runner:v1.2
+          image: prakashbanjade/cloud-ide-runner:latest
           imagePullPolicy: Always
           envFrom:
             - secretRef:

@@ -93,7 +93,7 @@ export class AuthHelper extends BaseRepository {
         }));
 
         return {
-            message: "An OTP has been sent to your email. Please use the OTP to verify your account."
+            message: AuthMessage.OTP_SENT_MESSAGE
         }
     }
 

@@ -69,7 +69,7 @@ export default function ForgotPasswordForm() {
                             <Check size={18} /> Mail Sent - Check Your Email
                         </p>
                         <p className="text-muted-foreground">
-                            We've sent a password reset link to your email address.
+                            We&apos;ve sent a password reset link to your email address.
                             Please check your inbox and follow the instructions to reset your password.
                         </p>
                         <p>
@@ -82,7 +82,7 @@ export default function ForgotPasswordForm() {
                 ) : (
                     <>
                         <p className="text-sm text-muted-foreground text-center mt-2">
-                            Enter your email address and we'll send you a link to reset your password.
+                            Enter your email address and we&apos;ll send you a link to reset your password.
                         </p>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-6">

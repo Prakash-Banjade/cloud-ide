@@ -18,6 +18,7 @@ export const enum AuthMessage {
     TOKEN_EXPIRED = "TokenExpiredError",
     REPORT_NOT_PUBLISHED = "Report not published yet",
     PASSWORD_NOT_SET_YET = "Password not set yet",
+    OTP_SENT_MESSAGE = "An OTP has been sent to your email. Please use the OTP to verify your account."
 };
 
 export const MAX_PREV_PASSWORDS = 3 as const;

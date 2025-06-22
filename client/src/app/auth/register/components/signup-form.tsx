@@ -54,7 +54,6 @@ export function SignUpForm() {
     const { mutateAsync, error } = useAppMutation<signUpFormSchemaType, { message: string }>();
 
     async function onSubmit(values: signUpFormSchemaType) {
-        return;
         setSuccessMsg(null);
 
         const res = await mutateAsync({
@@ -172,7 +171,6 @@ export function SignUpForm() {
                             className="w-full"
                             isLoading={form.formState.isSubmitting}
                             loadingText="Registering..."
-                            disabled
                         >
                             Register
                         </LoadingButton>
