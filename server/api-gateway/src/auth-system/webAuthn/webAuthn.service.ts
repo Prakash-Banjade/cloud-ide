@@ -169,6 +169,7 @@ export class WebAuthnService extends BaseRepository {
             .where('account.email = :email', { email: dto.email })
             .andWhere('account.verifiedAt IS NOT NULL')
             .leftJoin('account.webAuthnCredentials', 'webAuthnCredentials', 'webAuthnCredentials.credentialId = :credentialId', { credentialId: dto.authenticationResponse?.id })
+            .leftJoin('account.user', 'user')
             .select([
                 'account.id',
                 'account.email',
@@ -181,6 +182,7 @@ export class WebAuthnService extends BaseRepository {
                 'webAuthnCredentials.publicKey',
                 'webAuthnCredentials.transports',
                 'webAuthnCredentials.counter',
+                'user.id',
             ]).getOne();
         if (!account) throw new BadRequestException('Invalid email');
 

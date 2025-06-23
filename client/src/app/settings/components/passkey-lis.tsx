@@ -1,3 +1,5 @@
+"use client";
+
 import { Separator } from "@/components/ui/separator"
 import { KeyRound } from "lucide-react"
 import React from "react"

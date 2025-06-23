@@ -23,7 +23,7 @@ export default async function Navbar() {
                             <div className="flex items-center space-x-3">
                                 <Button
                                     variant="ghost"
-                                    className="text-foreground hover:text-dodgerblue hover:bg-dodgerblue/10"
+                                    className="text-foreground hover:text-brand hover:bg-brand/10"
                                     asChild
                                 >
                                     <Link href={"/auth/login"}>
@@ -31,7 +31,7 @@ export default async function Navbar() {
                                     </Link>
                                 </Button>
                                 <Button
-                                    className="bg-dodgerblue hover:bg-dodgerblue/90 text-white"
+                                    className="bg-brand hover:bg-brand/90 text-white"
                                     asChild
                                 >
                                     <Link href="/auth/register">
@@ -42,7 +42,7 @@ export default async function Navbar() {
                         ) : (
                             <div className="flex items-center space-x-3">
                                 <Button
-                                    className="bg-dodgerblue hover:bg-dodgerblue/90 text-white"
+                                    className="bg-brand hover:bg-brand/90 text-white"
                                     asChild
                                 >
                                     <Link href="/workspace">

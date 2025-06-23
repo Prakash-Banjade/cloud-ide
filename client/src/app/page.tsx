@@ -1,3 +1,4 @@
+import CodingPagePreview from "@/components/landing-page/coding-page-preview";
 import Features from "@/components/landing-page/features";
 import Hero from "@/components/landing-page/hero";
 import HeroGetStartedButton from "@/components/landing-page/hero-get-started-btn";
@@ -16,6 +17,7 @@ export default function Home() {
             <HeroGetStartedButton />
           </Suspense>
         </Hero>
+        <CodingPagePreview />
         <Features />
         <Pricing />
       </div>

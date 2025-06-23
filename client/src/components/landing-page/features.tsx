@@ -69,7 +69,7 @@ const Features = () => {
                 >
                     <h2 className="text-4xl md:text-5xl font-bold mb-6">
                         Everything You Need to
-                        <span className="text-dodgerblue"> Code</span>
+                        <span className="text-brand"> Code</span>
                     </h2>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Powerful features that make coding in the cloud as seamless as local development
@@ -84,24 +84,24 @@ const Features = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: index * 0.1 }}
                             viewport={{ once: true }}
-                            className={`group relative p-6 rounded-2xl bg-card border border-border hover:border-dodgerblue/50 transition-all duration-300 ${feature.gridClass}`}
+                            className={`group relative p-6 rounded-2xl bg-card border border-border hover:border-brand/50 transition-all duration-300 ${feature.gridClass}`}
                             whileHover={{
                                 scale: 1.02,
                                 transition: { duration: 0.2 }
                             }}
                         >
                             {/* Hover glow effect */}
-                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-dodgerblue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-brand/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                             {/* Content */}
                             <div className="relative z-10">
                                 <div className="flex items-center mb-4">
-                                    <div className="p-2 rounded-lg bg-dodgerblue/10 text-dodgerblue group-hover:bg-dodgerblue/20 transition-colors duration-300">
+                                    <div className="p-2 rounded-lg bg-brand/10 text-brand group-hover:bg-brand/20 transition-colors duration-300">
                                         <feature.icon className="w-6 h-6" />
                                     </div>
                                 </div>
 
-                                <h3 className="text-xl font-semibold mb-3 group-hover:text-dodgerblue transition-colors duration-300">
+                                <h3 className="text-xl font-semibold mb-3 group-hover:text-brand transition-colors duration-300">
                                     {feature.title}
                                 </h3>
 
@@ -111,7 +111,7 @@ const Features = () => {
                             </div>
 
                             {/* Animated border */}
-                            <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-dodgerblue/20 transition-all duration-300" />
+                            <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-brand/20 transition-all duration-300" />
                         </motion.div>
                     ))}
                 </div>

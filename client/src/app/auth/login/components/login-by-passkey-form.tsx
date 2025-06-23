@@ -38,6 +38,7 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
 
     async function onSubmit({ email }: loginFormSchemaType) {
         setError(null);
+        setLoadingText('Validating email...');
 
         startTransition(async () => {
             try {
@@ -73,6 +74,8 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
                             setErrorMsg("Unable to sign in", setError, form)
                         }
 
+                        localStorage.setItem("hasLoggedInBefore", "true");
+
                         router.replace("/workspace");
                         router.refresh();
                     }
@@ -83,8 +86,6 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
 
             } catch (e) {
                 setErrorMsg(e, setError, form);
-            } finally {
-                setLoadingText('Validating email...');
             }
         })
     };
