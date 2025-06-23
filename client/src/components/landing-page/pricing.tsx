@@ -56,7 +56,7 @@ const Pricing = () => {
                 >
                     <h2 className="text-4xl md:text-5xl font-bold mb-6">
                         Simple, Transparent
-                        <span className="text-dodgerblue"> Pricing</span>
+                        <span className="text-brand"> Pricing</span>
                     </h2>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         Choose the plan that fits your development needs. Upgrade or downgrade at any time.
@@ -72,14 +72,14 @@ const Pricing = () => {
                             transition={{ duration: 0.6, delay: index * 0.2 }}
                             viewport={{ once: true }}
                             className={`relative p-8 rounded-2xl border-2 transition-all duration-300 ${plan.popular
-                                    ? "border-dodgerblue bg-card scale-105 shadow-2xl shadow-dodgerblue/20"
-                                    : "border-border bg-card hover:border-dodgerblue/50"
+                                    ? "border-brand bg-card scale-105 shadow-2xl shadow-brand/20"
+                                    : "border-border bg-card hover:border-brand/50"
                                 }`}
                         >
                             {/* Popular badge */}
                             {plan.popular && (
                                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                    <div className="bg-dodgerblue text-white px-4 py-2 rounded-full text-sm font-semibold">
+                                    <div className="bg-brand text-white px-4 py-2 rounded-full text-sm font-semibold">
                                         Most Popular
                                     </div>
                                 </div>
@@ -120,7 +120,7 @@ const Pricing = () => {
                             {/* CTA Button */}
                             <Button
                                 className={`w-full py-6 text-lg font-semibold rounded-xl transition-all duration-300 ${plan.popular
-                                        ? "bg-dodgerblue hover:bg-dodgerblue/90 text-white"
+                                        ? "bg-brand hover:bg-brand/90 text-white"
                                         : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
                                     }`}
                             >

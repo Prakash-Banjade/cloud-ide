@@ -1,3 +1,5 @@
+"use client";
+
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signOut } from "next-auth/react";

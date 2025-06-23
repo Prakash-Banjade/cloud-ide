@@ -73,6 +73,8 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
                             setErrorMsg("Unable to sign in", setError, form)
                         }
 
+                        localStorage.setItem("hasLoggedInBefore", "true");
+
                         router.replace("/workspace");
                         router.refresh();
                     }

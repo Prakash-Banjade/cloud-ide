@@ -6,7 +6,7 @@ export default async function DocsPage() {
         <main className="p-8 pb-20 grid 2xl:grid-cols-5 xl:grid-cols-3 gap-20">
             <section className="2xl:col-span-4 xl:col-span-2 space-y-16">
                 <div className="space-y-6" id="why-qubide">
-                    <h1 className="text-3xl font-semibold text-dodgerblue">Why Qubide?</h1>
+                    <h1 className="text-3xl font-semibold text-brand">Why Qubide?</h1>
                     <div className="space-y-4">
                         <p className="text-lg text-muted-foreground">
                             Qubide is a revolutionary cloud-based development environment that transforms how developers build and
@@ -46,7 +46,7 @@ export default async function DocsPage() {
                 </div>
 
                 <div className="space-y-6" id="getting-started">
-                    <h1 className="text-3xl font-semibold text-dodgerblue">Getting Started</h1>
+                    <h1 className="text-3xl font-semibold text-brand">Getting Started</h1>
                     <div className="space-y-4">
                         <p className="text-lg text-muted-foreground">
                             Follow these simple steps to get your first project up and running on Qubide.
@@ -89,7 +89,7 @@ export default async function DocsPage() {
                 </div>
 
                 <div className="space-y-6" id="storage">
-                    <h1 className="text-3xl font-semibold text-dodgerblue">Storage</h1>
+                    <h1 className="text-3xl font-semibold text-brand">Storage</h1>
                     <div className="space-y-4">
                         <p className="text-lg text-muted-foreground">
                             Learn how Qubide securely stores and manages your code and project data.
@@ -128,7 +128,7 @@ export default async function DocsPage() {
                 </div>
 
                 <div className="space-y-6" id="keyboard-shortcuts">
-                    <h1 className="text-3xl font-semibold text-dodgerblue">Keyboard Shortcuts</h1>
+                    <h1 className="text-3xl font-semibold text-brand">Keyboard Shortcuts</h1>
                     <div className="space-y-4">
                         <p className="text-lg text-muted-foreground">
                             Master these keyboard shortcuts to boost your productivity in Qubide.
@@ -182,22 +182,22 @@ export default async function DocsPage() {
                 <h2 className="text-xs font-medium text-muted-foreground">On This Page</h2>
                 <ul className="space-y-3 text-sm">
                     <li>
-                        <a href="#why-qubide" className="hover:text-dodgerblue text-muted-foreground transition-colors">
+                        <a href="#why-qubide" className="hover:text-brand text-muted-foreground transition-colors">
                             Why Qubide?
                         </a>
                     </li>
                     <li>
-                        <a href="#getting-started" className="hover:text-dodgerblue text-muted-foreground transition-colors">
+                        <a href="#getting-started" className="hover:text-brand text-muted-foreground transition-colors">
                             Getting Started
                         </a>
                     </li>
                     <li>
-                        <a href="#storage" className="hover:text-dodgerblue text-muted-foreground transition-colors">
+                        <a href="#storage" className="hover:text-brand text-muted-foreground transition-colors">
                             Storage
                         </a>
                     </li>
                     <li>
-                        <a href="#keyboard-shortcuts" className="hover:text-dodgerblue text-muted-foreground transition-colors">
+                        <a href="#keyboard-shortcuts" className="hover:text-brand text-muted-foreground transition-colors">
                             Keyboard Shortcuts
                         </a>
                     </li>

@@ -19,9 +19,8 @@ export default function Preview() {
 
         const checkServer = async () => {
             try {
-                const res = await fetch(`/preview/${replId}`, {
+                const res = await fetch(link, {
                     method: "GET",
-                    // mode: "no-cors", // fallback if /health is not set up
                 });
 
                 if (res.status !== 502) {
@@ -54,7 +53,7 @@ export default function Preview() {
                 <div className="grow">
                     <input
                         type="text"
-                        value={link}
+                        value={`https://${replId}.qubide.cloud`}
                         className='text-xs w-full px-2.5 py-1.5 rounded-md border border-input'
                         readOnly
                         disabled

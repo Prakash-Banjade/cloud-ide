@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from '@/components/ui/button'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useAppMutation } from '@/hooks/useAppMutation'

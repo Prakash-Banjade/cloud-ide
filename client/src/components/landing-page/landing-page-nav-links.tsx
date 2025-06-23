@@ -13,8 +13,8 @@ export default function LandingPageNavLinks() {
             <Link
                 href="/docs"
                 className={cn(
-                    "flex items-center space-x-2 text-foreground hover:text-dodgerblue transition-colors",
-                    pathname === "/docs" && "text-dodgerblue"
+                    "flex items-center space-x-2 text-foreground hover:text-brand transition-colors",
+                    pathname === "/docs" && "text-brand"
                 )}
             >
                 <FileText className="w-4 h-4" />
@@ -23,8 +23,8 @@ export default function LandingPageNavLinks() {
             <Link
                 href="/support"
                 className={cn(
-                    "flex items-center space-x-2 text-foreground hover:text-dodgerblue transition-colors",
-                    pathname === "/support" && "text-dodgerblue"
+                    "flex items-center space-x-2 text-foreground hover:text-brand transition-colors",
+                    pathname === "/support" && "text-brand"
                 )}
             >
                 <HelpCircle className="w-4 h-4" />
