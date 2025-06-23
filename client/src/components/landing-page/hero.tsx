@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Code } from "lucide-react";
 
@@ -14,7 +15,7 @@ const Hero = ({ children }: { children: React.ReactNode }) => {
                 {[...Array(50)].map((_, i) => (
                     <motion.div
                         key={i}
-                        className="absolute w-1 h-1 bg-dodgerblue rounded-full"
+                        className="absolute w-1 h-1 bg-brand rounded-full"
                         style={{
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
@@ -44,9 +45,12 @@ const Hero = ({ children }: { children: React.ReactNode }) => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
-                        className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-6 gradient-text lg:leading-[105px] md:leading-[80px] leading-[60px]"
+                        className={cn(
+                            "text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-shadow-lg font-bold mb-6 lg:leading-[105px] md:leading-[80px] leading-[60px]",
+                            "gradient-text bg-linear-120 from-foreground from-0% to-foreground/60 to-100%"
+                        )}
                     >
-                        C<Code className="inline text-dodgerblue sm:size-12 md:size-16 lg:size-20 stroke-[4px]" />de Anywhere,
+                        C<Code className="inline text-brand sm:size-12 md:size-16 lg:size-20 stroke-[4px]" />de Anywhere,
                         <br />
                         Build Everything
                     </motion.h2>
@@ -83,7 +87,7 @@ const Hero = ({ children }: { children: React.ReactNode }) => {
                             { label: "Active Users", value: "5K+" },
                         ].map((stat, index) => (
                             <div key={index} className="text-center">
-                                <div className="text-3xl font-bold text-dodgerblue mb-2">{stat.value}</div>
+                                <div className="text-3xl font-bold text-brand mb-2">{stat.value}</div>
                                 <div className="text-sm text-muted-foreground">{stat.label}</div>
                             </div>
                         ))}

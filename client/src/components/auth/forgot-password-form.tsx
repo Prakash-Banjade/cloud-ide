@@ -81,7 +81,7 @@ export default function ForgotPasswordForm() {
                     </div>
                 ) : (
                     <>
-                        <p className="text-sm text-muted-foreground text-center mt-2">
+                        <p className="text-sm text-muted-foreground text-center mt-2 mb-6">
                             Enter your email address and we&apos;ll send you a link to reset your password.
                         </p>
                         <Form {...form}>

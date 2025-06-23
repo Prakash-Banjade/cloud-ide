@@ -42,7 +42,7 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
 
     function onSubmit(values: loginFormSchemaType) {
         setErrMsg(null);
-        
+
         startTransition(async () => {
             try {
                 const res = await axiosClient.post<TLoginResponse | { message: string }>(`/auth/login`, values);
@@ -72,6 +72,8 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                     setErrMsg(AuthMessage.INVALID_AUTH_CREDENTIALS_MSG);
                     return;
                 }
+
+                localStorage.setItem("hasLoggedInBefore", "true");
 
                 router.push("/workspace");
                 router.refresh();

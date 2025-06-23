@@ -1,7 +1,6 @@
 import { ThemeToggle } from '@/components/theme-toggle'
-import Image from 'next/image'
 import Link from 'next/link'
-import logoDark from '@/assets/logo-dark.png'
+import Logo from '@/components/logo'
 
 export default function AuthSideView() {
     return (
@@ -13,21 +12,13 @@ export default function AuthSideView() {
                 href="/"
                 className="absolute left-4 top-4 md:left-8 md:top-8 z-20 flex items-center font-medium"
             >
-                <div className="flex aspect-square size-12 items-center justify-center rounded-lg bg-primary mr-2">
-                    <Image
-                        src={logoDark}
-                        alt='Qubide Logo'
-                        width={32}
-                        height={32}
-                        className='rounded-md'
-                    />
+                <div className="flex aspect-square size-12 items-center justify-center rounded-lg">
+                    <Logo />
                 </div>
-                <span className='text-background'>Qubide</span>
             </Link>
             <div
-                className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex"
+                className="relative bg-[url('/auth-bg-light.png')] dark:bg-[url('/auth-bg-dark.png')] hidden h-full flex-col bg-muted p-10 lg:flex"
                 style={{
-                    backgroundImage: "linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0)), linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0)), url('/auth-bg.jpg')",
                     backgroundRepeat: "no-repeat",
                     backgroundSize: "cover",
                     backgroundPosition: "center",

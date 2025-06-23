@@ -1,3 +1,5 @@
+"use client";
+
 import axios, { AxiosInstance } from "axios";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";

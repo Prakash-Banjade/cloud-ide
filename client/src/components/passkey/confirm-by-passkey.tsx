@@ -1,3 +1,5 @@
+"use client";
+
 import { useAxiosPrivate } from "@/hooks/useAxios";
 import { QueryKey } from "@/lib/query-keys";
 import { getErrMsg } from "@/lib/utils";

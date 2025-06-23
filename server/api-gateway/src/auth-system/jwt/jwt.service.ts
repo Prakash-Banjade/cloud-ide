@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtService as JwtSer } from '@nestjs/jwt';
 import { Account } from '../accounts/entities/account.entity';
 import { EnvService } from 'src/env/env.service';
@@ -48,10 +48,12 @@ export class JwtService {
     async getAuthTokens(account: Account, req: FastifyRequest) {
         const deviceId = req.deviceId || generateDeviceId(req.headers['user-agent'], req.ip);
 
+        if (!account.user?.id) throw new InternalServerErrorException('Associated user not found');
+        
         const payload = {
             accountId: account.id,
             email: account.email,
-            userId: account.user?.id,
+            userId: account.user.id,
             deviceId,
             firstName: account.firstName,
             lastName: account.lastName,
