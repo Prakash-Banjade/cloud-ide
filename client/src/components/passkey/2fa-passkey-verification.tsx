@@ -22,6 +22,7 @@ export default function TwoFaPasskeyVerification({ isExternalPending, email }: P
 
     const handleVerify = async () => {
         setError(null);
+        setLoadingText('Validating email...');
 
         startTransition(async () => {
             try {
@@ -76,8 +77,6 @@ export default function TwoFaPasskeyVerification({ isExternalPending, email }: P
 
             } catch (e) {
                 setError(getErrMsg(e) || 'Something seems wrong. Please try again.')
-            } finally {
-                setLoadingText('Validating email...');
             }
         })
     }
