@@ -1,5 +1,8 @@
 "use client"
 
+import axiosClient from '@/lib/axios-client';
+import { REFRESH_TOKEN_HEADER, SocketEvents } from '@/lib/CONSTANTS';
+import { TLoginResponse } from '@/types';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -30,12 +33,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         const runnerUrl = process.env.NODE_ENV === 'production'
             ? `wss://${replId}.prakashbanjade.com`
             : `ws://${replId}.prakashbanjade.com`
-        // : `ws://127.0.0.1:3003`;
 
         const ptyUrl = process.env.NODE_ENV === 'production'
             ? `wss://pty.${replId}.prakashbanjade.com`
             : `ws://pty.${replId}.prakashbanjade.com`
-        // : `ws://127.0.0.1:3004`;
 
         const runnerSocket = io(
             runnerUrl,
@@ -45,6 +46,27 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
                 }
             }
         );
+
+        runnerSocket.on(SocketEvents.TOKEN_EXPIRED, async () => {
+            try {
+                const res = await axiosClient.post<TLoginResponse>(
+                    `/auth/refresh`,
+                    {},
+                    { headers: { [REFRESH_TOKEN_HEADER]: data?.backendTokens.refresh_token } }
+                );
+                const { access_token } = res.data;
+
+                if (access_token) {
+                    runnerSocket.auth = {
+                        access_token
+                    };
+                    runnerSocket.connect();
+                }
+
+            } catch (e) {
+                runnerSocket.disconnect();
+            }
+        })
 
         const ptySocket = io(
             ptyUrl,
@@ -59,6 +81,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setPtySocket(ptySocket);
 
         return () => {
+            runnerSocket.off(SocketEvents.TOKEN_EXPIRED);
             runnerSocket.disconnect();
             ptySocket.disconnect();
         };

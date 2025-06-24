@@ -10,9 +10,14 @@ import { Logger, OnModuleInit } from '@nestjs/common';
 import { SocketEvents } from 'src/CONSTANTS';
 
 @WebSocketGateway({
-  path: '/',
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: (origin, cb) => {
+      if (origin === process.env.CLIENT_URL) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'), false);
+      }
+    },
     methods: ['GET', 'POST'],
   },
 })
@@ -29,7 +34,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly terminalManager: TerminalManagerService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly kubernetesService: KubernetesService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
     // private readonly chokidarService: ChokidarService,
   ) {
     this.replId = this.configService.get<string>('REPL_ID')!;
@@ -40,7 +45,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   private timeOut: NodeJS.Timeout | null = null;
   private TIMER_NAME = 'timeout';
 
-  handleConnection(@ConnectedSocket() socket: Socket) {
+  async handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id}`);
 
     socket.join(this.replId); // join project room

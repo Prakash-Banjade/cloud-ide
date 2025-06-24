@@ -8,11 +8,17 @@ import { SocketEvents } from "src/CONSTANTS";
 
 @WebSocketGateway({
     cors: {
-        origin: process.env.CLIENT_URL,
+        origin: (origin, cb) => {
+            if (origin === process.env.CLIENT_URL) {
+                cb(null, true);
+            } else {
+                cb(new Error('Not allowed by CORS'), false);
+            }
+        },
         methods: ['GET', 'POST'],
     },
 })
-// @UseGuards(WsGuard)
+@UseGuards(WsGuard)
 export class FileSystemCRUDGateway implements OnGatewayConnection {
     @WebSocketServer()
     server: Server;
