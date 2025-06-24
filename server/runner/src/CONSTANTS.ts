@@ -13,5 +13,6 @@ export const enum SocketEvents {
 
     REQUEST_TERMINAL = "requestTerminal",
     TERMINAL = "terminal",
-    TERMINAL_DATA = "terminalData"
+    TERMINAL_DATA = "terminalData",
+    TOKEN_EXPIRED = "tokenExpired",
 }

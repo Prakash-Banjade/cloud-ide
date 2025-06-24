@@ -1,17 +1,25 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, MessageBody, ConnectedSocket } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, MessageBody, ConnectedSocket, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
 import { SocketEvents } from 'src/CONSTANTS';
+import { UseGuards } from '@nestjs/common';
+import { WsGuard } from 'src/guard/ws.guard';
 
 @WebSocketGateway({
   cors: {
-    origin: process.env.CLIENT_URL,
+    origin: (origin, cb) => {
+      if (origin === process.env.CLIENT_URL) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'), false);
+      }
+    },
     methods: ['GET', 'POST'],
   },
 })
-// @UseGuards(WsGuard)
-export class FileSystemGateway implements OnGatewayConnection {
+@UseGuards(WsGuard)
+export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -24,13 +32,17 @@ export class FileSystemGateway implements OnGatewayConnection {
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id}`);
-    
+
     const replId = socket.handshake.headers.host?.split('.')[0] || "";
     this.replId = replId;
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
     socket.emit(SocketEvents.TREE_LOADED, { rootContent });
+  }
+
+  handleDisconnect(@ConnectedSocket() socket: Socket) {
+    console.log(`🚫 DISCONNECTED - ${socket.id}`);
   }
 
   @SubscribeMessage(SocketEvents.FETCH_DIR)

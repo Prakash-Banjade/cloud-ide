@@ -10,7 +10,7 @@ export default async function HeroGetStartedButton() {
     return !session ? (
         <Button
             size="lg"
-            className="bg-brand hover:bg-brand/90 group text-white !px-12 !py-7 text-lg font-semibold rounded-full transition-all"
+            className="bg-brand hover:bg-brand/90 group text-white sm:!px-12 sm:!py-7 !px-8 !py-5 sm:text-lg sm:font-semibold font-medium rounded-full transition-all"
             asChild
         >
             <Link href="/auth/login">
@@ -21,7 +21,7 @@ export default async function HeroGetStartedButton() {
     ) : (
         <Button
             size="lg"
-            className="bg-brand hover:bg-brand/90 group text-white !px-12 !py-7 text-lg font-semibold rounded-full transition-all"
+            className="bg-brand hover:bg-brand/90 group text-white sm:!px-12 sm:!py-7 !px-8 !py-5 sm:text-lg sm:font-semibold font-medium rounded-full transition-all"
             asChild
         >
             <Link href="/workspace">
