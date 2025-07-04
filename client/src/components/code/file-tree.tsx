@@ -3,10 +3,10 @@
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCodingStates } from "@/context/coding-states-provider"
-import { sortFolderFirst } from "../fns/file-manager-fns"
 import { getFileIcon } from "./file-icons"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TreeItemContextMenu } from "./context-menu"
+import { sortFolderFirst } from "@/app/code/[replId]/fns/file-manager-fns"
 
 export enum EItemType {
     FILE = 'file',

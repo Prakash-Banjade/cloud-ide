@@ -1,6 +1,6 @@
-import Appearance from "./components/appearance";
-import PasswordAndAuthentication from "./components/password-and-authentication";
-import PersonalInfo from "./components/personal-info";
+import Appearance from "./appearance";
+import PasswordAndAuthentication from "./password-and-authentication";
+import PersonalInfo from "./personal-info";
 
 export const settignsTabs = [
     {
@@ -21,10 +21,4 @@ export const settignsTabs = [
         label: 'Password and Authentication',
         content: <PasswordAndAuthentication />,
     },
-    // {
-    //     id: 3,
-    //     name: 'device-activity',
-    //     label: 'Your Devices',
-    //     content: <SessionDevices />,
-    // }
 ]

@@ -4,13 +4,13 @@ import { TooltipWrapper } from '@/components/ui/tooltip'
 import { useCodingStates } from '@/context/coding-states-provider'
 import { CopyMinus, EllipsisVertical, FilePlus2, FolderPlus, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
-import { collapseAllDirs, getParentFolder, useRefreshTree } from '../fns/file-manager-fns'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
 import { EItemType, TreeItem } from './file-tree'
 import { NewItemForm } from './item-form'
 import { SocketEvents } from '@/lib/CONSTANTS'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { collapseAllDirs, getParentFolder, useRefreshTree } from '@/app/code/[replId]/fns/file-manager-fns'
 
 export default function ExplorerActions() {
     const { selectedItem, fileStructure, setFileStructure } = useCodingStates();

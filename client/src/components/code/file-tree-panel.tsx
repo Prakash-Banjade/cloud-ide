@@ -2,11 +2,11 @@ import React from 'react'
 import ExplorerActions from './explorer-actions'
 import { FileTree, TreeItem } from './file-tree'
 import { useCodingStates } from '@/context/coding-states-provider';
-import { onItemSelect } from '../fns/file-manager-fns';
 import { Socket } from 'socket.io-client';
 import { PanelLeftIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { onItemSelect } from '@/app/code/[replId]/fns/file-manager-fns';
 
 type Props = {
     socket: Socket

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { MoreHorizontal, X } from "lucide-react";
 import { TFileItem, TreeItem } from "./file-tree";
-import { onFileSelect, useRefreshTree } from "../fns/file-manager-fns";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
@@ -22,6 +21,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import FileTreePanel from "./file-tree-panel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manager-fns";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -59,7 +59,7 @@ export const CodingPagePostPodCreation = () => {
 
         socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
             setTreeLoaded(true);
-            
+
             await refreshTree({
                 content: rootContent,
                 socket,

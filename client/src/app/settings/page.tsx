@@ -1,6 +1,6 @@
 import { z } from "zod";
-import SettingTabs from "./components/settings-tabs";
-import { settignsTabs } from "./tabs";
+import { settignsTabs } from "../../components/settings/tabs";
+import SettingTabs from "@/components/settings/settings-tabs";
 
 const tabsSchema = z.enum(["personal-info", "appearance", "password-and-authentication", "device-activity"]);
 

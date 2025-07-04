@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree";
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/components/code/file-tree";
 import { Dispatch, SetStateAction } from "react";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { useParams } from "next/navigation";

@@ -1,8 +1,5 @@
 "use client"
 
-import axiosClient from '@/lib/axios-client';
-import { REFRESH_TOKEN_HEADER, SocketEvents } from '@/lib/CONSTANTS';
-import { TLoginResponse } from '@/types';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -39,34 +36,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             : `ws://pty.${replId}.prakashbanjade.com`
 
         const runnerSocket = io(
-            runnerUrl,
+            // runnerUrl,
+            "ws://localhost:3003",
             {
                 auth: {
                     access_token: data.backendTokens.access_token
                 }
             }
         );
-
-        runnerSocket.on(SocketEvents.TOKEN_EXPIRED, async () => {
-            try {
-                const res = await axiosClient.post<TLoginResponse>(
-                    `/auth/refresh`,
-                    {},
-                    { headers: { [REFRESH_TOKEN_HEADER]: data?.backendTokens.refresh_token } }
-                );
-                const { access_token } = res.data;
-
-                if (access_token) {
-                    runnerSocket.auth = {
-                        access_token
-                    };
-                    runnerSocket.connect();
-                }
-
-            } catch (e) {
-                runnerSocket.disconnect();
-            }
-        })
 
         const ptySocket = io(
             ptyUrl,
@@ -81,7 +58,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setPtySocket(ptySocket);
 
         return () => {
-            runnerSocket.off(SocketEvents.TOKEN_EXPIRED);
             runnerSocket.disconnect();
             ptySocket.disconnect();
         };

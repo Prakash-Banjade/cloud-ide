@@ -11,8 +11,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getFileIcon } from "./file-icons"
 import { TFileItem } from "./file-tree"
-import { onFileSelect } from "../fns/file-manager-fns"
 import { useSocket } from "@/context/socket-provider"
+import { onFileSelect } from "@/app/code/[replId]/fns/file-manager-fns"
 
 export function FileTabSwitcher() {
     const { selectedFile, setSelectedItem, setSelectedFile, setMruFiles, mruFiles } = useCodingStates();

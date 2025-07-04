@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import React from 'react'
-import CodingPageClient from './components/coding-page-client';
 import { API_URL } from '@/lib/utils';
 import { auth } from '@/lib/auth';
+import CodingPageClient from '@/components/code/coding-page-client';
 
 type Props = {
     replId: string;

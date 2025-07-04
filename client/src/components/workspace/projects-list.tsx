@@ -3,10 +3,10 @@ import { redirect } from "next/navigation";
 import { TProjectsResponse } from "@/types";
 import ProjectCard from "./project-card-item";
 import ProjectListItem from "./project-list-item";
-import { WorkspacePageProps } from "../page";
 import { createQueryString } from "@/lib/utils";
 import { FolderPlus, Search } from "lucide-react";
 import CreateProjectButton from "./create-project-button";
+import { WorkspacePageProps } from "@/app/workspace/page";
 
 type Props = {
     searchParams: WorkspacePageProps["searchParams"]

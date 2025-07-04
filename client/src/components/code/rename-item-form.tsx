@@ -9,11 +9,11 @@ import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
 import { getFileIcon } from "./file-icons"
 import { EItemType, TreeItem } from "./file-tree"
-import { renameTreeItem } from "../fns/tree-mutation-fns"
 import { useCodingStates } from "@/context/coding-states-provider"
-import { findItem } from "../fns/file-manager-fns"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
+import { findItem } from "@/app/code/[replId]/fns/file-manager-fns"
+import { renameTreeItem } from "@/app/code/[replId]/fns/tree-mutation-fns"
 
 
 interface RenameItemFormProps {

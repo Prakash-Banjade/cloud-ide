@@ -1,6 +1,5 @@
 "use client";
 
-import { EItemType, TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
 import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
@@ -12,8 +11,9 @@ import { z } from 'zod';
 import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
-import CodingPageLoader from '@/app/code/[replId]/components/coding-page-loader';
 import { SocketEvents } from '@/lib/CONSTANTS';
+import { EItemType, TFileItem, TreeItem } from '@/components/code/file-tree';
+import CodingPageLoader from '@/components/code/coding-page-loader';
 
 
 interface CodingStatesContextType {

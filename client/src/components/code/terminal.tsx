@@ -54,7 +54,7 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
         fitAddon.fit();
         setTerm(term);
 
-        socket.emit(SocketEvents.REQUEST_TERMINAL);
+        socket.emit(SocketEvents.TERMINAL_REQUEST);
         socket.on(SocketEvents.TERMINAL, ({ data }: { data: string | ArrayBuffer }) => {
             const text = typeof data === "string" ? data : decoder.decode(data);
             term.write(text);

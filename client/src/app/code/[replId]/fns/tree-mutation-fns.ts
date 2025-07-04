@@ -1,4 +1,4 @@
-import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree"
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/components/code/file-tree"
 
 /**
  * Insert `item` into `tree` at the correct nested spot based on its `.path`.

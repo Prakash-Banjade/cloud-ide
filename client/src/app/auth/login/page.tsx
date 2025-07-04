@@ -1,7 +1,7 @@
 "use client";
 
 import { z } from "zod"
-import LoginFormOptions from "./components/login-form-options";
+import LoginFormOptions from "../../../components/auth/login/login-form-options";
 import { use } from "react";
 
 const loginMethodSchema = z.enum(["password", "passkey"]);

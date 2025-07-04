@@ -1,9 +1,9 @@
-import MyProjectsList from "./components/projects-list"
-import CreateProjectButton from "./components/create-project-button"
 import { Suspense } from "react"
-import { CardsSkeleton } from "./components/projects-skeleton"
-import ProjectsSearch from "./components/projects-search"
 import { ELanguage } from "@/types"
+import CreateProjectButton from "@/components/workspace/create-project-button"
+import ProjectsSearch from "@/components/workspace/projects-search"
+import { CardsSkeleton } from "@/components/workspace/projects-skeleton"
+import MyProjectsList from "@/components/workspace/projects-list"
 
 export type WorkspacePageProps = {
     searchParams: {

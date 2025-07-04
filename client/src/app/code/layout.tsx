@@ -1,6 +1,6 @@
+import CodingPageLoader from '@/components/code/coding-page-loader'
 import { Metadata } from 'next'
 import React, { Suspense } from 'react'
-import CodingPageLoader from './[replId]/components/coding-page-loader'
 
 export const metadata: Metadata = {
     title: 'Code',

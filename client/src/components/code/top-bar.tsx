@@ -9,11 +9,11 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Socket } from 'socket.io-client';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import ProjectRenameForm from '@/app/workspace/components/project-rename-form';
 import { useState } from 'react';
 import { SocketEvents } from '@/lib/CONSTANTS';
 import { useIsMobile } from '@/hooks/use-mobile';
 import useDownload from '@/hooks/useDownload';
+import ProjectRenameForm from '../workspace/project-rename-form';
 
 type Props = {
     socket: Socket

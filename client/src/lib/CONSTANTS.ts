@@ -24,20 +24,18 @@ export const previewLanguages = [
 ]
 
 export const enum SocketEvents {
-    FETCH_CONTENT = "fetchContent",
-    FETCH_DIR = "fetchDir",
+    TREE_LOADED = "loaded",
+    FETCH_CONTENT = "content:fetch",
+    FETCH_DIR = "dir:fetch",
+    CREATE_ITEM = "item:create",
+    DELETE_ITEM = "item:delete",
+    UPDATE_CONTENT = "content:update",
+    RENAME_ITEM = "item:rename",
+
     PROCESS_STATUS = "process:status",
     PROCESS_RUN = "process:run",
     PROCESS_STOP = "process:stop",
-    TREE_LOADED = "loaded",
-
-    CREATE_ITEM = "createItem",
-    DELETE_ITEM = "deleteItem",
-    UPDATE_CONTENT = "updateContent",
-    RENAME_ITEM = "renameItem",
-
-    REQUEST_TERMINAL = "requestTerminal",
+    TERMINAL_REQUEST = "terminal:request",
     TERMINAL = "terminal",
-    TERMINAL_DATA = "terminalData",
-    TOKEN_EXPIRED = "tokenExpired",
+    TERMINAL_DATA = "terminal:data",
 }

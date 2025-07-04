@@ -3,7 +3,7 @@
 import { useCustomSearchParams } from "@/hooks/useCustomSearchParams"
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { settignsTabs } from "../tabs";
+import { settignsTabs } from "./tabs";
 
 export default function SettingTabs({ defaultActive }: { defaultActive: typeof settignsTabs[0]['id'] }) {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)

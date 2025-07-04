@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import React from 'react'
-import { SignUpForm } from './components/signup-form'
+import { SignUpForm } from '../../../components/auth/register/signup-form'
 
 export const metadata: Metadata = {
     title: 'Register',

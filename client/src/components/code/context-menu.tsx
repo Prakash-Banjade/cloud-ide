@@ -5,12 +5,12 @@ import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog"
 import { useCodingStates } from "@/context/coding-states-provider"
-import { updateTree } from "../fns/file-manager-fns"
-import { removeItemFromTree } from "../fns/tree-mutation-fns"
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { RenameItemForm } from "./rename-item-form"
 import { SocketEvents } from "@/lib/CONSTANTS"
 import { NewItemForm } from "./item-form"
+import { removeItemFromTree } from "@/app/code/[replId]/fns/tree-mutation-fns"
+import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
 
 type Props = {
     children: React.ReactNode,
