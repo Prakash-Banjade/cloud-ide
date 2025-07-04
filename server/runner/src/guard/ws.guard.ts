@@ -1,9 +1,8 @@
 import { ExecutionContext, Injectable } from "@nestjs/common";
 import { CanActivate } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { JwtService, TokenExpiredError } from "@nestjs/jwt";
+import { JwtService } from "@nestjs/jwt";
 import { Socket } from "socket.io";
-import { SocketEvents } from "src/CONSTANTS";
 
 @Injectable()
 export class WsGuard implements CanActivate {
@@ -28,7 +27,6 @@ export class WsGuard implements CanActivate {
         const access_token = auth?.access_token;
 
         if (!access_token) {
-            socket.disconnect();
             return false;
         }
 
@@ -38,11 +36,9 @@ export class WsGuard implements CanActivate {
             });
 
             socket['user'] = payload;
+
+            return true;
         } catch (e) {
-            if (e instanceof TokenExpiredError) {
-                socket.emit(SocketEvents.TOKEN_EXPIRED);
-            }
-            socket.disconnect();
             return false;
         }
     }

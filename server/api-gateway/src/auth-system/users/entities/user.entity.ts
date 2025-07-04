@@ -10,5 +10,5 @@ export class User extends BaseEntity {
     account: Account;
 
     @OneToMany(() => Project, project => project.createdBy)
-    projects: Project[]
+    projects: Project[];
 }

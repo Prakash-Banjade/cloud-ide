@@ -3,8 +3,8 @@ import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
 import { SocketEvents } from 'src/CONSTANTS';
-import { UseGuards } from '@nestjs/common';
 import { WsGuard } from 'src/guard/ws.guard';
+import { ConfigService } from '@nestjs/config';
 
 @WebSocketGateway({
   cors: {
@@ -18,7 +18,6 @@ import { WsGuard } from 'src/guard/ws.guard';
     methods: ['GET', 'POST'],
   },
 })
-@UseGuards(WsGuard)
 export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -28,13 +27,19 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
   constructor(
     private readonly minioService: MinioService,
     private readonly fileSystemService: FileSystemService,
-  ) { }
+    private readonly wsGuard: WsGuard,
+    private readonly configService: ConfigService
+  ) {
+    this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
+  }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id}`);
 
-    const replId = socket.handshake.headers.host?.split('.')[0] || "";
-    this.replId = replId;
+    const isAuthenticated = await this.wsGuard.verifyToken(socket);
+    if (!isAuthenticated) return socket.disconnect();
+
+    socket.join(this.replId);
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
