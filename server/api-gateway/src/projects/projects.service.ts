@@ -81,6 +81,7 @@ export class ProjectsService {
     const project = await this.projectRepo.createQueryBuilder('project')
       .where('project.replId = :id', { id })
       .andWhere('project.createdById = :userId', { userId: currentUser.userId })
+      .loadRelationCountAndMap('project.collaboratorsCount', 'project.collaborators')
       .select([
         'project.id',
         'project.name',

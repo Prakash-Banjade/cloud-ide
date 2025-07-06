@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from '@/components/ui/input';
 import LoadingButton from '@/components/loading-button';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TLoginResponse } from '@/types';
 
 type Props = {
@@ -26,7 +26,7 @@ type loginFormSchemaType = z.infer<typeof loginFormSchema>;
 export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [loadingText, setLoadingText] = useState<string>('Validating email...')
-    const router = useRouter();
+    const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
 
     const form = useForm<loginFormSchemaType>({
@@ -65,19 +65,12 @@ export default function LoginByPasskeyForm({ setIsFormSubmitting }: Props) {
                     const data = response.data;
 
                     if (data.access_token) {
-                        const res = await signIn("credentials", {
+                        await signIn("credentials", {
                             ...data,
-                            redirect: false,
+                            callbackUrl: searchParams.get("callbackUrl") || "/workspace",
                         });
 
-                        if (res?.status === 401) {
-                            setErrorMsg("Unable to sign in", setError, form)
-                        }
-
                         localStorage.setItem("hasLoggedInBefore", "true");
-
-                        router.replace("/workspace");
-                        router.refresh();
                     }
 
                 } catch (e) {

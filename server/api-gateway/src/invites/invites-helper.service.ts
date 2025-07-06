@@ -21,6 +21,8 @@ export class InvitesHelperService {
             }
         );
 
+        const expiresIn = Date.now() + (this.envService.INVITATION_EXPIRATION_SEC * 1000);
+
         const encryptedToken = this.encryptionService.encrypt(token);
 
         const tokenHash = crypto
@@ -32,7 +34,8 @@ export class InvitesHelperService {
 
         return {
             invitationLink,
-            tokenHash
+            tokenHash,
+            expiresIn
         }
     }
 

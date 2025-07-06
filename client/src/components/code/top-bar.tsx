@@ -14,6 +14,7 @@ import { SocketEvents } from '@/lib/CONSTANTS';
 import { useIsMobile } from '@/hooks/use-mobile';
 import useDownload from '@/hooks/useDownload';
 import ProjectRenameForm from '../workspace/project-rename-form';
+import ShareBtn from './share-popover';
 
 type Props = {
     socket: Socket
@@ -30,7 +31,7 @@ export default function TopBar({ socket }: Props) {
         if (!socket || !project) return;
 
         setShowTerm(true); // need to show the terminal when running the project
-        
+
         socket.emit(SocketEvents.PROCESS_RUN, { lang: project.language, path: selectedFile?.path }, (res: { error: string } | undefined) => {
             if (res?.error) toast.error(res.error);
         });
@@ -130,14 +131,18 @@ export default function TopBar({ socket }: Props) {
                 <div className="flex items-center gap-2">
                     {
                         !isMobile && (
-                            <Button
-                                variant={'outline'}
-                                type="button"
-                                onClick={handleDownload}
-                            >
-                                <Download />
-                                Download
-                            </Button>
+                            <>
+                                <ShareBtn />
+                                <Button
+                                    variant={'outline'}
+                                    type="button"
+                                    onClick={handleDownload}
+                                    size={'sm'}
+                                >
+                                    <Download />
+                                    Download
+                                </Button>
+                            </>
                         )
                     }
                     <ThemeToggle />

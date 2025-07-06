@@ -37,6 +37,7 @@ export type TProject = {
     name: string,
     language: ELanguage
     replId: string,
+    collaboratorsCount: number,
     createdAt: string,
     updatedAt: string;
 }
@@ -67,4 +68,30 @@ export enum EPasskeyChallengeType {
     Login = 'login',
     Sudo = 'sudo',
     TwoFaVerify = 'twofa_verify'
+}
+
+export enum ECollaboratorStatus {
+    PENDING = 'pending',
+    ACCEPTED = 'accepted',
+    DECLINED = 'declined'
+}
+
+export enum ECollaboratorPermission {
+    READ = 'read',
+    WRITE = 'write'
+}
+
+export type TCollaborator = {
+    id: string,
+    email: string,
+    user: {
+        id: string,
+        account: {
+            id: string,
+            firstName: string,
+            lastName: string,
+        }
+    } | null,
+    permission: ECollaboratorPermission,
+    status: ECollaboratorStatus
 }

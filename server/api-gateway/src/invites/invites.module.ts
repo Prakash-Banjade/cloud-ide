@@ -6,6 +6,7 @@ import { Invite } from './entities/invite.entity';
 import { Project } from 'src/projects/entities/project.entity';
 import { EncryptionModule } from 'src/auth-system/encryption/encryption.module';
 import { InvitesHelperService } from './invites-helper.service';
+import { CollaboratorsModule } from 'src/collaborators/collaborators.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { InvitesHelperService } from './invites-helper.service';
       Project,
     ]),
     EncryptionModule,
+    CollaboratorsModule,
   ],
   controllers: [InvitesController],
   providers: [

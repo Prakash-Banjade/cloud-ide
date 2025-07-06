@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import LoadingButton from "@/components/loading-button"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import axiosClient from "@/lib/axios-client"
 import { TLoginResponse } from "@/types"
 import { AuthMessage } from "@/lib/CONSTANTS"
@@ -31,6 +31,7 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
     const router = useRouter();
     const [isPending, startTransition] = React.useTransition();
     const [errMsg, setErrMsg] = React.useState<string | null>(null);
+    const searchParams = useSearchParams();
 
     const form = useForm<loginFormSchemaType>({
         resolver: zodResolver(loginFormSchema),
@@ -63,20 +64,12 @@ export function LoginForm({ className, setIsFormSubmitting, ...props }: LoginFor
                     return;
                 }
 
-                const result = await signIn("credentials", {
+                await signIn("credentials", {
                     ...data,
-                    redirect: false,
+                    callbackUrl: searchParams.get("callbackUrl") || "/workspace",
                 });
 
-                if (result?.status === 401) {
-                    setErrMsg(AuthMessage.INVALID_AUTH_CREDENTIALS_MSG);
-                    return;
-                }
-
                 localStorage.setItem("hasLoggedInBefore", "true");
-
-                router.push("/workspace");
-                router.refresh();
             } catch (error) {
                 const errMsg = getErrMsg(error);
                 setErrMsg(errMsg ?? "Failed to login");

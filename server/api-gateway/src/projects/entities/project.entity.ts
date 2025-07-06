@@ -1,4 +1,5 @@
 import { User } from "src/auth-system/users/entities/user.entity";
+import { Collaborator } from "src/collaborators/entities/collaborator.entity";
 import { BaseEntity } from "src/common/base.entity";
 import { ELanguage } from "src/common/global.types";
 import { Invite } from "src/invites/entities/invite.entity";
@@ -25,4 +26,7 @@ export class Project extends BaseEntity {
 
     @OneToMany(() => Invite, invite => invite.project)
     invites: Invite[]
+
+    @OneToMany(() => Collaborator, collaborator => collaborator.project)
+    collaborators: Collaborator[]
 }

@@ -12,4 +12,7 @@ export enum QueryKey {
     WEB_AUTHN = "web-authn",
     ACCOUNTS_DEVICES = "accounts/devices",
     TWOFA_STATUS = "accounts/2fa/status",
+
+    INVITES = "invites",
+    COLLABORATORS = "collaborators",
 }

@@ -16,6 +16,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { createKeyv } from '@keyv/redis';
 import { InvitesModule } from './invites/invites.module';
+import { CollaboratorsModule } from './collaborators/collaborators.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { InvitesModule } from './invites/invites.module';
     ProjectsModule,
     MailModule,
     InvitesModule,
+    CollaboratorsModule,
   ],
   providers: [
     {
