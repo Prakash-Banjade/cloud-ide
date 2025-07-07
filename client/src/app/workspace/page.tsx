@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { ELanguage } from "@/types"
+import { ELanguage } from "@/types/types"
 import CreateProjectButton from "@/components/workspace/create-project-button"
 import ProjectsSearch from "@/components/workspace/projects-search"
 import { CardsSkeleton } from "@/components/workspace/projects-skeleton"

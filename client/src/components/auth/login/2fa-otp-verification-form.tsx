@@ -13,7 +13,7 @@ import { API_URL, getErrMsg } from "@/lib/utils"
 import { useParams, useRouter } from "next/navigation"
 import useTimer from "@/hooks/useTimer"
 import { AuthMessage, RESEND_OTP_TIME_SEC } from "@/lib/CONSTANTS"
-import { TLoginResponse } from "@/types"
+import { TLoginResponse } from "@/types/types"
 import LoadingButton from "@/components/loading-button"
 import { signIn } from "next-auth/react"
 

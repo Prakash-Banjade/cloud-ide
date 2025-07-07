@@ -6,7 +6,7 @@ import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Edit, MoreVertical, Trash } from "lucide-react";
 import { useState } from "react";
 import ProjectRenameForm from "./project-rename-form";
-import { TProject } from "@/types";
+import { TProject } from "@/types/types";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog";
 import { useRouter } from "next/navigation";

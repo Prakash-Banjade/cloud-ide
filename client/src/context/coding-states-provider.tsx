@@ -5,14 +5,14 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
-import { TProject } from '@/types';
+import { TProject } from '@/types/types';
 import cookie from 'js-cookie';
 import { z } from 'zod';
 import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
 import { SocketEvents } from '@/lib/CONSTANTS';
-import { EItemType, TFileItem, TreeItem } from '@/components/code/file-tree';
+import { EItemType, TFileItem, TreeItem } from '@/types/tree.types';
 import CodingPageLoader from '@/components/code/coding-page-loader';
 
 

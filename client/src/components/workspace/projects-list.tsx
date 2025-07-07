@@ -1,6 +1,6 @@
 import { serverFetch } from "@/lib/axios-server";
 import { redirect } from "next/navigation";
-import { TProjectsResponse } from "@/types";
+import { TProjectsResponse } from "@/types/types";
 import ProjectCard from "./project-card-item";
 import ProjectListItem from "./project-list-item";
 import { createQueryString } from "@/lib/utils";

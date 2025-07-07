@@ -7,7 +7,7 @@ import { languageFields } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useCustomSearchParams } from '@/hooks/useCustomSearchParams'
 import { z } from 'zod'
-import { ELanguage } from '@/types'
+import { ELanguage } from '@/types/types'
 import SearchInput from '@/components/search-input'
 
 const searchSchema = z.object({

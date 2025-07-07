@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input"
 import { useSocket } from "@/context/socket-provider"
 import { Folder } from "lucide-react"
 import { getFileIcon } from "./file-icons"
-import { EItemType, TreeItem } from "./file-tree"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
 import { useState } from "react"
 import { insertTreeItem } from "@/app/code/[replId]/fns/tree-mutation-fns"
 import { findItem } from "@/app/code/[replId]/fns/file-manager-fns"
+import { EItemType, TreeItem } from "@/types/tree.types"
 
 const newItemFormSchema = z.object({
     name: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),

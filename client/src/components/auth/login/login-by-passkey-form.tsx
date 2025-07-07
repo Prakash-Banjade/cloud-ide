@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import LoadingButton from '@/components/loading-button';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { TLoginResponse } from '@/types';
+import { TLoginResponse } from '@/types/types';
 
 type Props = {
     setIsFormSubmitting: React.Dispatch<React.SetStateAction<boolean>>

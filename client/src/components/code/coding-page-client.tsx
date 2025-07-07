@@ -1,10 +1,10 @@
 "use client"
 
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { MoreHorizontal, X } from "lucide-react";
-import { TFileItem, TreeItem } from "./file-tree";
+import { TFileItem, TreeItem } from "@/types/tree.types";
 import { CodeEditor } from "./editor";
 import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import { SocketProvider, useSocket } from "@/context/socket-provider";

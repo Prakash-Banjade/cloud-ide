@@ -1,5 +1,5 @@
 import { insertTreeItem, removeItemFromTree } from "@/app/code/[replId]/fns/tree-mutation-fns";
-import { EItemType, TFileItem, TFolderItem } from "@/components/code/file-tree";
+import { EItemType, TFileItem, TFolderItem } from "@/types/tree.types";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { useEffect } from "react";
 import { Socket } from "socket.io-client";

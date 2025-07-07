@@ -13,7 +13,7 @@ import LoadingButton from "@/components/loading-button"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axiosClient from "@/lib/axios-client"
-import { TLoginResponse } from "@/types"
+import { TLoginResponse } from "@/types/types"
 import { AuthMessage } from "@/lib/CONSTANTS"
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {

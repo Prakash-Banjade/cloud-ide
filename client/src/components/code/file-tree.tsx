@@ -7,30 +7,7 @@ import { getFileIcon } from "./file-icons"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TreeItemContextMenu } from "./context-menu"
 import { sortFolderFirst } from "@/app/code/[replId]/fns/file-manager-fns"
-
-export enum EItemType {
-    FILE = 'file',
-    DIR = 'dir'
-}
-
-interface ItemCommonProps {
-    name: string,
-    path: string,
-}
-
-export interface TFileItem extends ItemCommonProps {
-    type: EItemType.FILE
-    content: string | undefined
-    language?: string
-}
-
-export interface TFolderItem extends ItemCommonProps {
-    type: EItemType.DIR
-    expanded?: boolean
-    children: (TFileItem | TFolderItem)[]
-}
-
-export type TreeItem = (TFileItem | TFolderItem);
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/types/tree.types"
 
 interface FileTreeProps {
     onSelectFile: (treeItem: TreeItem) => void
@@ -95,7 +72,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
         <div>
             <TreeItemContextMenu item={item}>
                 <div
-                    className={cn("flex items-center select-none py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
+                    className={cn("flex items-center select-none py-1 px-2 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
                     style={{ paddingLeft }}
                     onClick={() => onSelectFile(item)}
                 >
@@ -150,7 +127,7 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
     return (
         <TreeItemContextMenu item={item}>
             <div
-                className={cn("select-none flex items-center py-1 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
+                className={cn("select-none flex items-center py-1 px-2 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
                 style={{ paddingLeft }}
                 onClick={() => {
                     onSelectFile(item);

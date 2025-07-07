@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import LoadingButton from '../loading-button'
 import { useAppMutation } from '@/hooks/useAppMutation'
 import { ProfileAvatar } from '../ui/avatar'
-import { ECollaboratorPermission, ECollaboratorStatus, TCollaborator } from '@/types'
+import { ECollaboratorPermission, ECollaboratorStatus, TCollaborator } from '@/types/types'
 import { useState, useTransition } from 'react'
 import { QueryKey } from '@/lib/query-keys'
 import { cn, createQueryString } from '@/lib/utils'

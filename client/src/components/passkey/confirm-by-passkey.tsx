@@ -3,7 +3,7 @@
 import { useAxiosPrivate } from "@/hooks/useAxios";
 import { QueryKey } from "@/lib/query-keys";
 import { getErrMsg } from "@/lib/utils";
-import { EPasskeyChallengeType } from "@/types";
+import { EPasskeyChallengeType } from "@/types/types";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { KeyRound } from "lucide-react";
 import { useSession } from "next-auth/react";

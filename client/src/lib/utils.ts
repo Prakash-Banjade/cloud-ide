@@ -1,5 +1,5 @@
 import { Icons } from "@/components/icons";
-import { ELanguage, TLoginResponse, TUser } from "@/types";
+import { ELanguage, TLoginResponse, TUser } from "@/types/types";
 import { AxiosError } from "axios";
 import { clsx, type ClassValue } from "clsx"
 import { jwtDecode } from "jwt-decode";

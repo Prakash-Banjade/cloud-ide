@@ -7,7 +7,7 @@ import { Skeleton } from "../ui/skeleton";
 import { ConfirmByPasskey } from "./confirm-by-passkey";
 import { ConfirmByPassword } from "./confirm-by-password";
 import { useFetchData } from "@/hooks/useFetchData";
-import { TWebAuthnCredential } from "@/types";
+import { TWebAuthnCredential } from "@/types/types";
 import { QueryKey } from "@/lib/query-keys";
 import Logo from "../logo";
 

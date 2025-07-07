@@ -1,12 +1,13 @@
 import React from 'react'
 import ExplorerActions from './explorer-actions'
-import { FileTree, TreeItem } from './file-tree'
+import { TreeItem } from "@/types/tree.types"
 import { useCodingStates } from '@/context/coding-states-provider';
 import { Socket } from 'socket.io-client';
 import { PanelLeftIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { onItemSelect } from '@/app/code/[replId]/fns/file-manager-fns';
+import { FileTree } from './file-tree';
 
 type Props = {
     socket: Socket

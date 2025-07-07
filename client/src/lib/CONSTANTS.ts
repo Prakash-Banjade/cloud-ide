@@ -1,4 +1,4 @@
-import { ELanguage } from "@/types";
+import { ELanguage } from "@/types/types";
 
 export const enum AuthMessage {
     INVALID_AUTH_CREDENTIALS_MSG = 'Invalid email or password',

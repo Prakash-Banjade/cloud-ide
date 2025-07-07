@@ -6,7 +6,7 @@ import { CopyMinus, EllipsisVertical, FilePlus2, FolderPlus, RotateCcw } from 'l
 import { useState } from 'react'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
-import { EItemType, TreeItem } from './file-tree'
+import { EItemType, TreeItem } from "@/types/tree.types"
 import { NewItemForm } from './item-form'
 import { SocketEvents } from '@/lib/CONSTANTS'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"

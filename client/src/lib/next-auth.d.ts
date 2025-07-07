@@ -1,4 +1,4 @@
-import { TUser } from "@/types";
+import { TUser } from "@/types/types";
 
 import NextAuth from "next-auth";
 

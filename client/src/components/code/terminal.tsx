@@ -8,7 +8,7 @@ import "@xterm/xterm/css/xterm.css";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useCodingStates } from "@/context/coding-states-provider";
-import { EItemType } from "./file-tree";
+import { EItemType } from "@/types/tree.types";
 import { SocketEvents } from "@/lib/CONSTANTS";
 
 const fitAddon = new FitAddon();

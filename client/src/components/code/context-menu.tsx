@@ -1,5 +1,5 @@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
-import { EItemType, TreeItem } from "./file-tree"
+import { EItemType, TreeItem } from "@/types/tree.types"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"

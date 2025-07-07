@@ -10,7 +10,7 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getFileIcon } from "./file-icons"
-import { TFileItem } from "./file-tree"
+import { TFileItem } from "@/types/tree.types"
 import { useSocket } from "@/context/socket-provider"
 import { onFileSelect } from "@/app/code/[replId]/fns/file-manager-fns"
 
