@@ -5,6 +5,8 @@ import { File, FileSystemService } from './file-system.service';
 import { SocketEvents } from 'src/CONSTANTS';
 import { WsGuard } from 'src/guard/ws.guard';
 import { ConfigService } from '@nestjs/config';
+import { UseGuards } from '@nestjs/common';
+import { WriteGuard } from 'src/guard/write.guard';
 
 @WebSocketGateway({
   cors: {
@@ -66,6 +68,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     return data; // the data is returned in the cb function in the client
   }
 
+  @UseGuards(WriteGuard)
   @SubscribeMessage(SocketEvents.UPDATE_CONTENT)
   async onUpdateContent(@MessageBody() payload: { path: string; content: string }, @ConnectedSocket() socket: Socket) {
     const { path: filePath, content } = payload;

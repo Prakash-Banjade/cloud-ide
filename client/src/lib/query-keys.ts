@@ -13,6 +13,7 @@ export enum QueryKey {
     ACCOUNTS_DEVICES = "accounts/devices",
     TWOFA_STATUS = "accounts/2fa/status",
 
+    PROJECTS = "projects",
     INVITES = "invites",
     COLLABORATORS = "collaborators",
 }

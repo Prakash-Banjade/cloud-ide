@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { CollaboratorsService } from './collaborators.service';
 import { CollaboratorsQueryDto, UpdateCollaboratorDto } from './dto/collaborator.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';

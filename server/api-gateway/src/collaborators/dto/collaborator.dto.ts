@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsUUID } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsString, IsUUID } from "class-validator";
 import { EPermission } from "../entities/collaborator.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
@@ -14,7 +14,8 @@ export class UpdateCollaboratorDto {
 }
 
 export class CollaboratorsQueryDto {
-    @ApiProperty({ type: 'string', format: 'uuid', description: 'Project ID' })
-    @IsUUID()
-    projectId: string;
+    @ApiProperty({ type: 'string', description: 'Project replId' })
+    @IsString()
+    @IsNotEmpty()
+    replId: string;
 }

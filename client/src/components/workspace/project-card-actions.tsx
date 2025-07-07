@@ -6,14 +6,14 @@ import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Edit, MoreVertical, Trash } from "lucide-react";
 import { useState } from "react";
 import ProjectRenameForm from "./project-rename-form";
-import { TProject } from "@/types/types";
+import { TProjectsResponse } from "@/types/types";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
-export default function ProjectCardActions({ project }: { project: TProject }) {
-    const { data: session } = useSession();
+export default function ProjectCardActions({ project }: { project: TProjectsResponse["data"][0] }) {
+    const { data: session, status } = useSession();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -29,7 +29,7 @@ export default function ProjectCardActions({ project }: { project: TProject }) {
         router.refresh();
     }
 
-    if (project.createdBy.id !== session?.user.userId) return null;
+    if (status !== "loading" && project.createdBy.id !== session?.user.userId) return null;
 
     return (
         <>
@@ -58,7 +58,7 @@ export default function ProjectCardActions({ project }: { project: TProject }) {
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8">
+                    <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8" disabled={status === "loading"}>
                         <MoreVertical className="h-4 w-4" />
                         <span className="sr-only">More options</span>
                     </Button>

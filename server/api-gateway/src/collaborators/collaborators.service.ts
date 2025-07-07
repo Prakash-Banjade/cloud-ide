@@ -8,7 +8,7 @@ import { AuthUser } from 'src/common/global.types';
 @Injectable()
 export class CollaboratorsService {
   constructor(
-    @InjectRepository(Collaborator) private readonly collaboratorsRepo: Repository<Collaborator>
+    @InjectRepository(Collaborator) private readonly collaboratorsRepo: Repository<Collaborator>,
   ) { }
 
   findAll(queryDto: CollaboratorsQueryDto, currentUser: AuthUser) {
@@ -17,7 +17,7 @@ export class CollaboratorsService {
       .leftJoin('collab.project', 'project')
       .leftJoin('collab.user', 'user')
       .leftJoin('user.account', 'account')
-      .where('project.id = :projectId', { projectId: queryDto.projectId })
+      .where('project.replId = :projectId', { projectId: queryDto.replId })
       .andWhere('project.createdById = :createdById', { createdById: currentUser.userId })
       .select([
         'collab.id',

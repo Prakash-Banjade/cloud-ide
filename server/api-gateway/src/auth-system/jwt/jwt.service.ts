@@ -5,6 +5,8 @@ import { EnvService } from 'src/env/env.service';
 import { FastifyRequest } from 'fastify';
 import { AuthUser } from '../../common/global.types';
 import { generateDeviceId } from '../../common/utils';
+import { EPermission } from 'src/collaborators/entities/collaborator.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class JwtService {
@@ -49,7 +51,7 @@ export class JwtService {
         const deviceId = req.deviceId || generateDeviceId(req.headers['user-agent'], req.ip);
 
         if (!account.user?.id) throw new InternalServerErrorException('Associated user not found');
-        
+
         const payload = {
             accountId: account.id,
             email: account.email,
@@ -63,5 +65,12 @@ export class JwtService {
         const refresh_token = await this.createRefreshToken(payload);
 
         return { access_token, refresh_token };
+    }
+
+    async getAccessTokenWithProjectPermission(payload: Record<string, any>) {
+        return await this.jwtService.signAsync(payload, {
+            secret: this.envService.ACCESS_TOKEN_SECRET,
+            expiresIn: this.envService.ACCESS_TOKEN_EXPIRATION_SEC,
+        });
     }
 }

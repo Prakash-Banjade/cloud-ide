@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { MinioService } from '../minio/minio.service';
@@ -11,6 +11,8 @@ import { UsersService } from 'src/auth-system/users/users.service';
 import { ProjectsQueryDto } from './dto/projects-query.dto';
 import paginatedData from 'src/common/utilities/paginated-data';
 import { OrchestratorService } from './orchestrator.service';
+import { JwtService } from 'src/auth-system/jwt/jwt.service';
+import { EPermission } from 'src/collaborators/entities/collaborator.entity';
 
 @Injectable()
 export class ProjectsService {
@@ -18,7 +20,8 @@ export class ProjectsService {
     @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
     private readonly minioService: MinioService,
     private readonly usersService: UsersService,
-    private readonly orchestratorService: OrchestratorService
+    private readonly orchestratorService: OrchestratorService,
+    private readonly jwtService: JwtService,
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
@@ -62,6 +65,7 @@ export class ProjectsService {
       querybuilder
         .leftJoin('project.collaborators', 'collaborators')
         .where('collaborators.userId = :userId', { userId: currentUser.userId })
+        .andWhere('collaborators.permission != :permission', { permission: EPermission.NONE });
     } else {
       querybuilder.where('createdBy.id = :userId', { userId: currentUser.userId });
     }
@@ -84,6 +88,13 @@ export class ProjectsService {
       'createdBy.id',
     ]);
 
+    if (queryDto.collab) {
+      querybuilder.addSelect([
+        'collaborators.id',
+        'collaborators.permission'
+      ])
+    }
+
     return paginatedData(queryDto, querybuilder);
   }
 
@@ -94,7 +105,7 @@ export class ProjectsService {
       .where('project.replId = :id', { id })
       .andWhere(new Brackets(qb => {
         qb.orWhere('createdBy.id = :userId', { userId: currentUser.userId })
-          .orWhere('collaborators.userId = :userId', { userId: currentUser.userId })
+          .orWhere('(collaborators.userId = :userId AND collaborators.permission != :permission)', { userId: currentUser.userId, permission: EPermission.NONE });
       }))
       .loadRelationCountAndMap('project.collaboratorsCount', 'project.collaborators')
       .select([
@@ -141,5 +152,41 @@ export class ProjectsService {
     });
 
     return { message: "Project deleted" };
+  }
+
+  async getAccessTokenWithProjectPermission(replId: string, currentUser: AuthUser) {
+    const project = await this.projectRepo.findOne({
+      where: { replId },
+      relations: { createdBy: true, collaborators: { user: true } },
+      select: {
+        id: true,
+        replId: true,
+        createdBy: {
+          id: true,
+        },
+        collaborators: {
+          id: true,
+          permission: true,
+          user: {
+            id: true,
+          }
+        }
+      }
+    });
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const isOwner = project.createdBy.id === currentUser.userId;
+
+    const collaborator = project.collaborators.find(collaborator => collaborator.user?.id === currentUser.userId);
+
+    if (!isOwner && (!collaborator || collaborator.permission === EPermission.NONE)) throw new ForbiddenException('Access denied.');
+
+    const access_token = await this.jwtService.getAccessTokenWithProjectPermission({
+      permission: isOwner ? EPermission.WRITE : collaborator?.permission,
+      userId: currentUser.userId
+    });
+
+    return { access_token };
   }
 }

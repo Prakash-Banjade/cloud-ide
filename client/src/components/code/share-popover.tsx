@@ -47,8 +47,8 @@ export default function SharePopover() {
 
     const { data: collaborators } = useFetchData<TCollaborator[]>({
         endpoint: QueryKey.COLLABORATORS,
-        queryKey: [QueryKey.COLLABORATORS, project?.id || ""],
-        queryString: createQueryString({ projectId: project?.id }),
+        queryKey: [QueryKey.COLLABORATORS, project?.replId || ""],
+        queryString: createQueryString({ replId: project?.replId }),
         options: {
             enabled: project?.id !== undefined && isOwner
         }

@@ -1,15 +1,15 @@
 import { format, formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Code, Calendar, Clock, MoreVertical, ExternalLink, Trash, Edit } from "lucide-react"
-import { TProject } from "@/types/types"
+import { Code, Calendar, Clock, ExternalLink, } from "lucide-react"
+import { EPermission, TProjectsResponse } from "@/types/types"
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { languageFields } from "@/lib/utils"
 import ProjectCardActions from "./project-card-actions"
+import { Badge } from "../ui/badge"
 
 interface ProjectListItemProps {
-    project: TProject
+    project: TProjectsResponse["data"][0]
 }
 
 export default function ProjectListItem({ project }: ProjectListItemProps) {
@@ -43,6 +43,19 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
                         {language?.label}
                     </div>
                 </div>
+                {
+                    !!project.collaborators?.length && (
+                        <div className="mt-1">
+                            <Badge variant={'outline'}>
+                                {
+                                    project.collaborators[0].permission === EPermission.READ
+                                        ? "Read Only"
+                                        : "Can Read and Write"
+                                }
+                            </Badge>
+                        </div>
+                    )
+                }
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">

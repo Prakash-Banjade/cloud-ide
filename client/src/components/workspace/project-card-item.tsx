@@ -2,13 +2,14 @@ import { format, formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Code, Calendar, Clock, ExternalLink, Users } from "lucide-react"
-import { TProject } from "@/types/types"
+import { EPermission, TProject, TProjectsResponse } from "@/types/types"
 import Link from "next/link"
 import { languageFields } from "@/lib/utils"
 import ProjectCardActions from "./project-card-actions"
+import { Badge } from "../ui/badge"
 
 interface ProjectCardProps {
-    project: TProject
+    project: TProjectsResponse["data"][0]
 }
 
 const formatDate = (dateString: string) => {
@@ -56,10 +57,21 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                         {project.collaboratorsCount === 0 ? "Only You" : project.collaboratorsCount}
                     </div>
 
-                    <div className="flex items-center text-sm text-muted-foreground truncate">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground truncate">
                         <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                             {project.replId}
                         </span>
+                        {
+                            !!project.collaborators?.length && (
+                                <Badge variant={'outline'}>
+                                    {
+                                        project.collaborators[0].permission === EPermission.READ
+                                            ? "Read Only"
+                                            : "Can Read and Write"
+                                    }
+                                </Badge>
+                            )
+                        }
                     </div>
                 </div>
             </CardContent>

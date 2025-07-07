@@ -45,7 +45,17 @@ export type TProject = {
 }
 
 export type TProjectsResponse = {
-    data: TProject[]
+    data: {
+        id: string
+        name: string,
+        language: ELanguage
+        replId: string,
+        collaboratorsCount: number,
+        collaborators?: { id: string, permission: EPermission }[],
+        createdAt: string,
+        updatedAt: string;
+        createdBy: { id: string }
+    }[]
     meta: TMeta;
 }
 

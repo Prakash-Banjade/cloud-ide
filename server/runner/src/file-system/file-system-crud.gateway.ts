@@ -4,6 +4,8 @@ import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { SocketEvents } from "src/CONSTANTS";
 import { ConfigService } from "@nestjs/config";
+import { WriteGuard } from "src/guard/write.guard";
+import { UseGuards } from "@nestjs/common";
 
 @WebSocketGateway({
     cors: {
@@ -38,6 +40,7 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
     /**
      * Create either an empty file or an empty directory at `payload.path`.
      */
+    @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.CREATE_ITEM)
     async onCreateItem(
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
@@ -69,6 +72,7 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
     /**
      * Delete a file or directory (recursively) at payload.path.
      */
+    @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.DELETE_ITEM)
     async onDeleteItem(
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
@@ -99,10 +103,10 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
      * Rename or move a file or directory.
      * Assumes payload contains both oldPath and newPath.
      */
+    @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.RENAME_ITEM)
     async onRenameItem(
-        @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' },
-        @ConnectedSocket() socket: Socket
+        @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' }
     ): Promise<{ success: boolean, error: string | null }> {
         try {
             const { oldPath, newPath, type } = payload;
