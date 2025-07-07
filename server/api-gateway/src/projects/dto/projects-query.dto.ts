@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsEnum, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
 import { QueryDto } from "src/common/dto/query.dto";
 import { ELanguage } from "src/common/global.types";
 
@@ -22,4 +22,10 @@ export class ProjectsQueryDto extends QueryDto {
     @IsString()
     @Transform(({ value }) => sortByObj[value] ?? sortByObj.lastOpened)
     sortBy: string = sortByObj.lastOpened;
+
+    @ApiPropertyOptional({ type: Boolean, example: true })
+    @IsBoolean()
+    @IsOptional()
+    @Transform(({ value }) => value === 'true')
+    collab: boolean = false;
 }

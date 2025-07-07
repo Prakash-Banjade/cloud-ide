@@ -11,9 +11,10 @@ import { NewItemForm } from './item-form'
 import { SocketEvents } from '@/lib/CONSTANTS'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { collapseAllDirs, getParentFolder, useRefreshTree } from '@/app/code/[replId]/fns/file-manager-fns'
+import { EPermission } from '@/types/types'
 
 export default function ExplorerActions() {
-    const { selectedItem, fileStructure, setFileStructure } = useCodingStates();
+    const { selectedItem, fileStructure, setFileStructure, permission } = useCodingStates();
     const refreshTree = useRefreshTree();
     const [isOpen, setIsOpen] = useState(false);
     const [newItemType, setNewItemType] = useState<EItemType>(EItemType.FILE);
@@ -36,27 +37,33 @@ export default function ExplorerActions() {
     return (
         <>
             <section className='@3xs:block hidden'>
-                <ResponsiveDialog
-                    title={newItemType === EItemType.FILE ? 'New file' : 'New folder'}
-                    isOpen={isOpen}
-                    setIsOpen={setIsOpen}
-                    description={`Location: ${parentFolderPath}`}
-                >
-                    <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} setIsOpen={setIsOpen} />
-                </ResponsiveDialog>
+                {
+                    permission === EPermission.WRITE && (
+                        <>
+                            <ResponsiveDialog
+                                title={newItemType === EItemType.FILE ? 'New file' : 'New folder'}
+                                isOpen={isOpen}
+                                setIsOpen={setIsOpen}
+                                description={`Location: ${parentFolderPath}`}
+                            >
+                                <NewItemForm parentFolderPath={parentFolderPath} itemType={newItemType} setIsOpen={setIsOpen} />
+                            </ResponsiveDialog>
 
-                <TooltipWrapper label="New file" contentProps={{ side: "bottom" }}>
-                    <button
-                        type="button"
-                        className="cursor-pointer hover:bg-secondary p-1 rounded-md"
-                        onClick={() => {
-                            setNewItemType(EItemType.FILE);
-                            setIsOpen(true);
-                        }}
-                    >
-                        <FilePlus2 size={16} />
-                    </button>
-                </TooltipWrapper>
+                            <TooltipWrapper label="New file" contentProps={{ side: "bottom" }}>
+                                <button
+                                    type="button"
+                                    className="cursor-pointer hover:bg-secondary p-1 rounded-md"
+                                    onClick={() => {
+                                        setNewItemType(EItemType.FILE);
+                                        setIsOpen(true);
+                                    }}
+                                >
+                                    <FilePlus2 size={16} />
+                                </button>
+                            </TooltipWrapper>
+                        </>
+                    )
+                }
 
                 <TooltipWrapper label="New folder" contentProps={{ side: "bottom" }}>
                     <button
@@ -93,24 +100,30 @@ export default function ExplorerActions() {
                 <DropdownMenuContent className='min-w-[200px]'>
                     <DropdownMenuLabel>Explorer</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        onClick={() => {
-                            setNewItemType(EItemType.FILE);
-                            setIsOpen(true);
-                        }}
-                    >
-                        <FilePlus2 size={16} />
-                        New File
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => {
-                            setNewItemType(EItemType.DIR);
-                            setIsOpen(true);
-                        }}
-                    >
-                        <FolderPlus size={16} />
-                        New Folder
-                    </DropdownMenuItem>
+                    {
+                        permission === EPermission.WRITE && (
+                            <>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setNewItemType(EItemType.FILE);
+                                        setIsOpen(true);
+                                    }}
+                                >
+                                    <FilePlus2 size={16} />
+                                    New File
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setNewItemType(EItemType.DIR);
+                                        setIsOpen(true);
+                                    }}
+                                >
+                                    <FolderPlus size={16} />
+                                    New Folder
+                                </DropdownMenuItem>
+                            </>
+                        )
+                    }
                     <DropdownMenuItem onClick={refresh}>
                         <RotateCcw size={16} />
                         Refresh

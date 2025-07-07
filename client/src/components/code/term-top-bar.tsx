@@ -5,13 +5,16 @@ import { useEffect } from "react";
 
 type Props = {
     setShowTerm: React.Dispatch<React.SetStateAction<boolean>>
-    showTerm: boolean
+    showTerm: boolean,
+    readOnly: boolean;
 }
 
-export default function TermTopBar({ setShowTerm, showTerm }: Props) {
+export default function TermTopBar({ setShowTerm, showTerm, readOnly }: Props) {
     const { theme } = useTheme();
 
     useEffect(() => {
+        if (readOnly) return;
+
         function handleTerminalShortcut(e: KeyboardEvent) {
             const key = e.key.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === '`') {
@@ -26,7 +29,9 @@ export default function TermTopBar({ setShowTerm, showTerm }: Props) {
         return () => {
             window.removeEventListener("keydown", handleTerminalShortcut);
         }
-    }, [])
+    }, []);
+
+    if (readOnly) return null;
 
     return (
         <div className={cn("flex justify-between items-center", theme === "dark" ? "bg-black" : "bg-white")}>

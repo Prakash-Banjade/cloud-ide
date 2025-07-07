@@ -11,6 +11,7 @@ import { SocketEvents } from "@/lib/CONSTANTS"
 import { NewItemForm } from "./item-form"
 import { removeItemFromTree } from "@/app/code/[replId]/fns/tree-mutation-fns"
 import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
+import { EPermission } from "@/types/types"
 
 type Props = {
     children: React.ReactNode,
@@ -18,7 +19,7 @@ type Props = {
 }
 
 export function TreeItemContextMenu({ children, item }: Props) {
-    const { setFileStructure, setOpenedFiles, setMruFiles, setSelectedFile, mruFiles } = useCodingStates();
+    const { setFileStructure, setOpenedFiles, setMruFiles, setSelectedFile, mruFiles, permission } = useCodingStates();
     const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -55,7 +56,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                 (item.type === EItemType.DIR) && (
                     <>
                         <ResponsiveAlertDialog
-                            isOpen={isAlertOpen}
+                            isOpen={permission === EPermission.WRITE && isAlertOpen}
                             setIsOpen={setIsAlertOpen}
                             title={`Delete ${item.path}?`}
                             description="This folder contains items inside it. Are you sure you want to delete it?"
@@ -64,7 +65,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                         />
                         <ResponsiveDialog
                             title={newItemType === EItemType.FILE ? 'New file' : 'New folder'}
-                            isOpen={isNewItemOpen}
+                            isOpen={permission === EPermission.WRITE && isNewItemOpen}
                             setIsOpen={setIsNewItemOpen}
                             description={`Location: ${item.path}`}
                         >
@@ -83,10 +84,12 @@ export function TreeItemContextMenu({ children, item }: Props) {
             </ResponsiveDialog>
 
             <ContextMenu onOpenChange={setIsContextMenuOpen}>
-                <ContextMenuTrigger>
+                <ContextMenuTrigger disabled={permission !== EPermission.WRITE}>
                     <section
                         className={cn(isContextMenuOpen && "outline")}
                         onContextMenu={() => {
+                            if (permission !== EPermission.WRITE) return;
+                            
                             if (item.type === EItemType.DIR && !Array.isArray(item.children)) { // fetch children if they don't exist, this is to show alert dialog based on children presence
                                 socket?.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
                                     setFileStructure(prev =>

@@ -38,8 +38,10 @@ export type TProject = {
     language: ELanguage
     replId: string,
     collaboratorsCount: number,
+    collaborators: { id: string, permission: EPermission }[],
     createdAt: string,
     updatedAt: string;
+    createdBy: { id: string }
 }
 
 export type TProjectsResponse = {
@@ -76,7 +78,7 @@ export enum ECollaboratorStatus {
     DECLINED = 'declined'
 }
 
-export enum ECollaboratorPermission {
+export enum EPermission {
     READ = 'read',
     WRITE = 'write'
 }
@@ -92,6 +94,6 @@ export type TCollaborator = {
             lastName: string,
         }
     } | null,
-    permission: ECollaboratorPermission,
+    permission: EPermission,
     status: ECollaboratorStatus
 }

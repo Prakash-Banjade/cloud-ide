@@ -4,7 +4,7 @@ import Logo from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { serverFetch } from "@/lib/axios-server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 
 type Props = {
     searchParams: Promise<{
@@ -78,7 +78,7 @@ export default async function InvitePage({ searchParams }: Props) {
         }
 
         // invitation is accepted, redirect to repl
-        redirect('/code/' + data.replId);
+        redirect('/code/' + data.replId, RedirectType.replace);
     }
 
     const inviteDetail = data as InviteDetail;

@@ -4,10 +4,11 @@ import { useTheme } from "next-themes";
 import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
 import { useEffect } from "react";
 import { SocketEvents } from "@/lib/CONSTANTS";
+import { EPermission } from "@/types/types";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
-    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance } = useCodingStates();
+    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance, permission } = useCodingStates();
 
     async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
         setEditorInstance(editor);
@@ -50,6 +51,8 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
 
     // Sync file content on ctrl+s
     useEffect(() => {
+        if (permission === EPermission.READ) return;
+
         const handleKeyDown = (e: KeyboardEvent) => {
             const key = e.key.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === 's') {
@@ -106,11 +109,13 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
                 autoClosingComments: "always",
                 padding: {
                     top: 6,
-                }
+                },
+                readOnly: permission === EPermission.READ
             }}
             onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}
             onChange={val => {
+                if (permission === EPermission.READ) return;
                 syncFileContent(val);
                 if (selectedFile) {
                     selectedFile.content = val ?? "";

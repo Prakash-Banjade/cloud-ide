@@ -22,6 +22,7 @@ import FileTreePanel from "./file-tree-panel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manager-fns";
+import { EPermission } from "@/types/types";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -48,6 +49,7 @@ export const CodingPagePostPodCreation = () => {
         setTreePanelOpen,
         showTerm,
         setShowTerm,
+        permission
     } = useCodingStates();
     const isMobile = useIsMobile(1000);
 
@@ -132,7 +134,11 @@ export const CodingPagePostPodCreation = () => {
                         }
 
                         {/* Terminal panel */}
-                        <TermTopBar setShowTerm={setShowTerm} showTerm={showTerm} />
+                        <TermTopBar
+                            setShowTerm={setShowTerm}
+                            showTerm={showTerm}
+                            readOnly={permission === EPermission.READ}
+                        />
                         <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
                             <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
                         </ResizablePanel>

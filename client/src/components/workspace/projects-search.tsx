@@ -10,6 +10,42 @@ import { z } from 'zod'
 import { ELanguage } from '@/types/types'
 import SearchInput from '@/components/search-input'
 
+export function ProjectsListTabs(props: {
+    projectList: React.ReactNode,
+}) {
+    const { searchParams, setSearchParams } = useCustomSearchParams();
+    const [activeTab, setActiveTab] = useState<"own" | "shared">(searchParams.get("tab") as "own" | "shared" || "own");
+
+    useEffect(() => {
+        setSearchParams("tab", activeTab);
+    }, [activeTab]);
+
+    return (
+        <section className='space-y-6'>
+            <div className='bg-secondary p-1 rounded-lg w-fit'>
+                <Button
+                    variant={activeTab === "own" ? "default" : "ghost"}
+                    size={"sm"}
+                    type="button"
+                    onClick={() => setActiveTab("own")}
+                >
+                    My projects
+                </Button>
+                <Button
+                    variant={activeTab === "shared" ? "default" : "ghost"}
+                    size={"sm"}
+                    type="button"
+                    onClick={() => setActiveTab("shared")}
+                >
+                    Shared with me
+                </Button>
+            </div>
+
+            {props.projectList}
+        </section>
+    )
+}
+
 const searchSchema = z.object({
     q: z.string().optional(),
     language: z.union([z.nativeEnum(ELanguage), z.literal("all")]).optional(),

@@ -1,5 +1,5 @@
 import { IsEmail, IsEnum, IsUUID } from "class-validator";
-import { ECollaboratorPermission } from "../entities/collaborator.entity";
+import { EPermission } from "../entities/collaborator.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateCollaboratorDto {
@@ -8,9 +8,9 @@ export class CreateCollaboratorDto {
 }
 
 export class UpdateCollaboratorDto {
-    @ApiProperty({ type: 'string', enum: ECollaboratorPermission, example: ECollaboratorPermission.READ })
-    @IsEnum(ECollaboratorPermission)
-    permission: ECollaboratorPermission;
+    @ApiProperty({ type: 'string', enum: EPermission, example: EPermission.READ })
+    @IsEnum(EPermission)
+    permission: EPermission;
 }
 
 export class CollaboratorsQueryDto {

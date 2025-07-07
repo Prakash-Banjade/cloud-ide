@@ -1,21 +1,22 @@
 import { Suspense } from "react"
 import { ELanguage } from "@/types/types"
 import CreateProjectButton from "@/components/workspace/create-project-button"
-import ProjectsSearch from "@/components/workspace/projects-search"
+import ProjectsSearch, { ProjectsListTabs } from "@/components/workspace/projects-search"
 import { CardsSkeleton } from "@/components/workspace/projects-skeleton"
 import MyProjectsList from "@/components/workspace/projects-list"
 
 export type WorkspacePageProps = {
-    searchParams: {
+    searchParams: Promise<{
         q?: string,
         language?: ELanguage,
         sortBy?: string
         view: 'grid' | 'list',
-        order?: 'ASC' | 'DESC'
-    }
+        order?: 'ASC' | 'DESC',
+        tab?: 'shared' | 'own'
+    }>
 }
 
-export default async function WorkspacePage(props: { searchParams: Promise<WorkspacePageProps["searchParams"]> }) {
+export default async function WorkspacePage(props: WorkspacePageProps) {
     return (
         <div className="space-y-6">
             <header className="flex items-center justify-between">
@@ -28,7 +29,10 @@ export default async function WorkspacePage(props: { searchParams: Promise<Works
             </Suspense>
 
             <Suspense fallback={<CardsSkeleton />}>
-                <MyProjectsList searchParams={props.searchParams} />
+            <ProjectsListTabs
+                projectList={<MyProjectsList searchParams={await props.searchParams} />}
+             />
+                {/* <MyProjectsList searchParams={await props.searchParams} /> */}
             </Suspense>
         </div>
     )

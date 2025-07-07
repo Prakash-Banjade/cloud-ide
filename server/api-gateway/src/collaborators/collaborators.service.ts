@@ -55,7 +55,7 @@ export class CollaboratorsService {
 
     await this.collaboratorsRepo.save(collaborator);
 
-    return { message: 'Collaborator updated' };
+    return { message: 'Permission updated' };
   }
 
   async remove(id: string) {

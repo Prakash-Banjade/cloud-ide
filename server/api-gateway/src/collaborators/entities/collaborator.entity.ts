@@ -9,7 +9,7 @@ export enum ECollaboratorStatus {
     DECLINED = 'declined'
 }
 
-export enum ECollaboratorPermission {
+export enum EPermission {
     NONE = 'none',
     READ = 'read',
     WRITE = 'write'
@@ -31,6 +31,6 @@ export class Collaborator extends BaseEntity {
     @Column({ type: 'enum', enum: ECollaboratorStatus, default: ECollaboratorStatus.PENDING })
     status: ECollaboratorStatus;
 
-    @Column({ type: 'enum', enum: ECollaboratorPermission, default: ECollaboratorPermission.NONE })
-    permission: ECollaboratorPermission;
+    @Column({ type: 'enum', enum: EPermission, default: EPermission.NONE })
+    permission: EPermission;
 }

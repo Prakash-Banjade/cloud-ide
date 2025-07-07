@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import LoadingButton from '../loading-button'
 import { useAppMutation } from '@/hooks/useAppMutation'
 import { ProfileAvatar } from '../ui/avatar'
-import { ECollaboratorPermission, ECollaboratorStatus, TCollaborator } from '@/types/types'
+import { EPermission, ECollaboratorStatus, TCollaborator } from '@/types/types'
 import { useState, useTransition } from 'react'
 import { QueryKey } from '@/lib/query-keys'
 import { cn, createQueryString } from '@/lib/utils'
@@ -31,14 +31,12 @@ import { MAX_COLLABORATORS } from '@/lib/CONSTANTS'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 
-type Props = {}
-
 const formSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }).trim(),
 })
 
-export default function SharePopover({ }: Props) {
-    const { project } = useCodingStates();
+export default function SharePopover() {
+    const { project, isOwner } = useCodingStates();
     const { data: session } = useSession();
     const [isPending, startTransition] = useTransition();
 
@@ -52,7 +50,7 @@ export default function SharePopover({ }: Props) {
         queryKey: [QueryKey.COLLABORATORS, project?.id || ""],
         queryString: createQueryString({ projectId: project?.id }),
         options: {
-            enabled: project?.id !== undefined
+            enabled: project?.id !== undefined && isOwner
         }
     });
 
@@ -82,6 +80,8 @@ export default function SharePopover({ }: Props) {
             form.reset();
         })
     }
+
+    if (!isOwner) return null;
 
     return (
         <Popover>
@@ -143,7 +143,7 @@ export default function SharePopover({ }: Props) {
                                     <ProfileAvatar src={undefined} className='size-10' name={session.user.firstName + ' ' + session.user.lastName} />
                                     <section>
                                         <p className='text-sm font-medium'>{session.user.firstName + ' ' + session.user.lastName}</p>
-                                        <p className='text-sm text-muted-foreground max-w-[50ch] truncate'>{session.user.email}</p>
+                                        <p className='text-xs text-muted-foreground max-w-[50ch] truncate'>{session.user.email}</p>
                                     </section>
                                 </section>
 
@@ -179,8 +179,15 @@ function CollaboratorCard({ collaborator }: { collaborator: TCollaborator }) {
                         : <div className='size-10 rounded-full bg-muted' />
                 }
                 <section>
-                    {name && <p className='text-sm font-medium'>{name}</p>}
-                    <p className='text-sm text-muted-foreground max-w-[50ch] truncate'>{collaborator.email}</p>
+                    {!!name && <p className='text-sm font-medium'>{name}</p>}
+                    <p
+                        className={cn(
+                            'text-sm text-muted-foreground max-w-[50ch] truncate',
+                            !!name && 'text-xs'
+                        )}
+                    >
+                        {collaborator.email}
+                    </p>
                 </section>
             </section>
 
@@ -189,7 +196,7 @@ function CollaboratorCard({ collaborator }: { collaborator: TCollaborator }) {
                     collaborator.status === ECollaboratorStatus.PENDING ? (
                         <InvitedAction email={collaborator.email} />
                     ) : collaborator.status === ECollaboratorStatus.ACCEPTED && (
-                        <p className='text-sm text-muted-foreground'>Accepted</p>
+                        <AcceptedAction collaborator={collaborator} />
                     )
                 }
             </section>
@@ -234,14 +241,14 @@ function InvitedAction({ email }: { email: string }) {
     )
 }
 
-function AcceptedAction({ collaboratorId }: { collaboratorId: string }) {
+function AcceptedAction({ collaborator }: { collaborator: TCollaborator }) {
     const { mutateAsync: removeCollaborator, isPending: isPendingRemove } = useAppMutation();
     const { mutateAsync: updatePermission, isPending: isPendingUpdate } = useAppMutation();
     const [open, setOpen] = useState(false);
 
     async function handleRemoveCollaborator() {
         await removeCollaborator({
-            endpoint: QueryKey.COLLABORATORS + `/${collaboratorId}`,
+            endpoint: QueryKey.COLLABORATORS + `/${collaborator.id}`,
             method: 'delete',
             invalidateTags: [QueryKey.COLLABORATORS],
         });
@@ -249,12 +256,12 @@ function AcceptedAction({ collaboratorId }: { collaboratorId: string }) {
         setOpen(false);
     }
 
-    async function handleUpdatePermission(permission: ECollaboratorPermission) {
+    async function handleUpdatePermission() {
         await updatePermission({
-            endpoint: QueryKey.COLLABORATORS + `/${collaboratorId}`,
+            endpoint: QueryKey.COLLABORATORS + `/${collaborator.id}`,
             method: 'patch',
             invalidateTags: [QueryKey.COLLABORATORS],
-            data: { permission },
+            data: { permission: collaborator.permission === EPermission.READ ? EPermission.WRITE : EPermission.READ },
         });
 
         setOpen(false);
@@ -264,19 +271,28 @@ function AcceptedAction({ collaboratorId }: { collaboratorId: string }) {
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger>
                 <Button size={'sm'} variant={'ghost'} onClick={() => setOpen(true)}>
-                    Invited
+                    {
+                        collaborator.permission === EPermission.READ
+                            ? 'Can Only Read'
+                            : 'Can Write'
+                    }
                     <ChevronDown className={cn('transition-all', open && 'rotate-180')} />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className='w-fit p-1' align='end'>
+            <PopoverContent className='w-fit p-1 flex flex-col' align='end'>
                 <LoadingButton
                     variant={'ghost'}
                     size={'sm'}
                     isLoading={isPendingRemove}
-                    onClick={handleRemoveCollaborator}
-                    loadingText='Removing...'
+                    onClick={handleUpdatePermission}
+                    loadingText='Updating...'
+                    className='justify-start pr-10'
                 >
-                    Remove
+                    {
+                        collaborator.permission === EPermission.READ
+                            ? 'Can Write'
+                            : 'Can Only Read'
+                    }
                 </LoadingButton>
                 <LoadingButton
                     variant={'ghost'}
@@ -284,6 +300,7 @@ function AcceptedAction({ collaboratorId }: { collaboratorId: string }) {
                     isLoading={isPendingRemove}
                     onClick={handleRemoveCollaborator}
                     loadingText='Removing...'
+                    className='justify-start pr-10 text-destructive hover:!bg-destructive/10 hover:text-destructive'
                 >
                     Remove
                 </LoadingButton>

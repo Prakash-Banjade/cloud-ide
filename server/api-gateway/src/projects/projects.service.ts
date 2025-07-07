@@ -6,7 +6,7 @@ import { generateSlug } from 'src/common/utils';
 import { AuthUser } from 'src/common/global.types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { UsersService } from 'src/auth-system/users/users.service';
 import { ProjectsQueryDto } from './dto/projects-query.dto';
 import paginatedData from 'src/common/utilities/paginated-data';
@@ -55,7 +55,16 @@ export class ProjectsService {
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {
     const querybuilder = this.projectRepo.createQueryBuilder('project')
       .orderBy(queryDto.sortBy, queryDto.sortBy.includes('name') ? 'ASC' : queryDto.order) // sort by ASC for name
-      .where('project.createdById = :userId', { userId: currentUser.userId });
+      .leftJoin('project.createdBy', 'createdBy')
+      .loadRelationCountAndMap('project.collaboratorsCount', 'project.collaborators');
+
+    if (queryDto.collab) {
+      querybuilder
+        .leftJoin('project.collaborators', 'collaborators')
+        .where('collaborators.userId = :userId', { userId: currentUser.userId })
+    } else {
+      querybuilder.where('createdBy.id = :userId', { userId: currentUser.userId });
+    }
 
     if (queryDto.q) {
       querybuilder.andWhere('project.name ILIKE :q', { q: `%${queryDto.q}%` });
@@ -72,6 +81,7 @@ export class ProjectsService {
       'project.createdAt',
       'project.replId',
       'project.updatedAt',
+      'createdBy.id',
     ]);
 
     return paginatedData(queryDto, querybuilder);
@@ -79,21 +89,28 @@ export class ProjectsService {
 
   async findOne(id: string, currentUser: AuthUser) {
     const project = await this.projectRepo.createQueryBuilder('project')
+      .leftJoin('project.collaborators', 'collaborators')
+      .leftJoin('project.createdBy', 'createdBy')
       .where('project.replId = :id', { id })
-      .andWhere('project.createdById = :userId', { userId: currentUser.userId })
+      .andWhere(new Brackets(qb => {
+        qb.orWhere('createdBy.id = :userId', { userId: currentUser.userId })
+          .orWhere('collaborators.userId = :userId', { userId: currentUser.userId })
+      }))
       .loadRelationCountAndMap('project.collaboratorsCount', 'project.collaborators')
       .select([
         'project.id',
         'project.name',
         'project.language',
         'project.replId',
+        'createdBy.id',
+        'collaborators.id',
+        'collaborators.permission'
       ]).getOne();
 
     if (!project) throw new NotFoundException('Project not found');
 
     // update last opened
-    project.updatedAt = new Date().toISOString();
-    this.projectRepo.save(project);
+    await this.projectRepo.update({ id: project.id }, { updatedAt: new Date().toISOString() });
 
     return project;
   }

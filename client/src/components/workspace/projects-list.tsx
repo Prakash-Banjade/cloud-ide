@@ -8,18 +8,13 @@ import { FolderPlus, Search } from "lucide-react";
 import CreateProjectButton from "./create-project-button";
 import { WorkspacePageProps } from "@/app/workspace/page";
 
-type Props = {
-    searchParams: WorkspacePageProps["searchParams"]
-}
-
-export default async function MyProjectsList(props: { searchParams: Promise<Props["searchParams"]> }) {
-    const searchParams = await props.searchParams;
-
+export default async function ProjectsList({ searchParams }: { searchParams: Awaited<WorkspacePageProps["searchParams"]> }) {
     const queryString = createQueryString({
         q: searchParams.q,
         language: searchParams.language,
         sortBy: searchParams.sortBy,
-        order: searchParams.order
+        order: searchParams.order,
+        collab: searchParams.tab === "shared"
     });
 
     const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects", {

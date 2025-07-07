@@ -8,8 +8,8 @@ import "@xterm/xterm/css/xterm.css";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useCodingStates } from "@/context/coding-states-provider";
-import { EItemType } from "@/types/tree.types";
 import { SocketEvents } from "@/lib/CONSTANTS";
+import { EPermission } from "@/types/types";
 
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
@@ -20,7 +20,7 @@ type XterminalProps = {
 }
 
 export default function XTerminal({ socket, showTerm }: XterminalProps) {
-    const { fileStructure } = useCodingStates();
+    const { permission } = useCodingStates();
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
     const [term, setTerm] = useState<Terminal | null>(null);
@@ -35,6 +35,7 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
                 foreground: theme === "dark" ? "white" : "black",
                 cursor: theme === "dark" ? "white" : "black",
             },
+            disableStdin: permission === EPermission.READ
         });
 
         setTerm(terminal);

@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import useDownload from '@/hooks/useDownload';
 import ProjectRenameForm from '../workspace/project-rename-form';
 import ShareBtn from './share-popover';
+import { EPermission } from '@/types/types';
 
 type Props = {
     socket: Socket
@@ -22,8 +23,8 @@ type Props = {
 
 export default function TopBar({ socket }: Props) {
     const router = useRouter();
+    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, setTreePanelOpen, setShowTerm, permission } = useCodingStates();
     const [open, setOpen] = useState(false);
-    const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, setTreePanelOpen, setShowTerm } = useCodingStates();
     const isMobile = useIsMobile(1000);
     const handleDownload = useDownload();
 
@@ -75,7 +76,7 @@ export default function TopBar({ socket }: Props) {
                         )
                     }
 
-                    <Popover open={open} onOpenChange={setOpen}>
+                    <Popover open={permission === EPermission.WRITE && open} onOpenChange={setOpen}>
                         <PopoverTrigger>
                             <section className='flex items-center gap-1 p-2 rounded-sm hover:bg-secondary'>
                                 {Icon && <Icon className='size-4' />}
@@ -84,7 +85,7 @@ export default function TopBar({ socket }: Props) {
                         </PopoverTrigger>
                         <PopoverContent side='bottom' align='start'>
                             {
-                                project && <ProjectRenameForm
+                                project && permission === EPermission.WRITE && <ProjectRenameForm
                                     defaultValues={{ projectName: project.name }}
                                     projectId={project.id}
                                     setIsOpen={setOpen}

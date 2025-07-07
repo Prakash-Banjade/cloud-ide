@@ -10,7 +10,7 @@ import { CollaboratorsService } from 'src/collaborators/collaborators.service';
 import { BaseRepository } from 'src/common/base.repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { Collaborator, ECollaboratorPermission, ECollaboratorStatus } from 'src/collaborators/entities/collaborator.entity';
+import { Collaborator, EPermission, ECollaboratorStatus } from 'src/collaborators/entities/collaborator.entity';
 import { User } from 'src/auth-system/users/entities/user.entity';
 
 @Injectable()
@@ -185,7 +185,7 @@ export class InvitesService extends BaseRepository {
 
         if (collaborator) { // collaborator exist (when invited through mail) -> update
             collaborator.user = user;
-            collaborator.permission = ECollaboratorPermission.READ;
+            collaborator.permission = EPermission.READ;
             collaborator.status = ECollaboratorStatus.ACCEPTED;
             await this.getRepository(Collaborator).save(collaborator);
         } else { // collaborator doesn't exist (when invited through link) -> create
@@ -194,7 +194,7 @@ export class InvitesService extends BaseRepository {
                 user,
                 email: invite.email,
                 status: ECollaboratorStatus.ACCEPTED,
-                permission: ECollaboratorPermission.READ
+                permission: EPermission.READ
             });
             await this.getRepository(Collaborator).save(newCollaborator);
         }

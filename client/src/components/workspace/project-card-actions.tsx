@@ -10,8 +10,10 @@ import { TProject } from "@/types/types";
 import { useAppMutation } from "@/hooks/useAppMutation";
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function ProjectCardActions({ project }: { project: TProject }) {
+    const { data: session } = useSession();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -26,6 +28,8 @@ export default function ProjectCardActions({ project }: { project: TProject }) {
 
         router.refresh();
     }
+
+    if (project.createdBy.id !== session?.user.userId) return null;
 
     return (
         <>

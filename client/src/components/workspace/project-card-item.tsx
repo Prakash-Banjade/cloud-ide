@@ -1,7 +1,7 @@
 import { format, formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Code, Calendar, Clock, ExternalLink } from "lucide-react"
+import { Code, Calendar, Clock, ExternalLink, Users } from "lucide-react"
 import { TProject } from "@/types/types"
 import Link from "next/link"
 import { languageFields } from "@/lib/utils"
@@ -48,6 +48,12 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                         <Clock className="mr-2 h-4 w-4" />
                         <span className="mr-2">Last Updated:</span>
                         {formatDate(project.updatedAt)}
+                    </div>
+
+                    <div className="flex items-center text-sm text-muted-foreground">
+                        <Users className="mr-2 h-4 w-4" />
+                        <span className="mr-2">Members:</span>
+                        {project.collaboratorsCount === 0 ? "Only You" : project.collaboratorsCount}
                     </div>
 
                     <div className="flex items-center text-sm text-muted-foreground truncate">

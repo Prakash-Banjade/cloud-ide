@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
-import { TProject } from '@/types/types';
+import { EPermission, TProject } from '@/types/types';
 import cookie from 'js-cookie';
 import { z } from 'zod';
 import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
@@ -14,7 +14,6 @@ import { useSession } from 'next-auth/react';
 import { SocketEvents } from '@/lib/CONSTANTS';
 import { EItemType, TFileItem, TreeItem } from '@/types/tree.types';
 import CodingPageLoader from '@/components/code/coding-page-loader';
-
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -30,6 +29,8 @@ interface CodingStatesContextType {
     editorInstance: IStandaloneCodeEditor | null,
     setEditorInstance: React.Dispatch<React.SetStateAction<IStandaloneCodeEditor | null>>
     project: TProject | undefined;
+    permission: EPermission;
+    isOwner: boolean;
     projectRunning: boolean;
     setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>;
     mruFiles: TFileItem[];
@@ -53,6 +54,7 @@ interface CodingStatesProviderProps {
 
 export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const params = useParams();
+    const { data: session } = useSession();
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
@@ -62,7 +64,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const [treeLoaded, setTreeLoaded] = useState(false);
-    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [permission, setPermission] = useState<EPermission>(EPermission.READ);
+    const [showTerm, setShowTerm] = useState(() => permission === EPermission.WRITE && localStorage.getItem("showTerm") === "true");
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
     const { status } = useSession();
@@ -77,7 +81,14 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         gcTime: Infinity
     });
 
-    const [isSyncing, setIsSyncing] = useState(false);
+    useEffect(() => {
+        if (data) {
+            const project = data.data;
+            const [collaborator] = project.collaborators;
+            const isOwner = project.createdBy.id === session?.user.userId;
+            setPermission(isOwner ? EPermission.WRITE : (collaborator?.permission || EPermission.READ));
+        }
+    }, [data])
 
     const value = {
         fileStructure,
@@ -93,6 +104,8 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         editorInstance,
         setEditorInstance,
         project: data?.data,
+        isOwner: data?.data.createdBy.id === session?.user.userId,
+        permission,
         projectRunning,
         setProjectRunning,
         mruFiles,

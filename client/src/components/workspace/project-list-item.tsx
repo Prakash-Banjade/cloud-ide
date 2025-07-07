@@ -6,6 +6,7 @@ import { TProject } from "@/types/types"
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { languageFields } from "@/lib/utils"
+import ProjectCardActions from "./project-card-actions"
 
 interface ProjectListItemProps {
     project: TProject
@@ -44,7 +45,7 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
                 </div>
             </div>
 
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
                 <Button size="sm" asChild>
                     <Link href={`/code/${project.replId}`}>
                         <ExternalLink />
@@ -52,25 +53,7 @@ export default function ProjectListItem({ project }: ProjectListItemProps) {
                     </Link>
                 </Button>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">More options</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
-                            <Trash className="mr-2 h-4 w-4" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <ProjectCardActions project={project} />
             </div>
         </Card>
     )

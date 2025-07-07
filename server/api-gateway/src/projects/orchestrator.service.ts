@@ -8,8 +8,9 @@ import { AuthUser, ELanguage } from 'src/common/global.types';
 import { LANG_PORT } from 'src/common/utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { EPermission } from 'src/collaborators/entities/collaborator.entity';
 
 const namespace = "qubide" as const;
 
@@ -27,10 +28,19 @@ export class OrchestratorService {
 
     async startResource(dto: ResourceStartDto, currentUser: AuthUser) {
         const project = await this.projectRepo.findOne({
-            where: {
-                replId: dto.replId,
-                createdBy: { id: currentUser.userId }
-            },
+            where: [
+                {
+                    replId: dto.replId,
+                    createdBy: { id: currentUser.userId },
+                },
+                {
+                    replId: dto.replId,
+                    collaborators: {
+                        user: { id: currentUser.userId },
+                        permission: Not(EPermission.NONE),
+                    },
+                }
+            ],
             select: { id: true, language: true }
         });
 
