@@ -4,6 +4,14 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { Socket } from "socket.io";
 
+export type AuthUser = {
+    permission: 'read' | 'write',
+    userId: string,
+    firstName: string,
+    lastName?: string,
+    email: string,
+}
+
 @Injectable()
 export class WsGuard implements CanActivate {
     constructor(

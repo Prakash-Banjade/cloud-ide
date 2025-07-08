@@ -10,7 +10,7 @@ import { CollaboratorsService } from 'src/collaborators/collaborators.service';
 import { BaseRepository } from 'src/common/base.repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { Collaborator, EPermission, ECollaboratorStatus } from 'src/collaborators/entities/collaborator.entity';
+import { Collaborator, EPermission, ECollaboratorStatus, MAX_COLLABORATORS } from 'src/collaborators/entities/collaborator.entity';
 import { User } from 'src/auth-system/users/entities/user.entity';
 
 @Injectable()
@@ -69,10 +69,14 @@ export class InvitesService extends BaseRepository {
                 id: dto.projectId,
                 createdBy: { id: currentUser.userId }
             },
-            select: { id: true }
+            relations: { collaborators: true },
+            select: { id: true, collaborators: { id: true } }
         });
 
         if (!project) throw new ForbiddenException('Access denied.');
+
+        // check if maximum collaborators reached
+        if (project.collaborators.length >= MAX_COLLABORATORS) throw new BadRequestException(`You can't invite more than ${MAX_COLLABORATORS} collaborators.`);
 
         // check of existing
         const existing = await this.getRepository(Invite).findOne({

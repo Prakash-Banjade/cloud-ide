@@ -34,10 +34,17 @@ export const enum SocketEvents {
     UPDATE_CONTENT = "content:update",
     RENAME_ITEM = "item:rename",
 
+    ITEM_CREATED = "item:created",
+    ITEM_DELETED = "item:deleted",
+    ITEM_UPDATED = "item:updated",
+    ITEM_RENAMED = "item:renamed",
+
     PROCESS_STATUS = "process:status",
     PROCESS_RUN = "process:run",
     PROCESS_STOP = "process:stop",
     TERMINAL_REQUEST = "terminal:request",
     TERMINAL = "terminal",
     TERMINAL_DATA = "terminal:data",
+
+    USERS_ACTIVE = "users:active",
 }

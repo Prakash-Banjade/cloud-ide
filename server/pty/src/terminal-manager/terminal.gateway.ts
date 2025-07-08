@@ -81,6 +81,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   private startInactivityTimer() {
+    return;
     const timeout = setTimeout(() => {
       this.kubernetesService.shutdown(this.replId);
     }, this.INACTIVITY_TIMEOUT_MS);

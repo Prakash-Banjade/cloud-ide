@@ -5,9 +5,9 @@ import { MinioModule } from './minio/minio.module';
 import { ChokidarModule } from './chokidar/chokidar.module';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
-import { WsGuard } from './guard/ws.guard';
 import { ProjectModule } from './project/project.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -27,15 +27,12 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     FileSystemModule,
     ChokidarModule,
     ProjectModule,
+    UsersModule,
   ],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: WsGuard,
     }
   ],
 })

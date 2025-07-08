@@ -1,10 +1,9 @@
 import ProfileDropdown from '@/components/layout/profile-dropdown';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCodingStates } from '@/context/coding-states-provider';
 import { cn, languageFields } from '@/lib/utils';
-import { CircleCheck, Download, Home, LoaderCircle, PanelLeftIcon, Pause, Play } from 'lucide-react';
+import { CircleCheck, Home, LoaderCircle, PanelLeftIcon, Pause, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Socket } from 'socket.io-client';
@@ -12,10 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useState } from 'react';
 import { SocketEvents } from '@/lib/CONSTANTS';
 import { useIsMobile } from '@/hooks/use-mobile';
-import useDownload from '@/hooks/useDownload';
 import ProjectRenameForm from '../workspace/project-rename-form';
 import ShareBtn from './share-popover';
 import { EPermission } from '@/types/types';
+import ActiveUsers from './active-users';
 
 type Props = {
     socket: Socket
@@ -26,7 +25,6 @@ export default function TopBar({ socket }: Props) {
     const { isSyncing, project, selectedFile, projectRunning, setProjectRunning, setTreePanelOpen, setShowTerm, permission } = useCodingStates();
     const [open, setOpen] = useState(false);
     const isMobile = useIsMobile(1000);
-    const handleDownload = useDownload();
 
     function onRun() {
         if (!socket || !project) return;
@@ -129,24 +127,9 @@ export default function TopBar({ socket }: Props) {
                     }
                 </section>
 
-                <div className="flex items-center gap-2">
-                    {
-                        !isMobile && (
-                            <>
-                                <ShareBtn />
-                                <Button
-                                    variant={'outline'}
-                                    type="button"
-                                    onClick={handleDownload}
-                                    size={'sm'}
-                                >
-                                    <Download />
-                                    Download
-                                </Button>
-                            </>
-                        )
-                    }
-                    <ThemeToggle />
+                <div className="flex items-center gap-4">
+                    <ActiveUsers />
+                    <ShareBtn />
                     <ProfileDropdown />
                 </div>
             </div>

@@ -69,6 +69,12 @@ export default function SharePopover() {
             return;
         };
 
+        // check if collaborator already exists
+        if (collaborators.some((collaborator) => collaborator.email === data.email)) {
+            toast.error("Collaborator already exists");
+            return;
+        };
+
         startTransition(() => {
             mutateAsync({
                 endpoint: QueryKey.INVITES + '/send',
@@ -220,7 +226,7 @@ function InvitedAction({ email }: { email: string }) {
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger>
+            <PopoverTrigger asChild>
                 <Button size={'sm'} variant={'ghost'} onClick={() => setOpen(true)}>
                     Invited
                     <ChevronDown className={cn('transition-all', open && 'rotate-180')} />
@@ -269,7 +275,7 @@ function AcceptedAction({ collaborator }: { collaborator: TCollaborator }) {
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger>
+            <PopoverTrigger asChild>
                 <Button size={'sm'} variant={'ghost'} onClick={() => setOpen(true)}>
                     {
                         collaborator.permission === EPermission.READ

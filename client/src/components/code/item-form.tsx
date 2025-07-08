@@ -12,6 +12,9 @@ import { useState } from "react"
 import { insertTreeItem } from "@/app/code/[replId]/fns/tree-mutation-fns"
 import { findItem } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EItemType, TreeItem } from "@/types/tree.types"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 const newItemFormSchema = z.object({
     name: z.string().min(1, { message: "Name must be provided" }).max(50).regex(fileNameRgx, "Invalid file name. Cannot use illegal characters."),
@@ -28,22 +31,17 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
     const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
     const [error, setError] = useState<string | null>(null);
-    const [itemName, setItemName] = useState<string>('');
 
-    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        if (!parentFolderPath || !socket) return;
-
-        const { success, data: values, error } = newItemFormSchema.safeParse({
-            name: itemName,
+    const form = useForm({
+        resolver: zodResolver(newItemFormSchema),
+        defaultValues: {
+            name: '',
             type: itemType
-        });
-
-        if (!success) {
-            setError(error?.message);
-            return;
         }
+    })
+
+    const onSubmit = (values: z.infer<typeof newItemFormSchema>) => {
+        if (!parentFolderPath || !socket) return;
 
         const itemPath = (!!parentFolderPath && parentFolderPath !== "/") ? `${parentFolderPath}/${values.name}` : `/${values.name}`;
 
@@ -86,27 +84,37 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
     }
 
     return (
-        <form onSubmit={onSubmit} className="space-y-8">
-            <section className="space-y-2">
-                <section className='relative flex items-center'>
-                    <div className='absolute left-2'>
-                        {
-                            itemType === EItemType.FILE
-                                ? getFileIcon(itemName)
-                                : <Folder size={16} />
-                        }
-                    </div>
-                    <Input
-                        className='pl-8 w-full'
-                        placeholder={itemType === EItemType.FILE ? 'filename.ext' : 'folder name'}
-                        autoComplete="off"
-                        value={itemName}
-                        onChange={(e) => setItemName(e.target.value)}
-                    />
-                </section>
-                {error && <p className="text-destructive text-sm">{error}</p>}
-            </section>
-        </form>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <section className='relative flex items-center'>
+                                    <div className='absolute left-2'>
+                                        {
+                                            itemType === EItemType.FILE
+                                                ? getFileIcon(field.value)
+                                                : <Folder size={16} />
+                                        }
+                                    </div>
+                                    <Input
+                                        className='pl-8 w-full'
+                                        placeholder={itemType === EItemType.FILE ? 'filename.ext' : 'folder name'}
+                                        autoComplete="off"
+                                        required
+                                        {...field}
+                                    />
+                                </section>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </form>
+        </Form>
     )
 }
 

@@ -3,6 +3,8 @@ export type AuthUser = {
     userId: string;
     email: string;
     deviceId: string;
+    firstName: string;
+    lastName?: string;
 }
 
 export enum ELanguage {

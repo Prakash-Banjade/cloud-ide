@@ -52,7 +52,7 @@ export class JwtService {
 
         if (!account.user?.id) throw new InternalServerErrorException('Associated user not found');
 
-        const payload = {
+        const payload: AuthUser = {
             accountId: account.id,
             email: account.email,
             userId: account.user.id,

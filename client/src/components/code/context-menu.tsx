@@ -9,9 +9,9 @@ import { ResponsiveDialog } from "@/components/ui/responsive-dialog"
 import { RenameItemForm } from "./rename-item-form"
 import { SocketEvents } from "@/lib/CONSTANTS"
 import { NewItemForm } from "./item-form"
-import { removeItemFromTree } from "@/app/code/[replId]/fns/tree-mutation-fns"
 import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EPermission } from "@/types/types"
+import { useDeleteTreeItem } from "@/hooks/useListenTreeMutation"
 
 type Props = {
     children: React.ReactNode,
@@ -26,26 +26,14 @@ export function TreeItemContextMenu({ children, item }: Props) {
     const { socket } = useSocket();
     const [isNewItemOpen, setIsNewItemOpen] = useState(false);
     const [newItemType, setNewItemtype] = useState<EItemType>(EItemType.FILE);
+    const { deleteItem } = useDeleteTreeItem();
 
     function handleDelete() {
         if (!socket) return;
 
         socket.emit(SocketEvents.DELETE_ITEM, { path: item.path, type: item.type }, (data: boolean) => {
             if (data) {
-                setFileStructure(prev => removeItemFromTree(prev, item.path));
-
-                setOpenedFiles(prev => prev.filter(f =>
-                    item.type === EItemType.FILE
-                        ? f.path !== item.path
-                        : !f.path.startsWith(item.path)
-                ));
-                const newMruFiles = mruFiles.filter(f =>
-                    item.type === EItemType.FILE
-                        ? f.path !== item.path
-                        : !f.path.startsWith(item.path)
-                );
-                setMruFiles(newMruFiles);
-                setSelectedFile(newMruFiles[0]);
+                deleteItem({ path: item.path, type: item.type });
             }
         });
     }
@@ -89,7 +77,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                         className={cn(isContextMenuOpen && "outline")}
                         onContextMenu={() => {
                             if (permission !== EPermission.WRITE) return;
-                            
+
                             if (item.type === EItemType.DIR && !Array.isArray(item.children)) { // fetch children if they don't exist, this is to show alert dialog based on children presence
                                 socket?.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
                                     setFileStructure(prev =>

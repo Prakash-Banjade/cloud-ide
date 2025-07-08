@@ -1,5 +1,5 @@
 import { AppsV1Api, CoreV1Api, NetworkingV1Api } from '@kubernetes/client-node';
-import { ForbiddenException, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as yaml from 'yaml';
 import * as path from 'path';
@@ -44,7 +44,7 @@ export class OrchestratorService {
             select: { id: true, language: true }
         });
 
-        if (!project) throw new ForbiddenException('Access denied.');
+        if (!project) throw new NotFoundException('Project not found');
 
         const filePath = this.cfg.getOrThrow('NODE_ENV') === 'production'
             ? path.join(__dirname, '../kubernetes/manifest/service.yaml')

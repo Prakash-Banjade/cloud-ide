@@ -7,6 +7,7 @@ import { WsGuard } from 'src/guard/ws.guard';
 import { ConfigService } from '@nestjs/config';
 import { UseGuards } from '@nestjs/common';
 import { WriteGuard } from 'src/guard/write.guard';
+import { UsersGateway } from 'src/users/users.gateway';
 
 @WebSocketGateway({
   cors: {
@@ -30,16 +31,19 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     private readonly minioService: MinioService,
     private readonly fileSystemService: FileSystemService,
     private readonly wsGuard: WsGuard,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly usersGateway: UsersGateway
   ) {
     this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    console.log(`✅ CONNECTED - ${socket.id}`);
+    console.log(`✅ CONNECTED - ${socket.id} - FileSystemGateway`);
 
     const isAuthenticated = await this.wsGuard.verifyToken(socket);
     if (!isAuthenticated) return socket.disconnect();
+
+    this.usersGateway.addUser({ socketId: socket.id, ...socket["user"] });
 
     socket.join(this.replId);
 
@@ -49,7 +53,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
-    console.log(`🚫 DISCONNECTED - ${socket.id}`);
+    console.log(`🚫 DISCONNECTED - ${socket.id} - FileSystemGateway`);
   }
 
   @SubscribeMessage(SocketEvents.FETCH_DIR)
@@ -76,6 +80,9 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     await this.fileSystemService.saveFile(fullPath, content);
 
     await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);
+
+    // emit to active users
+    socket.to(this.replId).emit(SocketEvents.ITEM_UPDATED, { path: filePath, content: content || "" });
 
     return true; // need to return something, used in frontend to handle syncing status
   }

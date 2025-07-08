@@ -184,7 +184,10 @@ export class ProjectsService {
 
     const access_token = await this.jwtService.getAccessTokenWithProjectPermission({
       permission: isOwner ? EPermission.WRITE : collaborator?.permission,
-      userId: currentUser.userId
+      userId: currentUser.userId,
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
+      email: currentUser.email
     });
 
     return { access_token };

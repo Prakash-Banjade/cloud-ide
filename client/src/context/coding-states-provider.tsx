@@ -54,7 +54,7 @@ interface CodingStatesProviderProps {
 
 export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const params = useParams();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
@@ -69,7 +69,6 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [showTerm, setShowTerm] = useState(() => permission === EPermission.WRITE && localStorage.getItem("showTerm") === "true");
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
-    const { status } = useSession();
 
     const replId = params.replId;
 

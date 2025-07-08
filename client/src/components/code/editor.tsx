@@ -5,10 +5,11 @@ import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-
 import { useEffect } from "react";
 import { SocketEvents } from "@/lib/CONSTANTS";
 import { EPermission } from "@/types/types";
+import { updateFileContent } from "@/app/code/[replId]/fns/tree-mutation-fns";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
-    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance, permission } = useCodingStates();
+    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance, permission, setFileStructure } = useCodingStates();
 
     async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
         setEditorInstance(editor);
@@ -46,8 +47,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
             setIsSyncing(false);
         });
-
-    }, 1000);
+    }, 500);
 
     // Sync file content on ctrl+s
     useEffect(() => {
@@ -67,35 +67,26 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedFile, editorInstance]);
 
-    if (!selectedFile) return (
-        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-            <img src="/logo-white.png" alt="logo" className="opacity-5 hidden dark:block h-[30%] w-auto select-none" />
-            <img src="/logo-dark.png" alt="logo" className="opacity-5 block dark:hidden h-[30%] w-auto select-none" />
-            <table className="text-sm">
-                <tbody>
-                    <tr>
-                        <td className="p-2 text-right">Toggle Terminal</td>
-                        <td className="p-2">
-                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">`</kbd>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td className="p-2 text-right">Tab Switching</td>
-                        <td className="p-2">
-                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Alt</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">e</kbd>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td className="p-2 text-right">Manual Save</td>
-                        <td className="p-2">
-                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">s</kbd>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    useEffect(() => {
+        if (!socket) return;
 
-    );
+        socket.on(SocketEvents.ITEM_UPDATED, (data: { path: string, content: string }) => {
+            if (!data.path || typeof data.content !== 'string') return;
+            console.log('item-updated', data);
+
+            if (selectedFile && selectedFile.path === data.path) {
+                editorInstance?.setValue(data.content);
+            };
+
+            setFileStructure(prev => updateFileContent(prev, data.path, data.content));
+        });
+
+        return () => {
+            socket.off(SocketEvents.ITEM_UPDATED);
+        }
+    }, [socket, selectedFile, editorInstance]);
+
+    if (!selectedFile) return <NoFileSelected />;
 
     return (
         <Editor
@@ -158,4 +149,35 @@ function getLanguageFromName(name: string) {
     const ext = name.split('.').pop();
 
     return langObj?.[ext as keyof typeof langObj] || "plaintext";
+}
+
+function NoFileSelected() {
+    return (
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+            <img src="/logo-white.png" alt="logo" className="opacity-5 hidden dark:block h-[30%] w-auto select-none" />
+            <img src="/logo-dark.png" alt="logo" className="opacity-5 block dark:hidden h-[30%] w-auto select-none" />
+            <table className="text-sm">
+                <tbody>
+                    <tr>
+                        <td className="p-2 text-right">Toggle Terminal</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">`</kbd>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="p-2 text-right">Tab Switching</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Alt</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">e</kbd>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="p-2 text-right">Manual Save</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">s</kbd>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    )
 }
