@@ -11,6 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useOthers } from "@liveblocks/react";
 
 type Props = {}
 
@@ -60,14 +61,15 @@ const activeUsers = [
     },
 ]
 
+const VISIBLE_USERS_COUNT = 3;
+
 export default function ActiveUsers({ }: Props) {
-    const visibleUsers = activeUsers.slice(0, 3)
-    const remainingCount = activeUsers.length - 3
+    const users = useOthers();
 
     return (
         <TooltipProvider delayDuration={300}>
             <div className="flex items-center">
-                {visibleUsers.map((user, index) => (
+                {users.slice(0, VISIBLE_USERS_COUNT).map(({ info: user }, index) => (
                     <Tooltip key={user.id}>
                         <TooltipTrigger asChild>
                             <button
@@ -77,32 +79,32 @@ export default function ActiveUsers({ }: Props) {
                                     "hover:!z-10"
                                 )}
                                 style={{
-                                    zIndex: visibleUsers.length - index,
+                                    zIndex: VISIBLE_USERS_COUNT - index,
                                 }}
                             >
                                 <ProfileAvatar
                                     src={undefined}
                                     className="size-8 ring-1 ring-white/50 text-xs"
-                                    name={user.name}
+                                    name={user.firstName + ' ' + user.lastName}
                                 />
                             </button>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="px-3 py-2">
                             <div className="text-center">
-                                <p className="font-medium text-sm">{user.name}</p>
+                                <p className="font-medium text-sm">{user.firstName + ' ' + user.lastName}</p>
                                 <p className="text-xs">{user.email}</p>
                             </div>
                         </TooltipContent>
                     </Tooltip>
                 ))}
 
-                {remainingCount > 0 && (
+                {users.length > VISIBLE_USERS_COUNT && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <button type="button" className="ml-1 rounded-full">
                                 <Avatar className="size-8">
                                     <AvatarFallback className="bg-muted text-sm font-medium">
-                                        +{remainingCount}
+                                        +{users.length - VISIBLE_USERS_COUNT}
                                     </AvatarFallback>
                                 </Avatar>
                             </button>

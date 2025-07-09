@@ -32,6 +32,7 @@ export class EnvService implements OnModuleInit {
     AES_KEY: string;
     AES_IV: string;
     NODE_ENV: TNodeEnv;
+    LIVEBLOCKS_SECRET_KEY: string;
 
     onModuleInit() {
         this.DATABASE_URL = this.configService.getOrThrow<string>('DATABASE_URL');
@@ -57,6 +58,7 @@ export class EnvService implements OnModuleInit {
         this.AES_KEY = this.configService.getOrThrow<string>('AES_KEY');
         this.AES_IV = this.configService.getOrThrow<string>('AES_IV');
         this.NODE_ENV = this.configService.getOrThrow<TNodeEnv>('NODE_ENV');
+        this.LIVEBLOCKS_SECRET_KEY = this.configService.getOrThrow<string>('LIVEBLOCKS_SECRET_KEY');
     }
 
 }

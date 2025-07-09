@@ -17,6 +17,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { createKeyv } from '@keyv/redis';
 import { InvitesModule } from './invites/invites.module';
 import { CollaboratorsModule } from './collaborators/collaborators.module';
+import { LiveBlockModule } from './live-block/live-block.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { CollaboratorsModule } from './collaborators/collaborators.module';
     MailModule,
     InvitesModule,
     CollaboratorsModule,
+    LiveBlockModule,
   ],
   providers: [
     {

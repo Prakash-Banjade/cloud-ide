@@ -23,6 +23,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manager-fns";
 import { EPermission } from "@/types/types";
+import { LiveblocksProvider } from "@liveblocks/react/suspense";
+import { Room } from "./editor/room";
+import { CollaborativeEditor } from "./editor/collaborative-editor";
+import cookie from 'js-cookie';
+import { useParams } from "next/navigation";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -32,13 +37,17 @@ export default function CodingPageClient() {
     return (
         <SocketProvider>
             <CodingStatesProvider>
-                <CodingPagePostPodCreation />
+                <LiveblocksProvider authEndpoint={"/api/liveblocks-auth"}>
+                    <Room>
+                        <CodingPagePostPodCreation />
+                    </Room>
+                </LiveblocksProvider>
             </CodingStatesProvider>
         </SocketProvider>
     )
 }
 
-export const CodingPagePostPodCreation = () => {
+const CodingPagePostPodCreation = () => {
     const {
         setProjectRunning,
         projectRunning,
@@ -125,7 +134,8 @@ export const CodingPagePostPodCreation = () => {
                         <ResizablePanel order={1} defaultSize={70} minSize={30}>
                             <div className="h-full flex flex-col">
                                 <OpenedFilesTab />
-                                <CodeEditor socket={socket} />
+                                {/* <CodeEditor socket={socket} /> */}
+                                <CollaborativeEditor socket={socket} />
                             </div>
                         </ResizablePanel>
 
@@ -167,6 +177,7 @@ function OpenedFilesTab() {
     const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
     const { socket } = useSocket();
+    const { replId } = useParams();
 
     useEffect(() => {
         if (selectedTabRef.current) {
@@ -264,6 +275,7 @@ function OpenedFilesTab() {
                                         setOpenedFiles([]);
                                         setMruFiles([]);
                                         setSelectedFile(undefined);
+                                        cookie.remove(`selectedFile:${replId}`);
                                     }}
                                 >
                                     Close All

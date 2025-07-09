@@ -37,4 +37,5 @@ export const envSchema = Joi.object({
     NODE_ENV: Joi.string().valid('development', 'production', 'test').required(), // Restrict NODE_ENV to specific values
 
     RESEND_API_KEY: Joi.string().required(),
+    LIVEBLOCKS_SECRET_KEY: Joi.string().required(),
 });
