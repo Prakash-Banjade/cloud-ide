@@ -5,7 +5,7 @@ import { Server, Socket } from 'socket.io';
 import { SocketEvents } from 'src/CONSTANTS';
 import { AuthUser } from 'src/guard/ws.guard';
 
-const COLORS = ["#D583F0", "#F08385", "#F0D885"];
+const COLORS = ["#8594F0", "#F08385", "#F0D885"];
 
 @Injectable()
 @WebSocketGateway({
@@ -35,9 +35,9 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
 
   handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id} - UsersGateway`);
-
+    socket.join(this.replId);
     // emit active users as soon as a new user connects
-    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, Array.from(this.activeUsers.values()));
+    this.emitActiveUsers();
   }
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
@@ -46,7 +46,7 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     this.activeUsers.delete(socket.id); // remove user
 
     // emit active users
-    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, Array.from(this.activeUsers.values()));
+    this.emitActiveUsers();
     this.server.to(this.replId).emit(SocketEvents.USER_LEFT, { socketId: socket.id });
   }
 
@@ -54,7 +54,20 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     this.activeUsers.set(socketId, user); // add user
 
     // emit active users
-    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, Array.from(this.activeUsers.values()));
+    this.emitActiveUsers();
+  }
+
+  emitActiveUsers() {
+    const activeUsers = Array.from(this.activeUsers.values()).map((u, i) => {
+      return ({
+        userId: u.userId,
+        name: u.firstName + " " + u.lastName,
+        email: u.email,
+        color: COLORS[i],
+      })
+    });
+
+    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, activeUsers);
   }
 
   @SubscribeMessage(SocketEvents.CURSOR_MOVE)

@@ -175,7 +175,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         });
 
         socket.on(SocketEvents.USER_LEFT, ({ socketId }) => {
-            const rec = remoteUsers.current[socketId].cursor;
+            const rec = remoteUsers.current[socketId]?.cursor;
             if (!rec) return;
 
             // dispose the decoration collection → removes the cursor line
