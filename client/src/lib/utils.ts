@@ -122,3 +122,14 @@ export function getErrMsg(error: unknown): string | null {
     return null;
   }
 }
+
+export function debounce(func: (value: string | undefined) => void, wait: number) {
+    let timeout: NodeJS.Timeout;
+
+    return (value: string | undefined) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func(value);
+        }, wait);
+    };
+}

@@ -4,11 +4,11 @@ import { FileSystemGateway } from './file-system.gateway';
 import { FileSystemCRUDGateway } from './file-system-crud.gateway';
 import { WsGuard } from 'src/guard/ws.guard';
 import { WriteGuard } from 'src/guard/write.guard';
-import { UsersModule } from 'src/users/users.module';
+import { MultiplayerModule } from 'src/multiplayer/multiplayer.module';
 
 @Module({
   imports: [
-    UsersModule,
+    MultiplayerModule,
   ],
   providers: [
     FileSystemService,

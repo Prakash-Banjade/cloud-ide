@@ -16,7 +16,7 @@ export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;
 
 export const RESEND_OTP_TIME_SEC = 60;
 
-export const MAX_COLLABORATORS = 5 as const;
+export const MAX_COLLABORATORS = 2 as const;
 
 export const previewLanguages = [
     ELanguage.NEXT_TS,
@@ -47,4 +47,7 @@ export const enum SocketEvents {
     TERMINAL_DATA = "terminal:data",
 
     USERS_ACTIVE = "users:active",
+    CURSOR_MOVE = "cursor:move",
+    USER_LEFT = "user:left",
+    SELECTION_CHANGE = "selection:change",
 }

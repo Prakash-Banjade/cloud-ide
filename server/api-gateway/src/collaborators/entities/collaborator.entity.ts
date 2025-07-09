@@ -15,7 +15,7 @@ export enum EPermission {
     WRITE = 'write'
 }
 
-export const MAX_COLLABORATORS = 5 as const;
+export const MAX_COLLABORATORS = 2 as const;
 
 @Entity()
 export class Collaborator extends BaseEntity {

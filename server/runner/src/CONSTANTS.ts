@@ -17,4 +17,7 @@ export const enum SocketEvents {
     PROCESS_STOP = "process:stop",
 
     USERS_ACTIVE = "users:active",
+    CURSOR_MOVE = "cursor:move",
+    USER_LEFT = "user:left",
+    SELECTION_CHANGE = "selection:change",
 }

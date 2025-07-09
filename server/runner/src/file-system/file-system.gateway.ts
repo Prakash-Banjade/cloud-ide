@@ -7,7 +7,7 @@ import { WsGuard } from 'src/guard/ws.guard';
 import { ConfigService } from '@nestjs/config';
 import { UseGuards } from '@nestjs/common';
 import { WriteGuard } from 'src/guard/write.guard';
-import { UsersGateway } from 'src/users/users.gateway';
+import { MultiplayerGateway } from 'src/multiplayer/multiplayer.gateway';
 
 @WebSocketGateway({
   cors: {
@@ -32,7 +32,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     private readonly fileSystemService: FileSystemService,
     private readonly wsGuard: WsGuard,
     private readonly configService: ConfigService,
-    private readonly usersGateway: UsersGateway
+    private readonly multiplayerGateway: MultiplayerGateway
   ) {
     this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
   }
@@ -43,7 +43,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     const isAuthenticated = await this.wsGuard.verifyToken(socket);
     if (!isAuthenticated) return socket.disconnect();
 
-    this.usersGateway.addUser({ socketId: socket.id, ...socket["user"] });
+    this.multiplayerGateway.addUser({ socketId: socket.id, user: socket["user"] }); // removal of user is done in multiplayer.gateway
 
     socket.join(this.replId);
 

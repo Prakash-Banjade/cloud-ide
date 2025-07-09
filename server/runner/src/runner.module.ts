@@ -7,7 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { ProjectModule } from './project/project.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { UsersModule } from './users/users.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { UsersModule } from './users/users.module';
     FileSystemModule,
     ChokidarModule,
     ProjectModule,
-    UsersModule,
+    MulterModule,
   ],
   providers: [
     {
