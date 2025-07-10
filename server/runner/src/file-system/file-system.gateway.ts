@@ -81,9 +81,6 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
     await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);
 
-    // emit to active users
-    socket.to(this.replId).emit(SocketEvents.ITEM_UPDATED, { path: filePath, content: content || "" });
-
     return true; // need to return something, used in frontend to handle syncing status
   }
 }

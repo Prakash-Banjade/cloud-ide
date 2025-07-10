@@ -50,4 +50,5 @@ export const enum SocketEvents {
     CURSOR_MOVE = "cursor:move",
     USER_LEFT = "user:left",
     SELECTION_CHANGE = "selection:change",
+    CODE_CHANGE = "code:change",
 }

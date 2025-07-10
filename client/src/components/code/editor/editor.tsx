@@ -5,18 +5,20 @@ import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-
 import { useEffect, useRef } from "react";
 import { SocketEvents } from "@/lib/CONSTANTS";
 import { EPermission } from "@/types/types";
-import { updateFileContent } from "@/app/code/[replId]/fns/tree-mutation-fns";
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import { getLanguageFromName, NoFileSelected, udpateRemoteSelectionStyle, updateRemoteCursorStyle } from "./editor-utils";
+import { getLanguageFromName, NoFileSelected, removeInjectedCss, udpateRemoteSelectionStyle, updateRemoteCursorStyle } from "./editor-utils";
 import { debounce } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
+    const { data: session } = useSession();
     const { setIsSyncing, selectedFile, setEditorInstance, editorInstance, permission, setFileStructure } = useCodingStates();
     const remoteUsers = useRef<Record<string, {
         cursor: monaco.editor.IEditorDecorationsCollection,
         selection: monaco.editor.IEditorDecorationsCollection
     }>>({});
+    const isUpdatingRemote = useRef(false);
 
     async function handleEditorDidMount(editor: IStandaloneCodeEditor, monaco: Monaco) {
         setEditorInstance(editor);
@@ -54,7 +56,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         socket.emit(SocketEvents.UPDATE_CONTENT, { path: selectedFile.path, content: value }, () => {
             setIsSyncing(false);
         });
-    }, 500);
+    }, 1000);
 
     // Sync file content on ctrl+s
     useEffect(() => {
@@ -75,18 +77,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
     }, [selectedFile, editorInstance]);
 
     useEffect(() => {
-        if (!socket || !editorInstance) return;
-
-        socket.on(SocketEvents.ITEM_UPDATED, (data: { path: string, content: string }) => {
-            if (!data.path || typeof data.content !== 'string') return;
-            console.log('item-updated', data);
-
-            if (selectedFile && selectedFile.path === data.path) {
-                editorInstance.setValue(data.content);
-            };
-
-            setFileStructure(prev => updateFileContent(prev, data.path, data.content));
-        });
+        if (!socket || !editorInstance || !session) return;
 
         const cursorDisposable = editorInstance.onDidChangeCursorPosition(evt => {
             socket.emit(SocketEvents.CURSOR_MOVE, {
@@ -110,27 +101,43 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             });
         });
 
-        return () => {
-            socket.off(SocketEvents.ITEM_UPDATED);
-            cursorDisposable?.dispose();
-            selectionDisposable?.dispose();
-        }
-    }, [socket, selectedFile, editorInstance]);
+        const contentDisposable = editorInstance.onDidChangeModelContent((e) => {
+            if (permission === EPermission.READ) return;
+            if (isUpdatingRemote.current) return; // prevent echo
 
-    useEffect(() => {
-        if (!socket || !editorInstance) return;
+            const payload = {
+                path: selectedFile?.path,
+                changes: e.changes,          // contains an array of changes
+                versionId: editorInstance.getModel()?.getVersionId()
+            };
+            socket.emit(SocketEvents.CODE_CHANGE, payload);
 
-        socket.on(SocketEvents.CURSOR_MOVE, ({ socketId, path, position, color, user }) => {
-            if (path !== selectedFile?.path) return; // decorate only if the file is open
+            // TODO: should send only diffs
+            const value = editorInstance.getValue();
+            syncFileContent(value);
+            if (selectedFile) {
+                selectedFile.content = value ?? "";
+            }
+        });
+
+        socket.on(SocketEvents.CURSOR_MOVE, ({
+            path, position, color, user
+        }: {
+            path: string, position: monaco.Position, color: string, user: { userId: string, name: string }
+        }) => {
+            if (path !== selectedFile?.path) { // decorate only if the file is open
+                removeInjectedCss(user.userId); // remove injected css because the file user is working on is not selected right now
+                return;
+            }
 
             // create the collection if first time
-            if (!remoteUsers.current[socketId]) {
-                remoteUsers.current[socketId] = {
+            if (!remoteUsers.current[user.userId]) {
+                remoteUsers.current[user.userId] = {
                     cursor: editorInstance.createDecorationsCollection(),
                     selection: editorInstance.createDecorationsCollection(),
                 };
             }
-            const collection = remoteUsers.current[socketId].cursor;
+            const collection = remoteUsers.current[user.userId].cursor;
 
             const range = new monaco.Range(
                 position.lineNumber,
@@ -142,18 +149,18 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             collection.set([{
                 range,
                 options: {
-                    className: `remoteCursor-${socketId}`,
+                    className: `remoteCursor-${user.userId}`,
                     stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
                 }
             }]);
 
-            updateRemoteCursorStyle(socketId, user, color);
+            updateRemoteCursorStyle(user.userId, user, color);
         });
 
-        socket.on(SocketEvents.SELECTION_CHANGE, ({ socketId, path, start, end, color }) => {
+        socket.on(SocketEvents.SELECTION_CHANGE, ({ userId, path, start, end, color }) => {
             if (path !== selectedFile?.path) return; // decorate only if the file is open
 
-            const rec = remoteUsers.current[socketId];
+            const rec = remoteUsers.current[userId];
             if (!rec) return;
 
             // When selection collapsed, clear highlight
@@ -166,40 +173,75 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             rec.selection.set([{
                 range: selRange,
                 options: {
-                    className: `remoteSelection-${socketId}`,
+                    className: `remoteSelection-${userId}`,
                     isWholeLine: false
                 }
             }]);
 
-            udpateRemoteSelectionStyle(socketId, color);
+            udpateRemoteSelectionStyle(userId, color);
         });
 
-        socket.on(SocketEvents.USER_LEFT, ({ socketId }) => {
-            const rec = remoteUsers.current[socketId]?.cursor;
+        socket.on(SocketEvents.USER_LEFT, ({ userId }) => {
+            const rec = remoteUsers.current[userId]?.cursor;
             if (!rec) return;
 
             // dispose the decoration collection → removes the cursor line
             rec.clear();
 
             // clean up the stored ref
-            delete remoteUsers.current[socketId];
+            delete remoteUsers.current[userId];
 
             // remove injected CSS:
-            [
-                `remoteCursor-${socketId}`, // cursor
-                `remoteSelection-${socketId}`, // selection
-            ].forEach(styleSelector => {
-                const styleEl = document.getElementById(styleSelector);
-                if (styleEl) styleEl.remove();
-            })
+            removeInjectedCss(userId);
+        });
+
+        socket.on(SocketEvents.CODE_CHANGE, (data: {
+            userId: string;
+            path: string;
+            changes: monaco.editor.IModelContentChange[];
+            versionId: number;
+        }) => {
+            if (selectedFile?.path !== data.path) return;
+
+            const model = editorInstance.getModel();
+            if (!model) return;
+
+            isUpdatingRemote.current = true;
+
+            editorInstance.executeEdits(
+                "remote",
+                data.changes.map(c => ({
+                    range: new monaco.Range(
+                        c.range.startLineNumber, c.range.startColumn,
+                        c.range.endLineNumber, c.range.endColumn
+                    ),
+                    text: c.text,
+                    forceMoveMarkers: true
+                }))
+            );
+
+            isUpdatingRemote.current = false;
         });
 
         return () => {
+            cursorDisposable?.dispose();
+            selectionDisposable?.dispose();
+            contentDisposable?.dispose();
+            socket.off(SocketEvents.ITEM_UPDATED);
             socket.off(SocketEvents.CURSOR_MOVE)
             socket.off(SocketEvents.SELECTION_CHANGE)
             socket.off(SocketEvents.USER_LEFT)
-        };
-    }, [socket, editorInstance]);
+            socket.off(SocketEvents.CODE_CHANGE)
+        }
+    }, [socket, selectedFile, editorInstance, session]);
+
+    useEffect(() => {
+        if (!remoteUsers.current) return;
+
+        for (const key in remoteUsers.current) {
+            removeInjectedCss(key);
+        }
+    }, [selectedFile])
 
     if (!selectedFile) return <NoFileSelected />;
 
@@ -209,10 +251,6 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             language={getLanguageFromName(selectedFile.name)}
             value={selectedFile.content}
             options={{
-                "semanticHighlighting.enabled": true,
-                acceptSuggestionOnEnter: "on",
-                autoClosingBrackets: "always",
-                autoClosingComments: "always",
                 padding: {
                     top: 6,
                 },
@@ -220,13 +258,6 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             }}
             onMount={handleEditorDidMount}
             theme={theme === "dark" ? "vs-dark" : "light"}
-            onChange={val => {
-                if (permission === EPermission.READ) return;
-                syncFileContent(val);
-                if (selectedFile) {
-                    selectedFile.content = val ?? "";
-                }
-            }}
         />
     )
 }

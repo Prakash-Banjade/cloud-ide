@@ -5,7 +5,7 @@ import { Server, Socket } from 'socket.io';
 import { SocketEvents } from 'src/CONSTANTS';
 import { AuthUser } from 'src/guard/ws.guard';
 
-const COLORS = ["#8594F0", "#F08385", "#F0D885"];
+const COLORS = ["#8594F0", "#F08385", "#784ea3"];
 
 @Injectable()
 @WebSocketGateway({
@@ -36,29 +36,32 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
   handleConnection(@ConnectedSocket() socket: Socket) {
     console.log(`✅ CONNECTED - ${socket.id} - UsersGateway`);
     socket.join(this.replId);
-    // emit active users as soon as a new user connects
-    this.emitActiveUsers();
   }
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     console.log(`🚫 DISCONNECTED - ${socket.id} - UsersGateway`);
 
+    const leftUser = this.activeUsers.get(socket.id);
+    if (!leftUser) return;
+
     this.activeUsers.delete(socket.id); // remove user
 
-    // emit active users
-    this.emitActiveUsers();
-    this.server.to(this.replId).emit(SocketEvents.USER_LEFT, { socketId: socket.id });
+    const activeUsers = this.getActiveUsers();
+    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, activeUsers); // emit active users
+    this.server.to(this.replId).emit(SocketEvents.USER_LEFT, { userId: leftUser.userId }); // to remove decorations in editor
   }
 
   addUser({ socketId, user }: { socketId: string, user: AuthUser }) {
     this.activeUsers.set(socketId, user); // add user
 
     // emit active users
-    this.emitActiveUsers();
+    const activeUsers = this.getActiveUsers();
+    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, activeUsers);
   }
 
-  emitActiveUsers() {
-    const activeUsers = Array.from(this.activeUsers.values()).map((u, i) => {
+  @SubscribeMessage(SocketEvents.USERS_ACTIVE)
+  getActiveUsers() {
+    return Array.from(this.activeUsers.values()).map((u, i) => {
       return ({
         userId: u.userId,
         name: u.firstName + " " + u.lastName,
@@ -66,8 +69,6 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
         color: COLORS[i],
       })
     });
-
-    this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, activeUsers);
   }
 
   @SubscribeMessage(SocketEvents.CURSOR_MOVE)
@@ -76,7 +77,6 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     const index = [...this.activeUsers.keys()].indexOf(socket.id);
 
     const data = {
-      socketId: socket.id,
       color: index !== -1 ? COLORS[index] : COLORS[0],
       ...payload,
       user: {
@@ -93,7 +93,7 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     const index = [...this.activeUsers.keys()].indexOf(socket.id);
 
     const data = {
-      socketId: socket.id,
+      userId: socket["user"].userId,
       color: index !== -1 ? COLORS[index] : COLORS[0],
       ...payload,
     }
@@ -101,4 +101,11 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     socket.to(this.replId).emit(SocketEvents.SELECTION_CHANGE, data); // emit to active users
   }
 
+  @SubscribeMessage(SocketEvents.CODE_CHANGE)
+  onCodeChange(@MessageBody() payload, @ConnectedSocket() socket: Socket) {
+    socket.to(this.replId).emit(SocketEvents.CODE_CHANGE, {
+      userId: socket["user"].userId,
+      ...payload
+    });
+  }
 }

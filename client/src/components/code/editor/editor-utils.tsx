@@ -30,8 +30,8 @@ export function NoFileSelected() {
     )
 }
 
-export function updateRemoteCursorStyle(socketId: string, user: { name: string }, color = "red") {
-    const className = `remoteCursor-${socketId}`;
+export function updateRemoteCursorStyle(userId: string, user: { name: string }, color = "red") {
+    const className = `remoteCursor-${userId}`;
 
     // ensure css exists
     if (!document.getElementById(className)) {
@@ -46,6 +46,7 @@ export function updateRemoteCursorStyle(socketId: string, user: { name: string }
                     .${className}::before {
                         content: "${user.name}";
                         position: absolute;
+                        z-index: 100;
                         background: ${color};
                         color: #fff;
                         padding: 2px 6px;
@@ -61,8 +62,8 @@ export function updateRemoteCursorStyle(socketId: string, user: { name: string }
     }
 }
 
-export function udpateRemoteSelectionStyle(socketId: string, color: string) {
-    const id = `remoteSelection-${socketId}`;
+export function udpateRemoteSelectionStyle(userId: string, color: string) {
+    const id = `remoteSelection-${userId}`;
 
     if (!document.getElementById(id)) {
         const style = document.createElement('style');
@@ -81,6 +82,16 @@ export function hexToRgba(hex: string, alpha: number) {
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r},${g},${b},${alpha})`;
+}
+
+export function removeInjectedCss(userId: string) {
+    [
+        `remoteCursor-${userId}`, // cursor
+        `remoteSelection-${userId}`, // selection
+    ].forEach(styleSelector => {
+        const styleEl = document.getElementById(styleSelector);
+        if (styleEl) styleEl.remove();
+    })
 }
 
 export const langObj = {
