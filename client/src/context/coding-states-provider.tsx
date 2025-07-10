@@ -14,6 +14,7 @@ import { useSession } from 'next-auth/react';
 import { SocketEvents } from '@/lib/CONSTANTS';
 import { EItemType, TFileItem, TreeItem } from '@/types/tree.types';
 import CodingPageLoader from '@/components/code/coding-page-loader';
+import { RemoteUser } from '@/components/code/active-users';
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -40,7 +41,12 @@ interface CodingStatesContextType {
     treePanelOpen: boolean;
     setTreePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
     showTerm: boolean;
-    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>
+    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>;
+    mutedUsers: string[];
+    setMutedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+    observedUser: RemoteUser | null;
+    setObservedUser: React.Dispatch<React.SetStateAction<RemoteUser | null>>
+    observingPanelRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -66,9 +72,12 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [treeLoaded, setTreeLoaded] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [permission, setPermission] = useState<EPermission>(EPermission.READ);
+    const [mutedUsers, setMutedUsers] = useState<string[]>([]);
+    const [observedUser, setObservedUser] = useState<RemoteUser | null>(null);
     const [showTerm, setShowTerm] = useState(() => permission === EPermission.WRITE && localStorage.getItem("showTerm") === "true");
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
+    const observingPanelRef = React.useRef<HTMLDivElement>(null);
 
     const replId = params.replId;
 
@@ -114,7 +123,12 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         treePanelOpen,
         setTreePanelOpen,
         showTerm,
-        setShowTerm
+        setShowTerm,
+        mutedUsers,
+        setMutedUsers,
+        observedUser,
+        setObservedUser,
+        observingPanelRef
     };
 
     useEffect(() => {

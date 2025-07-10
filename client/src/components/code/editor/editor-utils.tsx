@@ -38,26 +38,26 @@ export function updateRemoteCursorStyle(userId: string, user: { name: string }, 
         const style = document.createElement('style');
         style.id = className;
         style.textContent = `
-                .${className} {
-                    position: relative;
-                    border-left: 2px solid ${color};
-                    z-index: 5;
-                }
-                    .${className}::before {
-                        content: "${user.name}";
-                        position: absolute;
-                        z-index: 100;
-                        background: ${color};
-                        color: #fff;
-                        padding: 2px 6px;
-                        font-size: 12px;
-                        border-radius: 4px;
-                        border-bottom-left-radius: 0;
-                        bottom: 100%;
-                        left: -2px;
-                        white-space: nowrap;
-                    }
-                `;
+            .${className} {
+                position: relative;
+                border-left: 2px solid ${color};
+                z-index: 5;
+            }
+            .${className}::before {
+                content: "${user.name}";
+                position: absolute;
+                z-index: 100;
+                background: ${color};
+                color: #fff;
+                padding: 2px 6px;
+                font-size: 12px;
+                border-radius: 4px;
+                border-bottom-left-radius: 0;
+                bottom: 100%;
+                left: -2px;
+                white-space: nowrap;
+            }
+        `;
         document.head.appendChild(style);
     }
 }
@@ -92,6 +92,16 @@ export function removeInjectedCss(userId: string) {
         const styleEl = document.getElementById(styleSelector);
         if (styleEl) styleEl.remove();
     })
+}
+
+export function toggleDecorations(userId: string, isMuted: boolean) {
+    [
+        `remoteCursor-${userId}`, // cursor
+        `remoteSelection-${userId}`, // selection
+    ].forEach(styleSelector => {
+        const styleEl = document.getElementById(styleSelector) as HTMLStyleElement | null;
+        if (styleEl) styleEl.disabled = isMuted;
+    });
 }
 
 export const langObj = {

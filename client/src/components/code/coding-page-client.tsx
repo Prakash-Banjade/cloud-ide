@@ -49,7 +49,8 @@ export const CodingPagePostPodCreation = () => {
         setTreePanelOpen,
         showTerm,
         setShowTerm,
-        permission
+        permission,
+        observingPanelRef
     } = useCodingStates();
     const isMobile = useIsMobile(1000);
 
@@ -119,31 +120,38 @@ export const CodingPagePostPodCreation = () => {
 
                 <ResizableHandle />
 
-                <ResizablePanel order={2} defaultSize={showPreview ? 50 : 80} minSize={40} className="relative">
-                    <ResizablePanelGroup direction="vertical" className="flex-1">
-                        {/* Code editor panel */}
-                        <ResizablePanel order={1} defaultSize={70} minSize={30}>
-                            <div className="h-full flex flex-col">
-                                <OpenedFilesTab />
-                                <CodeEditor socket={socket} />
-                            </div>
-                        </ResizablePanel>
+                <ResizablePanel
+                    order={2}
+                    defaultSize={showPreview ? 50 : 80}
+                    minSize={40}
+                    className="relative"
+                >
+                    <div ref={observingPanelRef} className="h-full">
+                        <ResizablePanelGroup direction="vertical" className="flex-1">
+                            {/* Code editor panel */}
+                            <ResizablePanel order={1} defaultSize={70} minSize={30}>
+                                <div className="h-full flex flex-col">
+                                    <OpenedFilesTab />
+                                    <CodeEditor socket={socket} />
+                                </div>
+                            </ResizablePanel>
 
-                        {
-                            showTerm && <ResizableHandle />
-                        }
+                            {
+                                showTerm && <ResizableHandle />
+                            }
 
-                        {/* Terminal panel */}
-                        <TermTopBar
-                            setShowTerm={setShowTerm}
-                            showTerm={showTerm}
-                            readOnly={permission === EPermission.READ}
-                        />
-                        <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
-                            <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
-                        </ResizablePanel>
+                            {/* Terminal panel */}
+                            <TermTopBar
+                                setShowTerm={setShowTerm}
+                                showTerm={showTerm}
+                                readOnly={permission === EPermission.READ}
+                            />
+                            <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
+                                <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
+                            </ResizablePanel>
 
-                    </ResizablePanelGroup>
+                        </ResizablePanelGroup>
+                    </div>
                 </ResizablePanel>
 
                 {
