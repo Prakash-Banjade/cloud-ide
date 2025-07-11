@@ -22,6 +22,8 @@ export default function ProfileDropdown() {
     const { setTheme } = useTheme()
     const [isPending, startTransition] = useTransition()
 
+    const isCodingPage = usePathname().startsWith("/code");
+
     const { mutateAsync } = useMutation({
         mutationFn: async () => {
             await axiosClient.post(`/auth/logout`, {}, {
@@ -54,8 +56,6 @@ export default function ProfileDropdown() {
         router.replace("/auth/login")
         return;
     }
-
-    const isCodingPage = usePathname().startsWith("/code");
 
     return (
         <DropdownMenu>
