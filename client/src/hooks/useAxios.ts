@@ -86,6 +86,8 @@ export const useAxiosPrivate = (): AxiosInstance => {
                             axiosInstance.defaults.headers.Authorization = `Bearer ${newAccessToken}`;
                             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
+                            // TODO: should update the next-auth session, but idk, using update() function reloads the coding page (/code)
+                            
                             onRefreshed(newAccessToken);
                             isRefreshing.current = false;
                             return axiosInstance(originalRequest);

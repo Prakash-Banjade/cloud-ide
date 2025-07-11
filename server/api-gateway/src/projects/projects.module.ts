@@ -6,6 +6,7 @@ import { OrchestratorService } from './orchestrator.service';
 import { UsersModule } from 'src/auth-system/users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
+import { JwtModule } from 'src/auth-system/jwt/jwt.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { Project } from './entities/project.entity';
     ]),
     MinioModule,
     UsersModule,
+    JwtModule,
   ],
   controllers: [ProjectsController],
   providers: [ProjectsService, OrchestratorService],

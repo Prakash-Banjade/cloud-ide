@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { CircleX } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import React from 'react'
 import toast from 'react-hot-toast';
 import { useAxiosPrivate } from './useAxios';
 

@@ -12,10 +12,11 @@ import { TypeOrmModule } from './datasource/typeorm.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './common/guards/auth.guard';
 import { MailModule } from './mail/mail.module';
-import { RedisModule } from './redis/redis.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { createKeyv } from '@keyv/redis';
+import { InvitesModule } from './invites/invites.module';
+import { CollaboratorsModule } from './collaborators/collaborators.module';
 
 @Module({
   imports: [
@@ -29,7 +30,6 @@ import { createKeyv } from '@keyv/redis';
     KubernetesModule,
     UtilitiesModule,
     ScheduleModule.forRoot(),
-    // RedisModule,
     CacheModule.registerAsync({
       imports: [ConfigModule],
       isGlobal: true,
@@ -44,6 +44,8 @@ import { createKeyv } from '@keyv/redis';
     AuthSystemModule,
     ProjectsModule,
     MailModule,
+    InvitesModule,
+    CollaboratorsModule,
   ],
   providers: [
     {

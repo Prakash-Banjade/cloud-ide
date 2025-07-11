@@ -1,20 +1,20 @@
 "use client";
 
-import { EItemType, TFileItem, TreeItem } from '@/app/code/[replId]/components/file-tree';
 import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
-import { TProject } from '@/types';
+import { EPermission, TProject } from '@/types/types';
 import cookie from 'js-cookie';
 import { z } from 'zod';
 import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
-import CodingPageLoader from '@/app/code/[replId]/components/coding-page-loader';
 import { SocketEvents } from '@/lib/CONSTANTS';
-
+import { EItemType, TFileItem, TreeItem } from '@/types/tree.types';
+import CodingPageLoader from '@/components/code/coding-page-loader';
+import { RemoteUser } from '@/components/code/active-users';
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -30,6 +30,8 @@ interface CodingStatesContextType {
     editorInstance: IStandaloneCodeEditor | null,
     setEditorInstance: React.Dispatch<React.SetStateAction<IStandaloneCodeEditor | null>>
     project: TProject | undefined;
+    permission: EPermission;
+    isOwner: boolean;
     projectRunning: boolean;
     setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>;
     mruFiles: TFileItem[];
@@ -39,7 +41,12 @@ interface CodingStatesContextType {
     treePanelOpen: boolean;
     setTreePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
     showTerm: boolean;
-    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>
+    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>;
+    mutedUsers: string[];
+    setMutedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+    observedUser: RemoteUser | null;
+    setObservedUser: React.Dispatch<React.SetStateAction<RemoteUser | null>>
+    observingPanelRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -53,6 +60,7 @@ interface CodingStatesProviderProps {
 
 export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const params = useParams();
+    const { data: session, status } = useSession();
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
@@ -62,10 +70,14 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const [treeLoaded, setTreeLoaded] = useState(false);
-    const [showTerm, setShowTerm] = useState(() => localStorage.getItem("showTerm") === "true");
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [permission, setPermission] = useState<EPermission>(EPermission.READ);
+    const [mutedUsers, setMutedUsers] = useState<string[]>([]);
+    const [observedUser, setObservedUser] = useState<RemoteUser | null>(null);
+    const [showTerm, setShowTerm] = useState(() => permission === EPermission.WRITE && localStorage.getItem("showTerm") === "true");
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
-    const { status } = useSession();
+    const observingPanelRef = React.useRef<HTMLDivElement>(null);
 
     const replId = params.replId;
 
@@ -77,7 +89,14 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         gcTime: Infinity
     });
 
-    const [isSyncing, setIsSyncing] = useState(false);
+    useEffect(() => {
+        if (data) {
+            const project = data.data;
+            const [collaborator] = project.collaborators;
+            const isOwner = project.createdBy.id === session?.user.userId;
+            setPermission(isOwner ? EPermission.WRITE : (collaborator?.permission || EPermission.READ));
+        }
+    }, [data])
 
     const value = {
         fileStructure,
@@ -93,6 +112,8 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         editorInstance,
         setEditorInstance,
         project: data?.data,
+        isOwner: data?.data.createdBy.id === session?.user.userId,
+        permission,
         projectRunning,
         setProjectRunning,
         mruFiles,
@@ -102,7 +123,12 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         treePanelOpen,
         setTreePanelOpen,
         showTerm,
-        setShowTerm
+        setShowTerm,
+        mutedUsers,
+        setMutedUsers,
+        observedUser,
+        setObservedUser,
+        observingPanelRef
     };
 
     useEffect(() => {

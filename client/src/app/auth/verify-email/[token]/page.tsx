@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import React, { Suspense } from 'react'
-import { EmailVerificationForm } from './components/email-verification-form';
+import { EmailVerificationForm } from '../../../../components/auth/verify-email/email-verification-form';
 import axios from '@/lib/axios-server';
 
 type Props = {

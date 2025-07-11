@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import AuthSideView from "./components/auth-side-view";
+import AuthSideView from "../../components/auth/auth-side-view";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
 

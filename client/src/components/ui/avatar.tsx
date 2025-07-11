@@ -54,11 +54,13 @@ const ProfileAvatar = ({
   src,
   name,
   className,
+  fallbackClassName,
   style,
 }: {
   src: string | undefined
   name: string
   className?: string
+  fallbackClassName?: string
   style?: React.CSSProperties
 }) => {
   const words = name.split(" ")
@@ -68,7 +70,7 @@ const ProfileAvatar = ({
 
   return <Avatar className={className} style={style} title={name}>
     <AvatarImage src={src} alt={name} className="object-cover" />
-    <AvatarFallback>
+    <AvatarFallback className={fallbackClassName}> 
       {(firstInitial + secondInitial).slice(0, 2)}
     </AvatarFallback>
   </Avatar>

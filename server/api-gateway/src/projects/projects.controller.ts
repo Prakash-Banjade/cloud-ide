@@ -6,7 +6,7 @@ import { OrchestratorService } from './orchestrator.service';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AuthUser } from 'src/common/global.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ProjectsQueryDto } from './dto/projects-query.dto';
+import { ProjectsQueryDto, ProjectTokenQueryDto } from './dto/projects-query.dto';
 
 @ApiBearerAuth()
 @ApiTags('Projects')
@@ -30,6 +30,11 @@ export class ProjectsController {
   @Get()
   findAll(@Query() queryDto: ProjectsQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.projectsService.findAll(queryDto, currentUser);
+  }
+
+  @Get('token')
+  getAccessTokenWithProjectPermission(@Query() queryDto: ProjectTokenQueryDto, @CurrentUser() currentUser: AuthUser) {
+    return this.projectsService.getAccessTokenWithProjectPermission(queryDto.replId, currentUser);
   }
 
   @Get(':replId')

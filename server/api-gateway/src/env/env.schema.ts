@@ -24,6 +24,9 @@ export const envSchema = Joi.object({
     TWOFACTOR_VERIFICATION_SECRET: Joi.string().required(),
     TWOFACTOR_VERIFICATION_EXPIRATION_SEC: Joi.string().required(),
 
+    INVITATION_SECRET: Joi.string().required(),
+    INVITATION_EXPIRATION_SEC: Joi.string().required(),
+
     CLIENT_URL: Joi.string().uri().required(), // Client URL should be a valid URL
     BACKEND_URL: Joi.string().uri().required(),
     CLIENT_DOMAIN: Joi.string().required(),

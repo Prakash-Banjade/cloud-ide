@@ -185,6 +185,7 @@ export class AuthService extends BaseRepository {
 
   async refresh(req: FastifyRequest) {
     // accountId and deviceId are set in the refresh token guard
+    console.log('refreshing...')
 
     const account = await this.getRepository(Account).findOne({
       where: { id: req.accountId },

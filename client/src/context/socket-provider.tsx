@@ -1,8 +1,7 @@
 "use client"
 
-import axiosClient from '@/lib/axios-client';
-import { REFRESH_TOKEN_HEADER, SocketEvents } from '@/lib/CONSTANTS';
-import { TLoginResponse } from '@/types';
+import { useFetchData } from '@/hooks/useFetchData';
+import { QueryKey } from '@/lib/query-keys';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -22,13 +21,20 @@ interface SocketProviderProps {
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     const params = useParams();
     const { replId } = params;
-    const { data } = useSession();
-
+    const { status } = useSession();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [ptySocket, setPtySocket] = useState<Socket | null>(null);
 
+    const { data } = useFetchData<{ access_token: string }>({ // this access_token contains
+        endpoint: QueryKey.PROJECTS + '/token' + `?replId=${replId}`,
+        queryKey: [QueryKey.PROJECTS, 'token', replId as string],
+        options: {
+            enabled: !!replId && status === 'authenticated'
+        }
+    });
+
     useEffect(() => {
-        if (!replId || !data) return;
+        if (!replId || !data?.access_token) return;
 
         const runnerUrl = process.env.NODE_ENV === 'production'
             ? `wss://${replId}.prakashbanjade.com`
@@ -40,39 +46,20 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
         const runnerSocket = io(
             runnerUrl,
+            // "ws://localhost:3003",
             {
                 auth: {
-                    access_token: data.backendTokens.access_token
+                    access_token: data.access_token,
                 }
             }
         );
 
-        runnerSocket.on(SocketEvents.TOKEN_EXPIRED, async () => {
-            try {
-                const res = await axiosClient.post<TLoginResponse>(
-                    `/auth/refresh`,
-                    {},
-                    { headers: { [REFRESH_TOKEN_HEADER]: data?.backendTokens.refresh_token } }
-                );
-                const { access_token } = res.data;
-
-                if (access_token) {
-                    runnerSocket.auth = {
-                        access_token
-                    };
-                    runnerSocket.connect();
-                }
-
-            } catch (e) {
-                runnerSocket.disconnect();
-            }
-        })
-
         const ptySocket = io(
             ptyUrl,
+            // "ws://localhost:3004",
             {
                 auth: {
-                    access_token: data.backendTokens.access_token
+                    access_token: data.access_token
                 }
             }
         );
@@ -81,7 +68,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setPtySocket(ptySocket);
 
         return () => {
-            runnerSocket.off(SocketEvents.TOKEN_EXPIRED);
             runnerSocket.disconnect();
             ptySocket.disconnect();
         };

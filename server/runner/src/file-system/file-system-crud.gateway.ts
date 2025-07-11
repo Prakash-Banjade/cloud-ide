@@ -1,10 +1,11 @@
 import { MinioService } from "src/minio/minio.service";
 import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { UseGuards } from "@nestjs/common";
-import { WsGuard } from "src/guard/ws.guard";
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { SocketEvents } from "src/CONSTANTS";
+import { ConfigService } from "@nestjs/config";
+import { WriteGuard } from "src/guard/write.guard";
+import { UseGuards } from "@nestjs/common";
 
 @WebSocketGateway({
     cors: {
@@ -18,8 +19,7 @@ import { SocketEvents } from "src/CONSTANTS";
         methods: ['GET', 'POST'],
     },
 })
-@UseGuards(WsGuard)
-export class FileSystemCRUDGateway implements OnGatewayConnection {
+export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
 
@@ -28,16 +28,24 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
     constructor(
         private readonly minioService: MinioService,
         private readonly fileSystemService: FileSystemService,
-    ) { }
+        private readonly configService: ConfigService,
+    ) {
+        this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
+    }
 
     handleConnection(@ConnectedSocket() socket: Socket) {
-        const replId = socket.handshake.headers.host?.split('.')[0] || "";
-        this.replId = replId;
+        console.log(`✅ CONNECTED - ${socket.id} - FileSystemCRUDGateway`);
+        socket.join(this.replId); // join project room
+    }
+
+    handleDisconnect(@ConnectedSocket() socket: Socket) {
+        console.log(`🚫 DISCONNECTED - ${socket.id} - FileSystemCRUDGateway`);
     }
 
     /**
      * Create either an empty file or an empty directory at `payload.path`.
      */
+    @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.CREATE_ITEM)
     async onCreateItem(
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
@@ -59,6 +67,8 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
                 await this.minioService.saveToMinio(`code/${this.replId}`, path, '');
             }
 
+            socket.to(this.replId).emit(SocketEvents.ITEM_CREATED, { path, type });
+
             return { success: true, error: null };
         } catch (err) {
             console.error('createItem failed', err);
@@ -69,6 +79,7 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
     /**
      * Delete a file or directory (recursively) at payload.path.
      */
+    @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.DELETE_ITEM)
     async onDeleteItem(
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
@@ -88,6 +99,9 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
                 await this.minioService.removeObject(`code/${this.replId}`, path);
             }
 
+            // emit to active users
+            socket.to(this.replId).emit(SocketEvents.ITEM_DELETED, { path, type });
+
             return true;
         } catch (err) {
             console.error('deleteItem failed', err);
@@ -99,10 +113,10 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
      * Rename or move a file or directory.
      * Assumes payload contains both oldPath and newPath.
      */
+    @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.RENAME_ITEM)
     async onRenameItem(
-        @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' },
-        @ConnectedSocket() socket: Socket
+        @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' }
     ): Promise<{ success: boolean, error: string | null }> {
         try {
             const { oldPath, newPath, type } = payload;
@@ -123,6 +137,9 @@ export class FileSystemCRUDGateway implements OnGatewayConnection {
                 await this.minioService.copyObject(`code/${this.replId}`, oldPath, `code/${this.replId}`, newPath);
                 await this.minioService.removeObject(`code/${this.replId}`, oldPath);
             }
+
+            // emit to active users
+            this.server.to(this.replId).emit(SocketEvents.ITEM_RENAMED, { oldPath, newPath });
 
             return { success: true, error: null };
         } catch (err) {

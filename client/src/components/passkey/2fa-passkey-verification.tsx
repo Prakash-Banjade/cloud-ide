@@ -1,7 +1,7 @@
 import axiosClient from '@/lib/axios-client';
 import { QueryKey } from '@/lib/query-keys';
 import { getErrMsg } from '@/lib/utils';
-import { EPasskeyChallengeType, TLoginResponse } from '@/types';
+import { EPasskeyChallengeType, TLoginResponse } from '@/types/types';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { KeyRound, LoaderCircle } from 'lucide-react';
 import { signIn } from 'next-auth/react';

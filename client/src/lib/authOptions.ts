@@ -1,7 +1,7 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import { User, NextAuthOptions } from "next-auth"
 import { getUserFromLoginResponse } from "@/lib/utils";
-import { TLoginResponse } from "@/types";
+import { TLoginResponse } from "@/types/types";
 import { JWT } from "next-auth/jwt";
 import axiosServer from "@/lib/axios-server";
 import { REFRESH_TOKEN_HEADER } from "@/lib/CONSTANTS";

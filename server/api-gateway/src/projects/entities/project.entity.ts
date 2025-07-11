@@ -1,7 +1,9 @@
 import { User } from "src/auth-system/users/entities/user.entity";
+import { Collaborator } from "src/collaborators/entities/collaborator.entity";
 import { BaseEntity } from "src/common/base.entity";
 import { ELanguage } from "src/common/global.types";
-import { Column, Entity, Index, ManyToOne } from "typeorm";
+import { Invite } from "src/invites/entities/invite.entity";
+import { Column, Entity, Index, ManyToOne, OneToMany } from "typeorm";
 
 @Entity()
 export class Project extends BaseEntity {
@@ -21,4 +23,10 @@ export class Project extends BaseEntity {
 
     @Column({ type: 'enum', enum: ELanguage })
     language: ELanguage;
+
+    @OneToMany(() => Invite, invite => invite.project)
+    invites: Invite[]
+
+    @OneToMany(() => Collaborator, collaborator => collaborator.project)
+    collaborators: Collaborator[]
 }

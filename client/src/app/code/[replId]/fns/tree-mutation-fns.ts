@@ -1,4 +1,4 @@
-import { EItemType, TFileItem, TFolderItem, TreeItem } from "../components/file-tree"
+import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/types/tree.types";
 
 /**
  * Insert `item` into `tree` at the correct nested spot based on its `.path`.
@@ -131,4 +131,30 @@ export function renameTreeItem(
         });
 
     return renameRec(tree);
+}
+
+/**
+ * Returns a new tree where the file at `targetPath` has its `content` replaced by `newContent`.
+ */
+export function updateFileContent(
+    tree: TreeItem[],
+    targetPath: string,
+    newContent: string
+): TreeItem[] {
+    return tree.map(item => {
+        // If this is the file we’re looking for, return a new object with updated content
+        if (item.type === EItemType.FILE && item.path === targetPath) {
+            return { ...item, content: newContent };
+        }
+        // If this is a directory, recurse into its children
+        if (item.type === EItemType.DIR && item.children) {
+            const updatedChildren = updateFileContent(item.children, targetPath, newContent);
+            // Only create a new dir object if any of its children changed
+            if (updatedChildren !== item.children) {
+                return { ...item, children: updatedChildren };
+            }
+        }
+        // Otherwise, return the item untouched
+        return item;
+    });
 }

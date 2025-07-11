@@ -1,5 +1,5 @@
 import { Icons } from "@/components/icons";
-import { ELanguage, TLoginResponse, TUser } from "@/types";
+import { ELanguage, TLoginResponse, TUser } from "@/types/types";
 import { AxiosError } from "axios";
 import { clsx, type ClassValue } from "clsx"
 import { jwtDecode } from "jwt-decode";
@@ -121,4 +121,15 @@ export function getErrMsg(error: unknown): string | null {
   } else {
     return null;
   }
+}
+
+export function debounce(func: (value: string | undefined) => void, wait: number) {
+    let timeout: NodeJS.Timeout;
+
+    return (value: string | undefined) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func(value);
+        }, wait);
+    };
 }

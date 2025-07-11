@@ -37,7 +37,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly configService: ConfigService,
     // private readonly chokidarService: ChokidarService,
   ) {
-    this.replId = this.configService.get<string>('REPL_ID')!;
+    this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
   }
 
   private INACTIVITY_TIMEOUT_MS = 1000 * 60 * 5;
@@ -81,6 +81,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   private startInactivityTimer() {
+    return;
     const timeout = setTimeout(() => {
       this.kubernetesService.shutdown(this.replId);
     }, this.INACTIVITY_TIMEOUT_MS);
@@ -97,7 +98,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
-  @SubscribeMessage(SocketEvents.REQUEST_TERMINAL)
+  @SubscribeMessage(SocketEvents.TERMINAL_REQUEST)
   onRequestTerminal(@ConnectedSocket() socket: Socket) {
     // this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
 

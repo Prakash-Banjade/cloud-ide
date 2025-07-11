@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { MinioService } from '../minio/minio.service';
@@ -6,11 +6,13 @@ import { generateSlug } from 'src/common/utils';
 import { AuthUser } from 'src/common/global.types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Project } from './entities/project.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { UsersService } from 'src/auth-system/users/users.service';
 import { ProjectsQueryDto } from './dto/projects-query.dto';
 import paginatedData from 'src/common/utilities/paginated-data';
 import { OrchestratorService } from './orchestrator.service';
+import { JwtService } from 'src/auth-system/jwt/jwt.service';
+import { EPermission } from 'src/collaborators/entities/collaborator.entity';
 
 @Injectable()
 export class ProjectsService {
@@ -18,12 +20,13 @@ export class ProjectsService {
     @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
     private readonly minioService: MinioService,
     private readonly usersService: UsersService,
-    private readonly orchestratorService: OrchestratorService
+    private readonly orchestratorService: OrchestratorService,
+    private readonly jwtService: JwtService,
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
-    const replId = await this.getReplId(createProjectDto.projectName);
-    // const replId = "node-node";
+    // const replId = await this.getReplId(createProjectDto.projectName);
+    const replId = "node-node";
 
     const user = await this.usersService.findOne(currentUser.userId);
 
@@ -55,7 +58,17 @@ export class ProjectsService {
   findAll(queryDto: ProjectsQueryDto, currentUser: AuthUser) {
     const querybuilder = this.projectRepo.createQueryBuilder('project')
       .orderBy(queryDto.sortBy, queryDto.sortBy.includes('name') ? 'ASC' : queryDto.order) // sort by ASC for name
-      .where('project.createdById = :userId', { userId: currentUser.userId });
+      .leftJoin('project.createdBy', 'createdBy')
+      .loadRelationCountAndMap('project.collaboratorsCount', 'project.collaborators');
+
+    if (queryDto.collab) {
+      querybuilder
+        .leftJoin('project.collaborators', 'collaborators')
+        .where('collaborators.userId = :userId', { userId: currentUser.userId })
+        .andWhere('collaborators.permission != :permission', { permission: EPermission.NONE });
+    } else {
+      querybuilder.where('createdBy.id = :userId', { userId: currentUser.userId });
+    }
 
     if (queryDto.q) {
       querybuilder.andWhere('project.name ILIKE :q', { q: `%${queryDto.q}%` });
@@ -72,27 +85,43 @@ export class ProjectsService {
       'project.createdAt',
       'project.replId',
       'project.updatedAt',
+      'createdBy.id',
     ]);
+
+    if (queryDto.collab) {
+      querybuilder.addSelect([
+        'collaborators.id',
+        'collaborators.permission'
+      ])
+    }
 
     return paginatedData(queryDto, querybuilder);
   }
 
   async findOne(id: string, currentUser: AuthUser) {
     const project = await this.projectRepo.createQueryBuilder('project')
+      .leftJoin('project.collaborators', 'collaborators')
+      .leftJoin('project.createdBy', 'createdBy')
       .where('project.replId = :id', { id })
-      .andWhere('project.createdById = :userId', { userId: currentUser.userId })
+      .andWhere(new Brackets(qb => {
+        qb.orWhere('createdBy.id = :userId', { userId: currentUser.userId })
+          .orWhere('(collaborators.userId = :userId AND collaborators.permission != :permission)', { userId: currentUser.userId, permission: EPermission.NONE });
+      }))
+      .loadRelationCountAndMap('project.collaboratorsCount', 'project.collaborators')
       .select([
         'project.id',
         'project.name',
         'project.language',
         'project.replId',
+        'createdBy.id',
+        'collaborators.id',
+        'collaborators.permission'
       ]).getOne();
 
     if (!project) throw new NotFoundException('Project not found');
 
     // update last opened
-    project.updatedAt = new Date().toISOString();
-    this.projectRepo.save(project);
+    await this.projectRepo.update({ id: project.id }, { updatedAt: new Date().toISOString() });
 
     return project;
   }
@@ -123,5 +152,44 @@ export class ProjectsService {
     });
 
     return { message: "Project deleted" };
+  }
+
+  async getAccessTokenWithProjectPermission(replId: string, currentUser: AuthUser) {
+    const project = await this.projectRepo.findOne({
+      where: { replId },
+      relations: { createdBy: true, collaborators: { user: true } },
+      select: {
+        id: true,
+        replId: true,
+        createdBy: {
+          id: true,
+        },
+        collaborators: {
+          id: true,
+          permission: true,
+          user: {
+            id: true,
+          }
+        }
+      }
+    });
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const isOwner = project.createdBy.id === currentUser.userId;
+
+    const collaborator = project.collaborators.find(collaborator => collaborator.user?.id === currentUser.userId);
+
+    if (!isOwner && (!collaborator || collaborator.permission === EPermission.NONE)) throw new ForbiddenException('Access denied.');
+
+    const access_token = await this.jwtService.getAccessTokenWithProjectPermission({
+      permission: isOwner ? EPermission.WRITE : collaborator?.permission,
+      userId: currentUser.userId,
+      firstName: currentUser.firstName,
+      lastName: currentUser.lastName,
+      email: currentUser.email
+    });
+
+    return { access_token };
   }
 }

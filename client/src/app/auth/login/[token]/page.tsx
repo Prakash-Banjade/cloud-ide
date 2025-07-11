@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { z } from "zod";
-import { TwoFactorAuthOTPVerificationForm } from "../components/2fa-otp-verification-form";
+import { TwoFactorAuthOTPVerificationForm } from "../../../../components/auth/login/2fa-otp-verification-form";
 
 const locationSchema = z.object({
     expiresIn: z.number().positive(),
