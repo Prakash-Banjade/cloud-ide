@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, StreamableFile } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as archiver from 'archiver';
@@ -28,5 +28,7 @@ export class ProjectService {
         });
 
         await archive.finalize();
+
+        return new StreamableFile(archive);
     }
 }
