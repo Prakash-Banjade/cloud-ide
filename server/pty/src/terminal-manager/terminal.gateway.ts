@@ -40,7 +40,7 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
   }
 
-  private INACTIVITY_TIMEOUT_MS = 1000 * 60 * 5;
+  private INACTIVITY_TIMEOUT_MS = 1000 * 60 * 5; // 5 minutes
   private connectedSocketsIds = new Set<string>();
   private timeOut: NodeJS.Timeout | null = null;
   private TIMER_NAME = 'timeout';
@@ -81,7 +81,6 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   private startInactivityTimer() {
-    return;
     const timeout = setTimeout(() => {
       this.kubernetesService.shutdown(this.replId);
     }, this.INACTIVITY_TIMEOUT_MS);
