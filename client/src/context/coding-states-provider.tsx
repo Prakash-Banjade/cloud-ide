@@ -47,6 +47,8 @@ interface CodingStatesContextType {
     observedUser: RemoteUser | null;
     setObservedUser: React.Dispatch<React.SetStateAction<RemoteUser | null>>
     observingPanelRef: React.RefObject<HTMLDivElement | null>;
+    previewOpen: boolean;
+    setPreviewOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -75,6 +77,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [mutedUsers, setMutedUsers] = useState<string[]>([]);
     const [observedUser, setObservedUser] = useState<RemoteUser | null>(null);
     const [showTerm, setShowTerm] = useState(() => permission === EPermission.WRITE && localStorage.getItem("showTerm") === "true");
+    const [previewOpen, setPreviewOpen] = useState(false);
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
     const observingPanelRef = React.useRef<HTMLDivElement>(null);
@@ -128,7 +131,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setMutedUsers,
         observedUser,
         setObservedUser,
-        observingPanelRef
+        observingPanelRef,
+        previewOpen,
+        setPreviewOpen
     };
 
     useEffect(() => {

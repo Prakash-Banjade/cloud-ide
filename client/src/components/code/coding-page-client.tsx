@@ -49,6 +49,8 @@ export const CodingPagePostPodCreation = () => {
         setTreePanelOpen,
         showTerm,
         setShowTerm,
+        previewOpen,
+        setPreviewOpen,
         permission,
         observingPanelRef
     } = useCodingStates();
@@ -79,9 +81,13 @@ export const CodingPagePostPodCreation = () => {
         };
     }, [socket, ptySocket]);
 
-    // useChokidar(socket);
-
-    const showPreview = project && !isMobile && projectRunning && previewLanguages.includes(project.language);
+    useEffect(() => {
+        if (project && !isMobile && projectRunning && previewLanguages.includes(project.language)) {
+            setPreviewOpen(true);
+        } else {
+            setPreviewOpen(false);
+        }
+    }, [project, isMobile, projectRunning]);
 
     if (!treeLoaded) return <CodingPageLoader state="setup" />;
 
@@ -122,7 +128,7 @@ export const CodingPagePostPodCreation = () => {
 
                 <ResizablePanel
                     order={2}
-                    defaultSize={showPreview ? 50 : 80}
+                    defaultSize={previewOpen ? 50 : 80}
                     minSize={40}
                     className="relative"
                 >
@@ -155,7 +161,7 @@ export const CodingPagePostPodCreation = () => {
                 </ResizablePanel>
 
                 {
-                    showPreview && (
+                    previewOpen && (
                         <>
                             <ResizableHandle />
 

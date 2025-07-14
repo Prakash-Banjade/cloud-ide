@@ -112,9 +112,6 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
           socket.emit(SocketEvents.TERMINAL, { data: this.terminalManager.getRunScrollback() });
         }
       },
-      () => {
-        this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: true });
-      }
     );
   }
 

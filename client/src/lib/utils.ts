@@ -3,6 +3,7 @@ import { ELanguage, TLoginResponse, TUser } from "@/types/types";
 import { AxiosError } from "axios";
 import { clsx, type ClassValue } from "clsx"
 import { jwtDecode } from "jwt-decode";
+import { File } from "lucide-react";
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -52,6 +53,11 @@ export function getUserFromLoginResponse(res: TLoginResponse): { user: TUser, ex
 
 
 export const languageFields = [
+  {
+    value: ELanguage.NONE,
+    label: "Empty",
+    icon: File,
+  },
   {
     value: ELanguage.REACT_JS,
     label: "React + JS",

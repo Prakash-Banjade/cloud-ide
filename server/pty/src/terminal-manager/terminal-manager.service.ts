@@ -4,11 +4,6 @@ import * as os from 'os';
 import { Socket } from 'socket.io';
 import { PROJECT_PATH } from 'src/CONSTANTS';
 
-// const viteReadyRegex = /VITE v\d+\.\d+\.\d+\s+ready in \d+ ms$/m;
-// const localUrlRegex = /^\s*➜\s+Local:\s+http:\/\/localhost:\d+\/$/m;
-// const nextJsReadyRegex = /ready - started server on http/;
-// const nextJsCompiledRegex = /compiled successfully/;
-
 @Injectable()
 export class TerminalManagerService {
     private sessions: { [id: string]: { terminal: IPty, socket: Socket } } = {};
@@ -19,7 +14,7 @@ export class TerminalManagerService {
     /** Scrollback buffer for runPty output */
     private runScrollback = '';
 
-    createPty(socket: Socket, onData: (data: string, id: number) => void, serverRunning: () => void) {
+    createPty(socket: Socket, onData: (data: string, id: number) => void) {
         const term = spawn(this.SHELL, [], {
             cols: 300,
             name: 'xterm',

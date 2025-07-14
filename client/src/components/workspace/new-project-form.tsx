@@ -5,14 +5,14 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ELanguage } from "@/types/types"
 import LoadingButton from "@/components/loading-button"
-import { Plus } from "lucide-react"
+import { File, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAppMutation } from "@/hooks/useAppMutation"
-import { languageFields } from "@/lib/utils"
 import { useTransition } from "react"
+import { Icons } from "../icons"
 
 const formSchema = z.object({
     projectName: z
@@ -20,7 +20,65 @@ const formSchema = z.object({
         .min(3, { message: "Project name must be at least 3 characters." })
         .max(20, { message: "Project name must be less than 20 characters." }),
     language: z.nativeEnum(ELanguage, { errorMap: () => ({ message: "Please select a programming language." }) }),
-})
+});
+
+const languageFields = {
+    empty: [
+        {
+            value: ELanguage.NONE,
+            label: "Empty",
+            icon: File
+        },
+    ],
+    javaScript: [
+        {
+            value: ELanguage.REACT_JS,
+            label: "React + JS",
+            icon: Icons.javascript
+        },
+        {
+            value: ELanguage.REACT_TS,
+            label: "React + TS",
+            icon: Icons.tsx
+        },
+        {
+            value: ELanguage.NEXT_TS,
+            label: "Next + TS",
+            icon: Icons.nextjs
+        },
+        {
+            value: ELanguage.NODE_JS,
+            label: "Node JS",
+            icon: Icons.node
+        },
+    ],
+    python: [
+        {
+            value: ELanguage.PYTHON,
+            label: "Python",
+            icon: Icons.python
+        },
+    ],
+    c: [
+        {
+            value: ELanguage.C,
+            label: "C",
+            icon: Icons.c
+        },
+        {
+            value: ELanguage.CPP,
+            label: "C++",
+            icon: Icons.cpp
+        },
+    ],
+    java: [
+        {
+            value: ELanguage.JAVA,
+            label: "Java",
+            icon: Icons.java
+        },
+    ]
+}
 
 type formSchemaType = z.infer<typeof formSchema>;
 
@@ -85,14 +143,19 @@ export function NewProjectForm() {
                                     </FormControl>
                                     <SelectContent>
                                         {
-                                            languageFields.map((field, ind) => {
-                                                return (
-                                                    <SelectItem key={ind} value={field.value}>
-                                                        <field.icon />
-                                                        {field.label}
-                                                    </SelectItem>
-                                                )
-                                            })
+                                            Object.entries(languageFields).map(([key, value]) => (
+                                                <SelectGroup key={key}>
+                                                    <SelectLabel className="capitalize">{key}</SelectLabel>
+                                                    {
+                                                        value.map((lang) => (
+                                                            <SelectItem key={lang.value} value={lang.value}>
+                                                                <lang.icon className="mr-2 h-4 w-4" />
+                                                                {lang.label}
+                                                            </SelectItem>
+                                                        ))
+                                                    }
+                                                </SelectGroup>
+                                            ))
                                         }
                                     </SelectContent>
                                 </Select>
