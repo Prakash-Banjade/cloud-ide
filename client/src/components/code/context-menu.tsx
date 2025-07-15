@@ -12,6 +12,7 @@ import { NewItemForm } from "./item-form"
 import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EPermission } from "@/types/types"
 import { useDeleteTreeItem } from "@/hooks/useListenTreeMutation"
+import useUpload from "@/hooks/useUpload"
 
 type Props = {
     children: React.ReactNode,
@@ -27,6 +28,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
     const [isNewItemOpen, setIsNewItemOpen] = useState(false);
     const [newItemType, setNewItemtype] = useState<EItemType>(EItemType.FILE);
     const { deleteItem } = useDeleteTreeItem();
+    const { upload } = useUpload();
 
     function handleDelete() {
         if (!socket) return;
@@ -59,6 +61,23 @@ export function TreeItemContextMenu({ children, item }: Props) {
                         >
                             <NewItemForm parentFolderPath={item.path} itemType={newItemType} setIsOpen={setIsNewItemOpen} />
                         </ResponsiveDialog>
+                        <input
+                            id="files-upload"
+                            type="file"
+                            multiple
+                            className="sr-only"
+                            onChange={e => upload(e, { type: EItemType.FILE })}
+                        />
+                        <input
+                            id="dir-upload"
+                            type="file"
+                            multiple
+                            className="sr-only"
+                            // @ts-expect-error
+                            webkitdirectory=""
+                            directory=""
+                            onChange={e => upload(e, { type: EItemType.DIR })}
+                        />
                     </>
                 )
             }
@@ -111,6 +130,20 @@ export function TreeItemContextMenu({ children, item }: Props) {
                                     }}
                                 >
                                     New Folder...
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    className="px-4"
+                                    onClick={() => { }}
+                                    asChild
+                                >
+                                    <label htmlFor="files-upload">Upload Files</label>
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    className="px-4"
+                                    onClick={() => { }}
+                                    asChild
+                                >
+                                    <label htmlFor="dir-upload">Upload Folder</label>
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                             </>

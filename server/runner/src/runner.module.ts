@@ -7,7 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { ProjectModule } from './project/project.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { MulterModule } from '@nestjs/platform-express';
+import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
 
 @Module({
   imports: [
@@ -23,11 +23,17 @@ import { MulterModule } from '@nestjs/platform-express';
       ttl: 1000, // 5 req per second
       limit: 5,
     }]),
+    NestjsFormDataModule.config({
+      storage: MemoryStoredFile,
+      isGlobal: true,
+      fileSystemStoragePath: 'public',
+      autoDeleteFile: false,
+      cleanupAfterSuccessHandle: false, // !important
+    }),
     MinioModule,
     FileSystemModule,
     ChokidarModule,
     ProjectModule,
-    MulterModule,
   ],
   providers: [
     {

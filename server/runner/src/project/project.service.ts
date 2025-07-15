@@ -2,6 +2,7 @@ import { Injectable, StreamableFile } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as archiver from 'archiver';
+import { UploadDto } from './dto/upload.dto';
 
 @Injectable()
 export class ProjectService {
@@ -30,5 +31,9 @@ export class ProjectService {
         await archive.finalize();
 
         return new StreamableFile(archive);
+    }
+
+    async upload(dto: UploadDto) {
+        console.log(dto)
     }
 }

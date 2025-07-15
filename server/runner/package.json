@@ -34,7 +34,10 @@
     "@nestjs/websockets": "^11.1.0",
     "archiver": "^7.0.1",
     "chokidar": "^4.0.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "minio": "^8.0.5",
+    "nestjs-form-data": "^1.9.93",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1"

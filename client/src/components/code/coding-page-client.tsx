@@ -119,7 +119,7 @@ export const CodingPagePostPodCreation = () => {
                             </SheetContent>
                         </Sheet>
                     ) : (
-                        <ResizablePanel order={1} defaultSize={20} minSize={15} maxSize={30}>
+                        <ResizablePanel order={1} defaultSize={15} minSize={15} maxSize={30}>
                             <FileTreePanel socket={socket} />
                         </ResizablePanel>
                     )
@@ -156,7 +156,7 @@ export const CodingPagePostPodCreation = () => {
                             <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
                                 <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
                             </ResizablePanel>
-                            
+
                             <EditorFooter />
                         </ResizablePanelGroup>
 

@@ -3,6 +3,7 @@ import { CircleX } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAxiosPrivate } from './useAxios';
+import { POD_DOMAIN } from '@/lib/CONSTANTS';
 
 export default function useDownload() {
     const { replId } = useParams();
@@ -10,8 +11,8 @@ export default function useDownload() {
 
     // const podUrl = "http://localhost:3003";
     const podUrl = process.env.NODE_ENV === 'production'
-        ? `https://${replId}.prakashbanjade.com`
-        : `http://${replId}.prakashbanjade.com`;
+        ? `https://${replId}.${POD_DOMAIN}`
+        : `http://${replId}.${POD_DOMAIN}`;
 
     async function handleDownload() {
         try {
