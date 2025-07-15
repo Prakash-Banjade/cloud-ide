@@ -138,6 +138,15 @@ export default async function DocsPage() {
                             <Card className="p-6">
                                 <div className="flex justify-between items-center">
                                     <div>
+                                        <h3 className="text-lg font-semibold">Open Command Palette</h3>
+                                        <p className="text-muted-foreground">Quickly access and execute commands</p>
+                                    </div>
+                                    <div className="bg-muted px-3 py-1 rounded font-mono text-sm">F1</div>
+                                </div>
+                            </Card>
+                            <Card className="p-6">
+                                <div className="flex justify-between items-center">
+                                    <div>
                                         <h3 className="text-lg font-semibold">Toggle Terminal</h3>
                                         <p className="text-muted-foreground">Show or hide the integrated terminal</p>
                                     </div>

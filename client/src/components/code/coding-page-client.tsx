@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manager-fns";
 import { EPermission } from "@/types/types";
+import EditorFooter from "./editor/editor-footer";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -155,8 +156,10 @@ export const CodingPagePostPodCreation = () => {
                             <ResizablePanel order={2} defaultSize={30} minSize={showTerm ? 20 : 0} maxSize={showTerm ? 100 : 0} className={cn(!showTerm && "scale-y-0 origin-bottom")}>
                                 <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
                             </ResizablePanel>
-
+                            
+                            <EditorFooter />
                         </ResizablePanelGroup>
+
                     </div>
                 </ResizablePanel>
 
