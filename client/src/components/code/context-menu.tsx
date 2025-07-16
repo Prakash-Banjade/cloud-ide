@@ -62,21 +62,21 @@ export function TreeItemContextMenu({ children, item }: Props) {
                             <NewItemForm parentFolderPath={item.path} itemType={newItemType} setIsOpen={setIsNewItemOpen} />
                         </ResponsiveDialog>
                         <input
-                            id="files-upload"
+                            id={"files-upload" + item.path}
                             type="file"
                             multiple
                             className="sr-only"
-                            onChange={e => upload(e, { type: EItemType.FILE })}
+                            onChange={e => upload(e, { type: EItemType.FILE, path: item.path })}
                         />
                         <input
-                            id="dir-upload"
+                            id={"dir-upload" + item.path}
                             type="file"
                             multiple
                             className="sr-only"
                             // @ts-expect-error
                             webkitdirectory=""
                             directory=""
-                            onChange={e => upload(e, { type: EItemType.DIR })}
+                            onChange={e => upload(e, { type: EItemType.DIR, path: item.path })}
                         />
                     </>
                 )
@@ -100,7 +100,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                             if (item.type === EItemType.DIR && !Array.isArray(item.children)) { // fetch children if they don't exist, this is to show alert dialog based on children presence
                                 socket?.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
                                     setFileStructure(prev =>
-                                        updateTree(prev, item.path, data, false)
+                                        updateTree(prev, item.path, data)
                                     )
                                 });
                             }
@@ -136,14 +136,14 @@ export function TreeItemContextMenu({ children, item }: Props) {
                                     onClick={() => { }}
                                     asChild
                                 >
-                                    <label htmlFor="files-upload">Upload Files</label>
+                                    <label htmlFor={"files-upload" + item.path}>Upload Files</label>
                                 </ContextMenuItem>
                                 <ContextMenuItem
                                     className="px-4"
                                     onClick={() => { }}
                                     asChild
                                 >
-                                    <label htmlFor="dir-upload">Upload Folder</label>
+                                    <label htmlFor={"dir-upload" + item.path}>Upload Folder</label>
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                             </>

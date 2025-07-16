@@ -76,14 +76,14 @@ export const onItemSelect = (
         // if we already loaded children, just toggle expanded
         if (Array.isArray(item.children)) {
             setFileStructure(prev =>
-                updateTree(prev, item.path, null)
+                updateTree(prev, item.path, null, true)
             )
         }
         // otherwise fetch children, then insert & expand
         else {
             socket.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
                 setFileStructure(prev =>
-                    updateTree(prev, item.path, data)
+                    updateTree(prev, item.path, data, true)
                 )
             })
         }
@@ -119,7 +119,7 @@ export function updateTree(
     items: TreeItem[],
     targetPath: string,
     newChildren: TreeItem[] | null,
-    expand: boolean = true,
+    toggleExpand: boolean = false
 ): TreeItem[] {
     return items.map(item => {
         // only folders can match
@@ -129,7 +129,7 @@ export function updateTree(
                 // either assign new children (if we just fetched them), or leave them alone
                 const children = newChildren ?? item.children
                 // toggle expanded
-                const expanded = expand && (item.expanded ? false : true)
+                const expanded = toggleExpand && (item.expanded ? false : true)
                 return { ...item, children, expanded }
             }
             // otherwise, even if this isn't the folder, its children might contain it:

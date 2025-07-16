@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as archiver from 'archiver';
 import { UploadDto } from './dto/upload.dto';
+import path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class ProjectService {
@@ -33,7 +35,14 @@ export class ProjectService {
         return new StreamableFile(archive);
     }
 
-    async upload(dto: UploadDto) {
-        console.log(dto)
+    async upload(files: Array<Express.Multer.File>) {
+        for (const file of files) {
+            console.log(file.path)
+            // const relPath = file.fieldname; // or webkitRelativePath equivalent
+            // const localPath = path.join("workspace", relPath);
+            // await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
+            // await fs.promises.rename(file.filepath, localPath);
+            // await minioClient.putObject('workspaces', relPath, fs.createReadStream(localPath));
+        }
     }
 }

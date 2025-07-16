@@ -8,6 +8,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { ProjectModule } from './project/project.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
+import { MulterModule } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import path from 'path';
+import * as fs from 'fs';
 
 @Module({
   imports: [
@@ -23,12 +27,27 @@ import { MemoryStoredFile, NestjsFormDataModule } from 'nestjs-form-data';
       ttl: 1000, // 5 req per second
       limit: 5,
     }]),
-    NestjsFormDataModule.config({
-      storage: MemoryStoredFile,
-      isGlobal: true,
-      fileSystemStoragePath: 'public',
-      autoDeleteFile: false,
-      cleanupAfterSuccessHandle: false, // !important
+    // NestjsFormDataModule.config({
+    //   storage: MemoryStoredFile,
+    //   isGlobal: true,
+    //   fileSystemStoragePath: 'public',
+    //   autoDeleteFile: false,
+    //   cleanupAfterSuccessHandle: false, // !important
+    // }),
+    MulterModule.register({
+      storage: diskStorage({
+        destination: async (_req, file, cb) => {
+          // Preserve relative paths sent from client
+          const fullPath = file.originalname;
+          const dir = path.dirname(fullPath);
+          await fs.promises.mkdir(path.join(__dirname, '..', 'uploads', dir), { recursive: true });
+          cb(null, path.join(__dirname, '..', 'uploads', dir));
+        },
+        filename: (_req, file, cb) => {
+          cb(null, path.basename(file.originalname));
+        },
+      }),
+      preservePath: true,
     }),
     MinioModule,
     FileSystemModule,

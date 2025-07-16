@@ -241,7 +241,7 @@ function OpenedFilesTab() {
                                         {getFileIcon(file.name)}
                                     </span>
 
-                                    <span className="truncate line-clamp-1 text-xs">
+                                    <span className="max-w-[20ch] truncate text-xs">
                                         {file.name}
                                     </span>
 

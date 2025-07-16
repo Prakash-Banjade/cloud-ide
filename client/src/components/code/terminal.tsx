@@ -73,7 +73,7 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
 
         return () => {
             if (term) term.dispose();
-            socket.off("terminal");
+            socket.off(SocketEvents.TERMINAL);
             ro.disconnect();
         };
     }, [term]);
