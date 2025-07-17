@@ -102,6 +102,9 @@ export default function SharePopover() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent side='bottom' align='end' className='w-fit min-w-sm space-y-6'>
+                <section className='border-yellow-500 text-yellow-500 bg-yellow-500/5 p-3 text-xs rounded-md'>
+                    Work in Progress!
+                </section>
                 <section className='flex justify-between items-center gap-2'>
                     <p className='font-medium'>Share Project</p>
                     <Button type='button' size={'sm'} variant={'outline'} className='text-xs'>

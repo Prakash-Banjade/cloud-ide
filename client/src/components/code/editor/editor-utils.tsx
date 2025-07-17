@@ -7,6 +7,12 @@ export function NoFileSelected() {
             <table className="text-sm">
                 <tbody>
                     <tr>
+                        <td className="p-2 text-right">Open Command Palette</td>
+                        <td className="p-2">
+                            <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">F1</kbd>
+                        </td>
+                    </tr>
+                    <tr>
                         <td className="p-2 text-right">Toggle Terminal</td>
                         <td className="p-2">
                             <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">Ctrl</kbd> + <kbd className="py-1 px-2 rounded-sm bg-sidebar/70">`</kbd>

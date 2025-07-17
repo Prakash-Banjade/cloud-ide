@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { RunnerModule } from './runner.module';
 import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(RunnerModule);
@@ -12,6 +13,12 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true
+    })
+  );
 
   const PORT = 3003;
   await app.listen(PORT);

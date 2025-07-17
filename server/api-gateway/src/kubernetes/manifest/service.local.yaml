@@ -81,11 +81,11 @@ spec:
             - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
           resources:
             requests:
-              cpu: "250m"
+              cpu: "100m"
               memory: "256Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "500m"
+              cpu: "250m"
               memory: "1Gi"
               ephemeral-storage: "5Gi"
       
@@ -106,11 +106,11 @@ spec:
           resources:
             requests:
               cpu: "100m"
-              memory: "512Mi"
+              memory: "256Mi"
               ephemeral-storage: "2Gi"
             limits:
               cpu: "300m"
-              memory: "1Gi"
+              memory: "512Mi"
               ephemeral-storage: "3Gi"
 
 ---

@@ -3,8 +3,8 @@ import { Card } from "@/components/ui/card"
 export default async function DocsPage() {
 
     return (
-        <main className="p-8 pb-20 grid 2xl:grid-cols-5 xl:grid-cols-3 gap-20">
-            <section className="2xl:col-span-4 xl:col-span-2 space-y-16">
+        <main className="p-8 pb-20 grid 2xl:grid-cols-5 xl:grid-cols-3 xl:gap-20 gap-10">
+            <section className="2xl:col-span-4 xl:col-span-2 order-2 xl:order-1 space-y-16">
                 <div className="space-y-6" id="why-qubide">
                     <h1 className="text-3xl font-semibold text-brand">Why Qubide?</h1>
                     <div className="space-y-4">
@@ -138,10 +138,19 @@ export default async function DocsPage() {
                             <Card className="p-6">
                                 <div className="flex justify-between items-center">
                                     <div>
+                                        <h3 className="text-lg font-semibold">Open Command Palette</h3>
+                                        <p className="text-muted-foreground">Quickly access and execute commands</p>
+                                    </div>
+                                    <kbd className="bg-muted px-3 py-1 rounded text-sm">F1</kbd>
+                                </div>
+                            </Card>
+                            <Card className="p-6">
+                                <div className="flex justify-between items-center">
+                                    <div>
                                         <h3 className="text-lg font-semibold">Toggle Terminal</h3>
                                         <p className="text-muted-foreground">Show or hide the integrated terminal</p>
                                     </div>
-                                    <div className="bg-muted px-3 py-1 rounded font-mono text-sm">Ctrl + `</div>
+                                    <kbd className="bg-muted px-3 py-1 rounded text-sm">Ctrl + `</kbd>
                                 </div>
                             </Card>
 
@@ -151,7 +160,7 @@ export default async function DocsPage() {
                                         <h3 className="text-lg font-semibold">Toggle Tab Switcher</h3>
                                         <p className="text-muted-foreground">Quick navigation between open files and tabs</p>
                                     </div>
-                                    <div className="bg-muted px-3 py-1 rounded font-mono text-sm">Alt + E</div>
+                                    <kbd className="bg-muted px-3 py-1 rounded text-sm">Alt + E</kbd>
                                 </div>
                             </Card>
 
@@ -161,7 +170,7 @@ export default async function DocsPage() {
                                         <h3 className="text-lg font-semibold">Manual Save</h3>
                                         <p className="text-muted-foreground">Force save current file (for confirmation)</p>
                                     </div>
-                                    <div className="bg-muted px-3 py-1 rounded font-mono text-sm">Ctrl + S</div>
+                                    <kbd className="bg-muted px-3 py-1 rounded text-sm">Ctrl + S</kbd>
                                 </div>
                             </Card>
                         </div>
@@ -178,7 +187,7 @@ export default async function DocsPage() {
                 </div>
             </section>
 
-            <section className="sticky top-24 self-start space-y-4">
+            <section className="xl:sticky top-24 order-1 xl:order-2 self-start space-y-4">
                 <h2 className="text-xs font-medium text-muted-foreground">On This Page</h2>
                 <ul className="space-y-3 text-sm">
                     <li>

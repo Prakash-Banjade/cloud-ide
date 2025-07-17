@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manager-fns";
 import { EPermission } from "@/types/types";
+import EditorFooter from "./editor/editor-footer";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -49,6 +50,8 @@ export const CodingPagePostPodCreation = () => {
         setTreePanelOpen,
         showTerm,
         setShowTerm,
+        previewOpen,
+        setPreviewOpen,
         permission,
         observingPanelRef
     } = useCodingStates();
@@ -79,9 +82,13 @@ export const CodingPagePostPodCreation = () => {
         };
     }, [socket, ptySocket]);
 
-    // useChokidar(socket);
-
-    const showPreview = project && !isMobile && projectRunning && previewLanguages.includes(project.language);
+    useEffect(() => {
+        if (project && !isMobile && projectRunning && previewLanguages.includes(project.language)) {
+            setPreviewOpen(true);
+        } else {
+            setPreviewOpen(false);
+        }
+    }, [project, isMobile, projectRunning]);
 
     if (!treeLoaded) return <CodingPageLoader state="setup" />;
 
@@ -112,7 +119,7 @@ export const CodingPagePostPodCreation = () => {
                             </SheetContent>
                         </Sheet>
                     ) : (
-                        <ResizablePanel order={1} defaultSize={20} minSize={15} maxSize={30}>
+                        <ResizablePanel order={1} defaultSize={15} minSize={15} maxSize={30}>
                             <FileTreePanel socket={socket} />
                         </ResizablePanel>
                     )
@@ -122,7 +129,7 @@ export const CodingPagePostPodCreation = () => {
 
                 <ResizablePanel
                     order={2}
-                    defaultSize={showPreview ? 50 : 80}
+                    defaultSize={previewOpen ? 50 : 80}
                     minSize={40}
                     className="relative"
                 >
@@ -150,12 +157,14 @@ export const CodingPagePostPodCreation = () => {
                                 <XTerminalNoSSR socket={ptySocket} showTerm={showTerm} />
                             </ResizablePanel>
 
+                            <EditorFooter />
                         </ResizablePanelGroup>
+
                     </div>
                 </ResizablePanel>
 
                 {
-                    showPreview && (
+                    previewOpen && (
                         <>
                             <ResizableHandle />
 
@@ -232,7 +241,7 @@ function OpenedFilesTab() {
                                         {getFileIcon(file.name)}
                                     </span>
 
-                                    <span className="truncate line-clamp-1 text-xs">
+                                    <span className="max-w-[20ch] truncate text-xs">
                                         {file.name}
                                     </span>
 

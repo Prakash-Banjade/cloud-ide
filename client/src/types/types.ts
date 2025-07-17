@@ -7,6 +7,7 @@ export enum ELanguage {
     REACT_TS = "react-ts",
     NEXT_TS = "next-ts",
     JAVA = "java",
+    NONE = "none"
 }
 
 export type TUser = {

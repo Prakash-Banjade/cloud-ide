@@ -28,11 +28,11 @@ spec:
             - containerPort: 3002
           resources:
             requests:
-              cpu: "300m"       # 0.3 core
+              cpu: "100m"
               memory: "512Mi"
               ephemeral-storage: "2Gi"
             limits:
-              cpu: "1"          # 1 full core
+              cpu: "500m"
               memory: "1Gi"
               ephemeral-storage: "5Gi"
 

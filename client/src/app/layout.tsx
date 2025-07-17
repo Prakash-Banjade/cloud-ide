@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/context/session-provider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const montserrat = Montserrat({ subsets: ["latin"] });
+const ibmPlexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
   title: {
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${montserrat.className} antialiased h-screen`}
+        className={`${ibmPlexSans.className} antialiased h-screen`}
       >
         <ScrollArea className="h-screen overflow-y-auto">
           <QueryClientProvider client={queryClient}>

@@ -1,4 +1,4 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ProfileAvatar } from '../ui/avatar'
 import { Button } from '../ui/button'
 import { signOut, useSession } from 'next-auth/react'
@@ -7,10 +7,9 @@ import { useMutation } from '@tanstack/react-query'
 import { REFRESH_TOKEN_HEADER } from '@/lib/CONSTANTS'
 import { usePathname, useRouter } from 'next/navigation'
 import { Skeleton } from '../ui/skeleton'
-import { Download, EllipsisVertical, FolderKanban, LogOut, Moon, Newspaper, Settings, Sun, SunMoon } from "lucide-react"
+import { EllipsisVertical, FolderKanban, LogOut, Moon, Newspaper, Settings, Sun, SunMoon } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import Link from "next/link"
-import useDownload from "@/hooks/useDownload"
 import { useTheme } from "next-themes"
 import { useTransition } from "react"
 
@@ -18,7 +17,6 @@ export default function ProfileDropdown() {
     const { data, status } = useSession();
     const router = useRouter();
     const isMobile = useIsMobile();
-    const handleDownload = useDownload();
     const { setTheme } = useTheme()
     const [isPending, startTransition] = useTransition()
 
@@ -79,16 +77,6 @@ export default function ProfileDropdown() {
             <DropdownMenuContent side='bottom' align='end'>
                 <DropdownMenuLabel className="truncate max-w-[20ch]" title={data?.user.email}>{data?.user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {
-                    isCodingPage && (
-                        <>
-                            <DropdownMenuItem onClick={handleDownload}>
-                                <Download /> Download
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                        </>
-                    )
-                }
                 {
                     (isMobile && !isCodingPage) && (
                         <>

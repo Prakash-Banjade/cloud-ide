@@ -1,3 +1,5 @@
+export const WORKSPACE_PATH = '/workspace' as const;
+
 export const enum SocketEvents {
     TREE_LOADED = "loaded",
     FETCH_CONTENT = "content:fetch",

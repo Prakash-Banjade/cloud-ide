@@ -2,7 +2,7 @@ import { MinioService } from "src/minio/minio.service";
 import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { SocketEvents } from "src/CONSTANTS";
+import { SocketEvents, WORKSPACE_PATH } from "src/CONSTANTS";
 import { ConfigService } from "@nestjs/config";
 import { WriteGuard } from "src/guard/write.guard";
 import { UseGuards } from "@nestjs/common";
@@ -53,7 +53,7 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
     ): Promise<{ success: boolean, error: string | null }> {
         try {
             const { path, type } = payload;
-            const fullPath = `/workspace${path}`;
+            const fullPath = `${WORKSPACE_PATH}${path}`;
 
             if (type === 'dir') {
                 // create an on-disk folder
@@ -87,7 +87,7 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
     ): Promise<boolean> {
         try {
             const { path, type } = payload;
-            const fullPath = `/workspace${path}`;
+            const fullPath = `${WORKSPACE_PATH}${path}`;
 
             // delete on disk (recursive for dirs)
             await this.fileSystemService.deletePath(fullPath);
@@ -120,8 +120,8 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
     ): Promise<{ success: boolean, error: string | null }> {
         try {
             const { oldPath, newPath, type } = payload;
-            const fullOld = `/workspace${oldPath}`;
-            const fullNew = `/workspace${newPath}`;
+            const fullOld = `${WORKSPACE_PATH}${oldPath}`;
+            const fullNew = `${WORKSPACE_PATH}${newPath}`;
 
             // rename on disk
             await this.fileSystemService.renamePath(fullOld, fullNew);

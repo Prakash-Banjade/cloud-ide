@@ -3,6 +3,7 @@ import { CircleX } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAxiosPrivate } from './useAxios';
+import { POD_DOMAIN } from '@/lib/CONSTANTS';
 
 export default function useDownload() {
     const { replId } = useParams();
@@ -10,27 +11,35 @@ export default function useDownload() {
 
     // const podUrl = "http://localhost:3003";
     const podUrl = process.env.NODE_ENV === 'production'
-        ? `https://${replId}.prakashbanjade.com`
-        : `http://${replId}.prakashbanjade.com`;
+        ? `https://${replId}.${POD_DOMAIN}`
+        : `http://${replId}.${POD_DOMAIN}`;
 
     async function handleDownload() {
         try {
             const response = await axios.get(`${podUrl}/project/download`, {
+                responseType: "blob",
                 withCredentials: undefined
             });
 
-            const blob = response.data;
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
+            // create URL for the blob and trigger download
+            const url = window.URL.createObjectURL(response.data);
+            const disposition = response.headers['content-disposition'] || '';
+            let filename = replId + '.zip';
 
-            a.href = url;
-            a.download = `${replId}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+            // try to extract filename from header if available
+            const match = disposition.match(/filename="?(.+?)"?($|;)/);
+            if (match) filename = match[1];
 
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up
+            link.remove();
         } catch (error) {
+            console.log(error)
             toast(() => (
                 <div className="flex items-center">
                     <span className="self-start mr-1">

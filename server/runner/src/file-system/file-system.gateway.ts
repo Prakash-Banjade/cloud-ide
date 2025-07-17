@@ -2,7 +2,7 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { MinioService } from '../minio/minio.service';
 import { File, FileSystemService } from './file-system.service';
-import { SocketEvents } from 'src/CONSTANTS';
+import { SocketEvents, WORKSPACE_PATH } from 'src/CONSTANTS';
 import { WsGuard } from 'src/guard/ws.guard';
 import { ConfigService } from '@nestjs/config';
 import { UseGuards } from '@nestjs/common';
@@ -48,7 +48,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     socket.join(this.replId);
 
     // Send initial directory listing
-    const rootContent = await this.fileSystemService.fetchDir('/workspace', '');
+    const rootContent = await this.fileSystemService.fetchDir(WORKSPACE_PATH, '');
     socket.emit(SocketEvents.TREE_LOADED, { rootContent });
   }
 
@@ -58,7 +58,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
   @SubscribeMessage(SocketEvents.FETCH_DIR)
   async onFetchDir(@MessageBody() dir: string): Promise<File[]> {
-    const dirPath = dir?.length ? `/workspace/${dir}` : '/workspace';
+    const dirPath = dir?.length ? `${WORKSPACE_PATH}/${dir}` : WORKSPACE_PATH;
     const contents = await this.fileSystemService.fetchDir(dirPath, dir);
 
     return contents; // the data is returned in the cb function in the client
@@ -66,7 +66,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
   @SubscribeMessage(SocketEvents.FETCH_CONTENT)
   async onFetchContent(@MessageBody() payload: { path: string }) {
-    const fullPath = `/workspace${payload.path}`;
+    const fullPath = `${WORKSPACE_PATH}${payload.path}`;
     const data = await this.fileSystemService.fetchFileContent(fullPath);
 
     return data; // the data is returned in the cb function in the client
@@ -76,7 +76,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
   @SubscribeMessage(SocketEvents.UPDATE_CONTENT)
   async onUpdateContent(@MessageBody() payload: { path: string; content: string }, @ConnectedSocket() socket: Socket) {
     const { path: filePath, content } = payload;
-    const fullPath = `/workspace/${filePath}`;
+    const fullPath = `${WORKSPACE_PATH}/${filePath}`;
     await this.fileSystemService.saveFile(fullPath, content);
 
     await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);

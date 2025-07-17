@@ -53,7 +53,7 @@ export default function Preview() {
                 <div className="grow">
                     <input
                         type="text"
-                        value={`https://${replId}.qubide.cloud`}
+                        value={link}
                         className='text-xs w-full px-2.5 py-1.5 rounded-md border border-input'
                         readOnly
                         disabled

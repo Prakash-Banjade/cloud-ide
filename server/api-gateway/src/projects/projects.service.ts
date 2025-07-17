@@ -25,8 +25,7 @@ export class ProjectsService {
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
-    // const replId = await this.getReplId(createProjectDto.projectName);
-    const replId = "node-node";
+    const replId = await this.getReplId(createProjectDto.projectName);
 
     const user = await this.usersService.findOne(currentUser.userId);
 
