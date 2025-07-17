@@ -18,7 +18,7 @@ export default async function ProjectsList({ searchParams }: { searchParams: Awa
     });
 
     const res = await serverFetch(queryString.length > 0 ? `/projects?${queryString}` : "/projects", {
-        next: { revalidate: 60 }
+        next: { revalidate: 10 }
     });
 
     if (!res.ok) redirect("/auth/login");

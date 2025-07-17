@@ -28,9 +28,9 @@ export class FileSystemService {
                     reject(err);
                 } else {
                     resolve((await Promise.all(files.map(async f => {
-                        // if (excludeItems.some(regex => regex.test(f.name))) {
-                        //     return null; // skip excluded items
-                        // }
+                        if (excludeItems.some(regex => regex.test(f.name))) {
+                            return null; // skip excluded items
+                        }
 
                         const objWithKeep = f.name.endsWith('.keep');
 
