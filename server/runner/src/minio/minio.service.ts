@@ -3,6 +3,7 @@ import { InjectMinio } from "./minio.decorator";
 import * as Minio from 'minio';
 import path from "path";
 import fs from 'fs';
+import { Readable } from "stream";
 
 @Injectable()
 export class MinioService {
@@ -27,7 +28,6 @@ export class MinioService {
         key: string,
         localPath: string
     ): Promise<void> {
-        ;
         const objects = await this.listObjects(this._bucketName, key);
         for (const obj of objects) {
             const fileKey = obj.name;
@@ -83,10 +83,10 @@ export class MinioService {
     async saveToMinio(
         key: string,
         filePath: string,
-        content: string
+        content: string | Buffer<ArrayBufferLike> | Readable
     ): Promise<void> {
         const objectName = `${key}${filePath}`;
-        await this.minioClient.putObject(this._bucketName, objectName, Buffer.from(content));
+        await this.minioClient.putObject(this._bucketName, objectName, typeof content === 'string' ? Buffer.from(content) : content);
         console.log(`Uploaded to ${this._bucketName}/${objectName}`);
     };
 

@@ -129,12 +129,12 @@ export function updateTree(
                 // either assign new children (if we just fetched them), or leave them alone
                 const children = newChildren ?? item.children
                 // toggle expanded
-                const expanded = toggleExpand && (item.expanded ? false : true)
+                const expanded = toggleExpand ? (item.expanded ? false : true) : item.expanded
                 return { ...item, children, expanded }
             }
             // otherwise, even if this isn't the folder, its children might contain it:
             const children = item.children
-                ? updateTree(item.children, targetPath, newChildren)
+                ? updateTree(item.children, targetPath, newChildren, toggleExpand)
                 : item.children
             return { ...item, children }
         }

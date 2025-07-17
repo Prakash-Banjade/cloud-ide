@@ -5,6 +5,7 @@ import { POD_DOMAIN, SocketEvents } from "@/lib/CONSTANTS";
 import { useSocket } from "@/context/socket-provider";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns";
+import { useParams } from "next/navigation";
 
 type Props = {
   type: EItemType,
@@ -12,12 +13,14 @@ type Props = {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILES = 100;
 
 export default function useUpload() {
   const [isPending, startTransition] = useTransition();
   const { mutateAsync } = useAppMutation();
   const { socket } = useSocket();
   const { setFileStructure } = useCodingStates();
+  const { replId } = useParams();
 
   const upload = (e: ChangeEvent<HTMLInputElement>, { type, path }: Props) => {
     const files = e.target.files;
@@ -28,6 +31,10 @@ export default function useUpload() {
 
     const formData = new FormData();
 
+    if (files.length > MAX_FILES) {
+      throw new Error('You can only upload up to 100 files at once.');
+    }
+
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         throw new Error('File size is too large. Max size is 5MB.');
@@ -36,7 +43,6 @@ export default function useUpload() {
       if (type === EItemType.FILE) {
         formData.append('files', file, `${pathWithOutLeadingSlash}/${file.name}`);
       } else {
-        console.log(file.webkitRelativePath)
         formData.append('files', file, `${pathWithOutLeadingSlash}/${file.webkitRelativePath}`);
       }
     }
@@ -44,8 +50,8 @@ export default function useUpload() {
     startTransition(async () => {
       try {
         await mutateAsync({
-          // endpoint: `https://${POD_DOMAIN}/project/upload`,
-          endpoint: `http://localhost:3003/project/upload`,
+          endpoint: `https://${replId}.${POD_DOMAIN}/project/upload`,
+          // endpoint: `http://localhost:3003/project/upload`,
           method: 'post',
           data: formData,
         });

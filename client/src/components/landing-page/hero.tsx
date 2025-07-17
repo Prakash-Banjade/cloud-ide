@@ -78,7 +78,7 @@ export default function Hero() {
                         <Button
                             size="lg"
                             className="bg-brand hover:bg-brand/90 group text-white sm:!px-12 sm:!py-7 !px-8 !py-5 sm:text-lg sm:font-semibold font-medium rounded-full transition-all"
-                            onClick={() => router.push("/login")}
+                            onClick={() => router.push("/auth/login")}
                         >
                             Get Started
                             <ArrowRight className="size-5 group-hover:translate-x-2 transition-transform duration-300" />

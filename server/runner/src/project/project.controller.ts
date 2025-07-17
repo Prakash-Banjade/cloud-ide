@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Post, Res, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Res, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { Response } from 'express';
 import { AuthGuard } from 'src/guard/auth.guard';
-import { UploadDto } from './dto/upload.dto';
-import { FormDataRequest } from 'nestjs-form-data';
-import { AnyFilesInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per file
+const MAX_FILES = 100;
 
 @Controller('project')
 @UseGuards(AuthGuard)
@@ -17,7 +18,12 @@ export class ProjectController {
   }
 
   @Post('upload')
-  @UseInterceptors(AnyFilesInterceptor())
+  @UseInterceptors(AnyFilesInterceptor({
+    limits: {
+      fileSize: MAX_FILE_SIZE,
+      files: MAX_FILES,
+    },
+  }))
   upload(@UploadedFiles() files: Array<Express.Multer.File>) {
     return this.projectService.upload(files);
   }

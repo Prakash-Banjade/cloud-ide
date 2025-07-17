@@ -2,14 +2,14 @@ import { Injectable, StreamableFile } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import * as archiver from 'archiver';
-import { UploadDto } from './dto/upload.dto';
-import path from 'path';
 import * as fs from 'fs';
+import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class ProjectService {
     constructor(
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly minioService: MinioService
     ) { }
 
     async download(res: Response) {
@@ -36,13 +36,13 @@ export class ProjectService {
     }
 
     async upload(files: Array<Express.Multer.File>) {
-        for (const file of files) {
-            console.log(file.path)
-            // const relPath = file.fieldname; // or webkitRelativePath equivalent
-            // const localPath = path.join("workspace", relPath);
-            // await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
-            // await fs.promises.rename(file.filepath, localPath);
-            // await minioClient.putObject('workspaces', relPath, fs.createReadStream(localPath));
-        }
+        const uploadPromises = files.map(file => {
+            const key = `code/${this.configService.getOrThrow('REPL_ID')}`;
+            const filePath = `/${file.originalname}`;
+
+            return this.minioService.saveToMinio(key, filePath, file.buffer || fs.createReadStream(file.path));
+        });
+
+        await Promise.all(uploadPromises);
     }
 }
