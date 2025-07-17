@@ -67,7 +67,7 @@ export default function EditorFooter() {
                             </HoverCardTrigger>
                             <HoverCardContent className="text-sm">
                                 Internally the application will be live on port {availablePort[project.language]}. If you programatically change the port, your application
-                                won't be live on that port. Not recommended to change the port.
+                                won&apos;t be live on that port. Not recommended to change the port.
                             </HoverCardContent>
                         </HoverCard>
                         Exposed port: {availablePort[project.language]}

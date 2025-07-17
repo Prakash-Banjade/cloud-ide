@@ -1,9 +1,15 @@
 import { Card } from "@/components/ui/card"
+import { Metadata } from "next"
 
-export default async function DocsPage() {
+export const metadata: Metadata = {
+    title: 'Docs',
+    description: 'Read our documentation for more information about Qubide.',
+}
+
+export default function DocsPage() {
 
     return (
-        <main className="p-8 pb-20 grid 2xl:grid-cols-5 xl:grid-cols-3 xl:gap-20 gap-10">
+        <main className="container mx-auto p-8 pb-20 grid 2xl:grid-cols-5 xl:grid-cols-3 xl:gap-20 gap-10">
             <section className="2xl:col-span-4 xl:col-span-2 order-2 xl:order-1 space-y-16">
                 <div className="space-y-6" id="why-qubide">
                     <h1 className="text-3xl font-semibold text-brand">Why Qubide?</h1>
