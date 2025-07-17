@@ -12,10 +12,10 @@ export default function Hero() {
     return (
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
             {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
+            {/* <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" /> */}
 
             {/* Animated background dots */}
-            <div className="absolute inset-0 opacity-30">
+            {/* <div className="absolute inset-0 opacity-30">
                 {[...Array(50)].map((_, i) => (
                     <motion.div
                         key={i}
@@ -35,7 +35,7 @@ export default function Hero() {
                         }}
                     />
                 ))}
-            </div>
+            </div> */}
 
             <div className="container mx-auto px-4 relative z-10">
                 <motion.div
