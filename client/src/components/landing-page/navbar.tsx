@@ -4,8 +4,6 @@ import Logo from "../logo";
 import LandingPageNavLinks from "./landing-page-nav-links";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import { Suspense } from "react";
-import { Skeleton } from "../ui/skeleton";
 
 export default function Navbar() {
 
@@ -18,10 +16,7 @@ export default function Navbar() {
                     </Link>
 
                     <LandingPageNavLinks />
-
-                    <Suspense fallback={<Skeleton className="h-10 w-28" />}>
-                        <ActionButton />
-                    </Suspense>
+                    <ActionButton />
                 </div>
             </div>
         </nav>

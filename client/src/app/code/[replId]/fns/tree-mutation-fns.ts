@@ -1,71 +1,75 @@
 import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/types/tree.types";
 
 /**
- * Insert `item` into `tree` at the correct nested spot based on its `.path`.
- * Creates any missing folders along the way.
+ * Insert `items` into `tree` at the parentPath.
  */
-export function insertTreeItem(
+// TODO: if the parent already contains one of the item, it is not being replaced causing duplicates, handle this
+export function insertTreeItems(
     tree: TreeItem[],
-    item: TreeItem
+    items: TreeItem[],
+    parentPath: string
 ): TreeItem[] {
-    // split "/a/b/c.txt" → ["a","b","c.txt"]
-    const segments = item.path.split("/").filter(Boolean)
-    // recursive helper carries a `prefix` so we can construct folder paths
-    function helper(
-        nodes: TreeItem[],
-        segs: string[],
-        prefix: string
-    ): TreeItem[] {
-        // if no more segments, nothing to insert
-        if (segs.length === 0) return nodes
+    // Normalize so "/a/b" and "a/b" behave the same:
+    const cleanParent = parentPath.replace(/^\/+|\/+$/g, '');
 
-        const [head, ...rest] = segs
-        const currentPath = prefix + "/" + head
-
-        // if this is the last segment, insert `item` here
-        if (rest.length === 0) {
-            // remove any existing entry with same path, then append the new item
-            return [
-                ...(Array.isArray(nodes) ? nodes.filter(n => n.path !== item.path) : []),
-                item
-            ]
-        }
-
-        // we’re inserting deeper – find or create the folder `head`
-        const existing = nodes.find(
-            n => n.type === EItemType.DIR && n.name === head
-        ) as TFolderItem | undefined
-
-        const folder: TFolderItem = existing
-            ? {
-                ...existing,
-                expanded: true
-            }
-            : {
-                name: head,
-                type: EItemType.DIR,
-                path: currentPath,
-                expanded: true,
-                children: []
-            }
-
-        // recurse into that folder’s children
-        const newChildren = helper(folder.children, rest, currentPath)
-
-        const newFolder: TFolderItem = {
-            ...folder,
-            children: newChildren
-        }
-
-        // rebuild this level: replace the old folder (if any) with the new one
-        const others = nodes.filter(
-            n => !(n.type === EItemType.DIR && n.name === head)
-        )
-
-        return [...others, newFolder]
+    // If inserting at the root, just merge there:
+    if (!cleanParent) {
+        // Remove any existing nodes whose path conflicts with our items:
+        const filtered = tree.filter(n => !items.some(i => i.path === n.path));
+        return [...filtered, ...items];
     }
 
-    return helper(tree, segments, "")
+    // Otherwise split the parent path into segments:
+    const parentSegments = cleanParent.split('/');
+
+    // Recursive helper: walks down the segments and rebuilds folders immutably
+    function helper(nodes: TreeItem[], segs: string[], prefix: string): TreeItem[] {
+        const [head, ...rest] = segs;
+        const thisPath = prefix + '/' + head;
+
+        // If we’re at the target folder (no more rest), merge here:
+        if (rest.length === 0) {
+            // Find or create the folder to insert into:
+            const existing = nodes.find(
+                n => n.type === EItemType.DIR && n.path === thisPath
+            ) as TFolderItem | undefined;
+
+            const folder: TFolderItem = existing
+                ? { ...existing, expanded: true }
+                : { type: EItemType.DIR, name: head, path: thisPath, expanded: true, children: [] };
+
+            // Merge its children: drop any that conflict with our items, then append
+            const filteredChildren = folder.children?.filter(
+                c => !items.some(i => i.path === c.path)
+            ) ?? [];
+            const newChildren = [...filteredChildren, ...items];
+
+            const newFolder: TFolderItem = { ...folder, children: newChildren };
+
+            // Rebuild this level: replace the old folder (if any) with the new one
+            const others = nodes.filter(n => !(n.type === EItemType.DIR && n.path === thisPath));
+            return [...others, newFolder];
+        }
+
+        // Not yet at target: descend into or create this folder
+        const existing = nodes.find(
+            n => n.type === EItemType.DIR && n.path === thisPath
+        ) as TFolderItem | undefined;
+
+        const folder: TFolderItem = existing
+            ? { ...existing, expanded: true }
+            : { type: EItemType.DIR, name: head, path: thisPath, expanded: true, children: [] };
+
+        // Recurse on its children
+        const newChildren = helper(folder.children, rest, thisPath);
+        const newFolder: TFolderItem = { ...folder, children: newChildren };
+
+        // Rebuild this level:
+        const others = nodes.filter(n => !(n.type === EItemType.DIR && n.path === thisPath));
+        return [...others, newFolder];
+    }
+
+    return helper(tree, parentSegments, '');
 }
 
 export function removeItemFromTree(tree: TreeItem[], targetPath: string): TreeItem[] {

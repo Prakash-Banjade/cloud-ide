@@ -2,7 +2,7 @@
 
 import { useCodingStates } from '@/context/coding-states-provider'
 import { CopyMinus, Download, EllipsisVertical, FilePlus2, FileUp, FolderPlus, FolderUp, RotateCcw } from 'lucide-react'
-import { useState } from 'react'
+import { ChangeEvent, useState } from 'react'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { useSocket } from '@/context/socket-provider'
 import { EItemType, TreeItem } from "@/types/tree.types"
@@ -13,6 +13,7 @@ import { collapseAllDirs, getParentFolder, useRefreshTree } from '@/app/code/[re
 import { EPermission } from '@/types/types'
 import useDownload from '@/hooks/useDownload'
 import useUpload from '@/hooks/useUpload'
+import toast from 'react-hot-toast'
 
 export default function ExplorerActions() {
     const { selectedItem, fileStructure, setFileStructure, permission } = useCodingStates();
@@ -37,6 +38,18 @@ export default function ExplorerActions() {
         setFileStructure(prev => collapseAllDirs(prev));
     }
 
+    const handleUpload = (e: ChangeEvent<HTMLInputElement>, type: EItemType) => {
+        try {
+            upload(e, { type, path: "" });
+        } catch (e) {
+            if (e instanceof Error) {
+                toast.error(e.message);
+            } else {
+                toast.error('Something went wrong. Please try again.');
+            }
+        }
+    }
+
     return (
         <>
             {
@@ -56,7 +69,7 @@ export default function ExplorerActions() {
                             type="file"
                             multiple
                             className="sr-only"
-                            onChange={e => upload(e, { type: EItemType.FILE, path: "/" })}
+                            onChange={e => handleUpload(e, EItemType.FILE)}
                         />
                         <input
                             id={"dir-upload /"}
@@ -66,7 +79,7 @@ export default function ExplorerActions() {
                             // @ts-expect-error
                             webkitdirectory=""
                             directory=""
-                            onChange={e => upload(e, { type: EItemType.DIR, path: "/" })}
+                            onChange={e => handleUpload(e, EItemType.DIR)}
                         />
                     </>
                 )

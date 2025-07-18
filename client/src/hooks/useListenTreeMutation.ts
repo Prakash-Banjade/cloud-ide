@@ -1,4 +1,4 @@
-import { insertTreeItem, removeItemFromTree, renameTreeItem } from '@/app/code/[replId]/fns/tree-mutation-fns';
+import { insertTreeItems, removeItemFromTree, renameTreeItem } from '@/app/code/[replId]/fns/tree-mutation-fns';
 import { useCodingStates } from '@/context/coding-states-provider';
 import { useSocket } from '@/context/socket-provider';
 import { SocketEvents } from '@/lib/CONSTANTS';
@@ -30,7 +30,9 @@ export default function useListenTreeMutation() {
                 } : {}),
             } as TreeItem;
 
-            setFileStructure(prev => insertTreeItem(prev, newTreeItem)); // insert the new item in the tree
+            const parentFolder = newTreeItem.path.split('/').slice(0, -1).join('/');
+
+            setFileStructure(prev => insertTreeItems(prev, [newTreeItem], parentFolder)); // insert the new item in the tree
         });
 
         socket.on(SocketEvents.ITEM_DELETED, (data: { path: string, type: EItemType }) => {

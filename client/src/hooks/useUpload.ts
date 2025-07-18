@@ -6,6 +6,7 @@ import { useSocket } from "@/context/socket-provider";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns";
 import { useParams } from "next/navigation";
+import { insertTreeItems } from "@/app/code/[replId]/fns/tree-mutation-fns";
 
 type Props = {
   type: EItemType,
@@ -18,7 +19,6 @@ const MAX_FILES = 100;
 export default function useUpload() {
   const [isPending, startTransition] = useTransition();
   const { mutateAsync } = useAppMutation();
-  const { socket } = useSocket();
   const { setFileStructure } = useCodingStates();
   const { replId } = useParams();
 
@@ -41,27 +41,31 @@ export default function useUpload() {
       }
 
       if (type === EItemType.FILE) {
-        formData.append('files', file, `${pathWithOutLeadingSlash}/${file.name}`);
+        formData.append('files', file, `${path}/${file.name}`);
       } else {
-        formData.append('files', file, `${pathWithOutLeadingSlash}/${file.webkitRelativePath}`);
+        formData.append('files', file, `${path}/${file.webkitRelativePath}`);
       }
     }
 
+    formData.append('parentPath', path);
+
     startTransition(async () => {
       try {
-        await mutateAsync({
-          endpoint: `https://${replId}.${POD_DOMAIN}/project/upload`,
-          // endpoint: `http://localhost:3003/project/upload`,
+        const res = await mutateAsync({
+          // endpoint: `https://${replId}.${POD_DOMAIN}/project/upload`,
+          endpoint: `http://localhost:3003/project/upload`,
           method: 'post',
           data: formData,
         });
 
-        if (socket) {
-          socket.emit(SocketEvents.FETCH_DIR, path, (data: TreeItem[]) => {
-            setFileStructure(prev =>
-              updateTree(prev, path, data)
-            )
-          })
+        console.log(path, res.data)
+
+        if (res.data) {
+          setFileStructure(prev => insertTreeItems(
+            prev,
+            res.data as TreeItem[],
+            path
+          ));
         }
       } catch (e) {
         console.log(e)

@@ -8,11 +8,10 @@ import { getFileIcon } from "./file-icons"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
-import { useState } from "react"
-import { insertTreeItem } from "@/app/code/[replId]/fns/tree-mutation-fns"
+import { insertTreeItems } from "@/app/code/[replId]/fns/tree-mutation-fns"
 import { findItem } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EItemType, TreeItem } from "@/types/tree.types"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -30,7 +29,6 @@ interface NewItemFormProps {
 export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
     const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
-    const [error, setError] = useState<string | null>(null);
 
     const form = useForm({
         resolver: zodResolver(newItemFormSchema),
@@ -48,7 +46,10 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
         const existing = findItem(fileStructure, itemPath);
 
         if (existing) {
-            setError(`A file or folder ${values.name} already exists at this location. Please choose a different name.`);
+            form.setError("name", {
+                message: `A file or folder ${values.name} already exists at this location. Please choose a different name.`,
+                type: "custom",
+            });
             return;
         }
 
@@ -64,7 +65,7 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
                     } : {}),
                 } as TreeItem;
 
-                setFileStructure(prev => insertTreeItem(prev, newTreeItem)); // insert the new item in the tree
+                setFileStructure(prev => insertTreeItems(prev, [newTreeItem], parentFolderPath)); // insert the new item in the tree
                 setSelectedItem(newTreeItem);
 
                 if (newTreeItem.type === EItemType.FILE) {
@@ -78,7 +79,10 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
 
                 setIsOpen(false);
             } else {
-                setError(typeof error === 'string' ? error : `Cannot create ${itemType}`);
+                form.setError("name", {
+                    message: typeof error === 'string' ? error : `Cannot create ${itemType}`,
+                    type: "custom",
+                });
             }
         });
     }
