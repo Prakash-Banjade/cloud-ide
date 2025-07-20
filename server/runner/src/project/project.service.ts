@@ -36,7 +36,7 @@ export class ProjectService {
         return new StreamableFile(archive);
     }
 
-    async upload(files: Array<Express.Multer.File>) {
+    async upload(files: Array<Express.Multer.File>, parentPath: string) {
         const uploadPromises = files.map(file => {
             const key = `code/${this.configService.getOrThrow('REPL_ID')}`;
             const filePath = `${file.originalname}`;
@@ -45,57 +45,77 @@ export class ProjectService {
 
         await Promise.all(uploadPromises);
 
-        console.log(files)
-        
-        return this.buildFileTreeFromUploads(files);
+        const tree = this.buildFileTreeFromUploads(files, parentPath ?? "");
+
+        return tree;
     }
 
-    // TODO: not working properly
-    private buildFileTreeFromUploads(files: Array<Express.Multer.File>): TreeItem[] {
+    private buildFileTreeFromUploads(
+        files: Express.Multer.File[],
+        parentPath = ''  // e.g. "/layouts/hero"
+    ): TreeItem[] {
+        // normalize parentPath, remove trailing slash but keep leading slash if present
+        const cleanParent = parentPath
+            .replace(/\/+$/, '')
+            .replace(/^\/?/, '/');
+
+        // length of the prefix including trailing slash, e.g. "/a/b/".length === 4
+        const prefix = cleanParent === '/' ? '/' : cleanParent + '/';
+
         const root: TFolderItem[] = [];
 
         for (const file of files) {
-            // normalize and split: ["react-js", "src", "App.css"]
-            const parts = file.originalname.replace(/^\/+/, '').split('/');
+            // skip any file not under our parentPath
+            if (cleanParent !== '/' && !file.originalname.startsWith(prefix)) {
+                continue;
+            }
 
+            // derive the path _relative_ to parent, but keep full for the node.path
+            const relative = cleanParent === '/'
+                ? file.originalname.replace(/^\/+/, '')
+                : file.originalname.slice(prefix.length);
+
+            // skip if outside or empty
+            if (!relative) continue;
+
+            const parts = relative.split('/');  // e.g. ["hero.js"] or ["assets","img.png"]
             let currentLevel = root as TreeItem[];
-            let cumulativePath = '';
+            let cumulative = cleanParent === '/' ? '' : cleanParent;  // Start at parentPath (no trailing slash)
 
             for (let i = 0; i < parts.length; i++) {
                 const name = parts[i];
-                cumulativePath += '/' + name;
-
+                cumulative += '/' + name;
                 const isFile = i === parts.length - 1;
+
                 if (isFile) {
-                    // --- add file node ---
+                    // --- create a file node under this level ---
                     const extMatch = name.match(/\.(\w+)$/);
                     const language = extMatch?.[1];
                     const fileNode: TFileItem = {
                         type: EItemType.FILE,
                         name,
-                        path: cumulativePath,
+                        path: cumulative,
                         content: undefined,
                         ...(language ? { language } : {}),
                     };
                     currentLevel.push(fileNode);
                 } else {
-                    // --- ensure folder exists ---
+                    // --- descend or create a folder node ---
                     let folder = currentLevel.find(
-                        (item) => item.type === EItemType.DIR && item.name === name
+                        item => item.type === EItemType.DIR && item.name === name
                     ) as TFolderItem;
 
                     if (!folder) {
                         folder = {
                             type: EItemType.DIR,
                             name,
-                            path: cumulativePath,
+                            path: cumulative,
                             expanded: false,
                             children: [],
                         };
                         currentLevel.push(folder);
                     }
 
-                    // drill down
                     currentLevel = folder.children;
                 }
             }

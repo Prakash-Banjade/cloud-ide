@@ -42,8 +42,6 @@ export function TreeItemContextMenu({ children, item }: Props) {
     }
 
     const handleUpload = (e: ChangeEvent<HTMLInputElement>, type: EItemType) => {
-        console.log(item.path)
-        
         try {
             upload(e, { type, path: item.path });
         } catch (e) {

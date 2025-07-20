@@ -1,3 +1,5 @@
+"use client";
+
 import { useCodingStates } from "@/context/coding-states-provider"
 import { useEffect, useState } from "react";
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';

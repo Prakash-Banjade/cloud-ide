@@ -25,8 +25,6 @@ export default function useUpload() {
   const upload = (e: ChangeEvent<HTMLInputElement>, { type, path }: Props) => {
     const files = e.target.files;
 
-    const pathWithOutLeadingSlash = path.startsWith('/') ? path.slice(1) : path;
-
     if (!files || files.length === 0) return;
 
     const formData = new FormData();
@@ -52,13 +50,11 @@ export default function useUpload() {
     startTransition(async () => {
       try {
         const res = await mutateAsync({
-          // endpoint: `https://${replId}.${POD_DOMAIN}/project/upload`,
-          endpoint: `http://localhost:3003/project/upload`,
+          endpoint: `https://${replId}.${POD_DOMAIN}/project/upload`,
+          // endpoint: `http://localhost:3003/project/upload`,
           method: 'post',
           data: formData,
         });
-
-        console.log(path, res.data)
 
         if (res.data) {
           setFileStructure(prev => insertTreeItems(
