@@ -1,6 +1,6 @@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { EItemType, TreeItem } from "@/types/tree.types"
-import { useState } from "react"
+import { ChangeEvent, useState } from "react"
 import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog"
@@ -13,6 +13,7 @@ import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EPermission } from "@/types/types"
 import { useDeleteTreeItem } from "@/hooks/useListenTreeMutation"
 import useUpload from "@/hooks/useUpload"
+import toast from "react-hot-toast"
 
 type Props = {
     children: React.ReactNode,
@@ -38,6 +39,18 @@ export function TreeItemContextMenu({ children, item }: Props) {
                 deleteItem({ path: item.path, type: item.type });
             }
         });
+    }
+
+    const handleUpload = (e: ChangeEvent<HTMLInputElement>, type: EItemType) => {
+        try {
+            upload(e, { type, path: item.path });
+        } catch (e) {
+            if (e instanceof Error) {
+                toast.error(e.message);
+            } else {
+                toast.error('Something went wrong. Please try again.');
+            }
+        }
     }
 
     return (
@@ -66,7 +79,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                             type="file"
                             multiple
                             className="sr-only"
-                            onChange={e => upload(e, { type: EItemType.FILE, path: item.path })}
+                            onChange={e => handleUpload(e, EItemType.FILE)}
                         />
                         <input
                             id={"dir-upload" + item.path}
@@ -76,7 +89,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                             // @ts-expect-error
                             webkitdirectory=""
                             directory=""
-                            onChange={e => upload(e, { type: EItemType.DIR, path: item.path })}
+                            onChange={e => handleUpload(e, EItemType.DIR)}
                         />
                     </>
                 )

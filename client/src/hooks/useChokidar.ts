@@ -1,4 +1,4 @@
-import { insertTreeItem, removeItemFromTree } from "@/app/code/[replId]/fns/tree-mutation-fns";
+import { insertTreeItems, removeItemFromTree } from "@/app/code/[replId]/fns/tree-mutation-fns";
 import { EItemType, TFileItem, TFolderItem } from "@/types/tree.types";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { useEffect } from "react";
@@ -26,7 +26,7 @@ export default function useChokidar(socket: Socket | null) {
                 content: '',
             };
 
-            setFileStructure(prev => insertTreeItem(prev, fileItem)); // insert the new item in the tree
+            // setFileStructure(prev => insertTreeItems(prev, fileItem)); // insert the new item in the tree
         });
 
         socket.on('chokidar:file-removed', (data: { path: string }) => {
@@ -50,7 +50,7 @@ export default function useChokidar(socket: Socket | null) {
                 expanded: false,
             };
 
-            setFileStructure(prev => insertTreeItem(prev, folderItem)); // insert the new item in the tree
+            // setFileStructure(prev => insertTreeItem(prev, folderItem)); // insert the new item in the tree
         });
 
         socket.on('chokidar:dir-removed', (data: { path: string }) => {

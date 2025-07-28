@@ -1,3 +1,5 @@
+"use client";
+
 import { useCodingStates } from "@/context/coding-states-provider"
 import { useEffect, useState } from "react";
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -60,7 +62,7 @@ export default function EditorFooter() {
         <section className="text-xs px-2 flex items-center justify-between bg-card font-sans">
             {
                 project && (project.language in availablePort) && (
-                    <p className="flex items-center gap-1">
+                    <p className="flex items-center gap-1 p-1">
                         <HoverCard>
                             <HoverCardTrigger>
                                 <Info size={12} />
