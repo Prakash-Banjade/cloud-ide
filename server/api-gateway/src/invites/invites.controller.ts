@@ -5,7 +5,6 @@ import { CancelInviteDto, CreateInviteDto, SendInvitationDto } from './dto/invit
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AuthUser } from 'src/common/global.types';
 import { TransactionInterceptor } from 'src/common/transaction.interceptor';
-import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiBearerAuth()
 @ApiTags('Invites')

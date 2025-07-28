@@ -4,7 +4,7 @@ import { Column, Entity, Index, ManyToOne } from "typeorm";
 
 @Entity()
 export class Invite extends BaseEntity {
-    @ManyToOne(() => Project, project => project.invites, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Project, project => project.invites, { onDelete: 'CASCADE', nullable: false })
     project: Project;
 
     @Column({ type: 'text', nullable: false })

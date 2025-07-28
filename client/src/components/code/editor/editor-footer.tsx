@@ -77,7 +77,7 @@ export default function EditorFooter() {
                 )
             }
 
-            <div className="text-muted-foreground flex items-center gap-4">
+            <div className="text-muted-foreground flex items-center gap-4 ml-auto">
                 {
                     position && (
                         <button
