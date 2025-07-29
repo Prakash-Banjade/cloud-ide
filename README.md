@@ -10,6 +10,7 @@ Key capabilities:
 * Integrated terminal for executing commands
 * Automatic workspace provisioning using Kubernetes
 * Support for multiple language servers (TypeScript, Python, C, Java etc.)
+* Collaborative Editing
 
 ## Prerequisites
 
@@ -128,7 +129,7 @@ kubectl get svc -n ingress-nginx
 
 ## References
 
-Huge thanks to [Piyush Garg](https://www.linkedin.com/in/piyushgarg195) for the idea and [Harkirat Singh](https://www.linkedin.com/in/kirat-li) for the guidance and implementation.
+Huge thanks to [Piyush Garg](https://www.linkedin.com/in/piyushgarg195) for the idea, [Harkirat Singh](https://www.linkedin.com/in/kirat-li) for the guidance and implementation and [TrainWithShubham](https://www.linkedin.com/company/trainwithshubham)
 
 ## Contributing
 

@@ -74,13 +74,16 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
   @UseGuards(WriteGuard)
   @SubscribeMessage(SocketEvents.UPDATE_CONTENT)
-  async onUpdateContent(@MessageBody() payload: { path: string; content: string }, @ConnectedSocket() socket: Socket) {
-    const { path: filePath, content } = payload;
-    const fullPath = `${WORKSPACE_PATH}/${filePath}`;
-    await this.fileSystemService.saveFile(fullPath, content);
-
-    await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);
-
-    return true; // need to return something, used in frontend to handle syncing status
+  async onUpdateContent(@MessageBody() payload: { path: string; content: string }) {
+    try {
+      const { path: filePath, content } = payload;
+      const fullPath = `${WORKSPACE_PATH}/${filePath}`;
+      await this.fileSystemService.saveFile(fullPath, content);
+      await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      return true; // need to return something, used in frontend to handle syncing status
+    }
   }
 }
