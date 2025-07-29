@@ -27,11 +27,10 @@ export default async function WorkspacePage(props: WorkspacePageProps) {
             <Suspense fallback={<div>Loading...</div>}>
                 <ProjectsSearch />
             </Suspense>
-
             <Suspense fallback={<CardsSkeleton />}>
-            <ProjectsListTabs
-                projectList={<MyProjectsList searchParams={await props.searchParams} />}
-             />
+                <ProjectsListTabs
+                    projectList={<MyProjectsList searchParams={await props.searchParams} />}
+                />
                 {/* <MyProjectsList searchParams={await props.searchParams} /> */}
             </Suspense>
         </div>
