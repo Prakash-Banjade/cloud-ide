@@ -11,12 +11,16 @@ import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
 import { Collaborator, EPermission, ECollaboratorStatus, MAX_COLLABORATORS } from 'src/collaborators/entities/collaborator.entity';
 import { User } from 'src/auth-system/users/entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MailEvents } from 'src/mail/mail.service';
+import { SendInvitationEventDto } from 'src/mail/dto/events.dto';
 
 @Injectable()
 export class InvitesService extends BaseRepository {
     constructor(
         dataSource: DataSource, @Inject(REQUEST) req: FastifyRequest,
         private readonly invitesHelperService: InvitesHelperService,
+        private readonly eventEmitter: EventEmitter2,
     ) { super(dataSource, req) }
 
     async createInvitationLink(dto: CreateInviteDto, currentUser: AuthUser) {
@@ -33,7 +37,8 @@ export class InvitesService extends BaseRepository {
         // check for existing invite, if yes, return it
         const existingInvite = await this.getRepository(Invite).findOne({
             where: {
-                project: { id: project.id }
+                project: { id: project.id },
+                email: IsNull()
             },
             select: { id: true, expiresIn: true, invitationLink: true }
         });
@@ -57,8 +62,6 @@ export class InvitesService extends BaseRepository {
 
         await this.getRepository(Invite).save(invite);
 
-        console.log(invite)
-
         return { invitationLink };
     }
 
@@ -70,8 +73,20 @@ export class InvitesService extends BaseRepository {
                 id: dto.projectId,
                 createdBy: { id: currentUser.userId }
             },
-            relations: { collaborators: true },
-            select: { id: true, collaborators: { id: true } }
+            relations: { collaborators: true, createdBy: { account: true } },
+            select: {
+                id: true,
+                name: true,
+                collaborators: { id: true, email: true },
+                createdBy: {
+                    id: true,
+                    account: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                    }
+                }
+            }
         });
 
         if (!project) throw new ForbiddenException('Access denied.');
@@ -90,12 +105,17 @@ export class InvitesService extends BaseRepository {
 
         if (existing) throw new ConflictException("Invite already sent. Cancel existing invite first.");
 
+        // check if existing collaborator
+        const existingCollaborator = project.collaborators.some(collaborator => collaborator.email === dto.email);
+        if (existingCollaborator) throw new ConflictException("Already a collaborator.");
+
         const { invitationLink, tokenHash, expiresIn } = this.invitesHelperService.generateLink(project.id);
 
         // check if user exists with the email
         const user = await this.getRepository(User).findOne({
             where: { account: { email: dto.email } },
-            select: { id: true }
+            relations: { account: true },
+            select: { id: true, account: { id: true, firstName: true, lastName: true } }
         });
 
         const invite = this.getRepository(Invite).create({
@@ -117,9 +137,18 @@ export class InvitesService extends BaseRepository {
 
         await this.getRepository(Invite).save(invite);
 
-        console.log(invitationLink);
+        const url = invitationLink + "&action=accept";
 
-        // TODO: send email to the invitee
+        // send email
+        this.eventEmitter.emit(MailEvents.INVITATION, new SendInvitationEventDto({
+            projectName: project.name,
+            url,
+            projectOwner: `${project.createdBy.account.firstName} ${project.createdBy.account.lastName}`,
+            receiverEmail: dto.email,
+            receiverName: user
+                ? user?.account.firstName + ' ' + user?.account.lastName
+                : "there", // fallback to Hello there,
+        }));
 
         return { message: 'Invitation sent successfully' };
     }
@@ -128,8 +157,7 @@ export class InvitesService extends BaseRepository {
         const { error, payload, tokenHash } = this.invitesHelperService.validateToken(token);
 
         if (error || !payload?.projectId || !tokenHash) {
-            if (error instanceof TokenExpiredError) throw new BadRequestException('Link has been expired');
-            throw new BadRequestException(error?.message || 'Invalid reset token');
+            throw new BadRequestException(error?.message || "Link has expired or invalid token.");
         };
 
         const invite = await this.getRepository(Invite).findOne({
@@ -168,7 +196,7 @@ export class InvitesService extends BaseRepository {
 
         if (invite.project.createdBy.id === currentUser.userId) throw new ForbiddenException('Access denied. Operation not allowed.'); // self accepting the invite
 
-        if (invite.email !== currentUser.email) throw new ForbiddenException('Access denied. You aren not allowed to accept this invite.');
+        if (invite.email && invite.email !== currentUser.email) throw new ForbiddenException('Access denied. You are not allowed to accept this invite.');
 
         return invite;
     }
@@ -184,8 +212,14 @@ export class InvitesService extends BaseRepository {
 
         if (!user) throw new NotFoundException('User not found.');
 
+        if (invite.email && invite.email !== currentUser.email) throw new ForbiddenException('Access denied. You are not allowed to accept this invite.');
+
         const collaborator = await this.getRepository(Collaborator).findOne({ // current user -> collaborator
-            where: { user: { id: user.id }, project: { id: invite.project.id } },
+            where: {
+                email: currentUser.email,
+                project: { id: invite.project.id },
+                status: ECollaboratorStatus.PENDING
+            },
             select: { id: true }
         });
 
@@ -200,7 +234,7 @@ export class InvitesService extends BaseRepository {
             const newCollaborator = this.getRepository(Collaborator).create({
                 project: invite.project,
                 user,
-                email: invite.email,
+                email: currentUser.email,
                 status: ECollaboratorStatus.ACCEPTED,
                 permission: EPermission.READ
             });
@@ -209,7 +243,7 @@ export class InvitesService extends BaseRepository {
 
         await this.getRepository(Invite).delete({ id: invite.id });
 
-        return { message: 'Invite accepted' };
+        return { message: 'Invite accepted', replId: invite.project.replId };
     }
 
     async cancelInvite(email: string, currentUser: AuthUser) {

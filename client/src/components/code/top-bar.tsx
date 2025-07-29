@@ -46,6 +46,8 @@ export default function TopBar({ socket }: Props) {
 
     const Icon = languageFields.find((field) => field.value === project?.language)?.icon || null;
 
+    const hasWritePermission = permission === EPermission.WRITE;
+
     return (
         <section className='bg-background'>
             <div className="min-h-[50px] relative border-b-2 flex items-center justify-between gap-2 px-4 bg-card/70">
@@ -74,16 +76,19 @@ export default function TopBar({ socket }: Props) {
                         )
                     }
 
-                    <Popover open={permission === EPermission.WRITE && open} onOpenChange={setOpen}>
+                    <Popover open={hasWritePermission && open} onOpenChange={setOpen}>
                         <PopoverTrigger>
-                            <section className='flex items-center gap-1 p-2 rounded-sm hover:bg-secondary'>
+                            <section className={cn(
+                                'flex items-center gap-1 p-2 rounded-sm cursor-auto',
+                                hasWritePermission && 'hover:bg-secondary cursor-pointer'
+                            )}>
                                 {Icon && <Icon className='size-4' />}
                                 <span className={cn("font-medium text-xs truncate", isMobile && "max-w-[8ch]")}>{project?.name}</span>
                             </section>
                         </PopoverTrigger>
                         <PopoverContent side='bottom' align='start'>
                             {
-                                project && permission === EPermission.WRITE && <ProjectRenameForm
+                                project && hasWritePermission && <ProjectRenameForm
                                     defaultValues={{ projectName: project.name }}
                                     projectId={project.id}
                                     setIsOpen={setOpen}
@@ -93,39 +98,58 @@ export default function TopBar({ socket }: Props) {
                     </Popover>
 
                     {
-                        isMobile ? (
-                            isSyncing ? <LoaderCircle className="animate-spin" size={16} /> : <CircleCheck size={16} />
-                        ) : (
-                            <Badge variant={'outline'}>
+                        hasWritePermission && (
+                            <>
                                 {
-                                    isSyncing ?
-                                        (<><LoaderCircle className="animate-spin" size={16} /> Syncing...</>)
-                                        : (<><CircleCheck size={16} /> Synced</>)
+                                    isMobile ? (
+                                        isSyncing ? <LoaderCircle className="animate-spin" size={16} /> : <CircleCheck size={16} />
+                                    ) : (
+                                        <Badge variant={'outline'}>
+                                            {
+                                                isSyncing ?
+                                                    (<><LoaderCircle className="animate-spin" size={16} /> Syncing...</>)
+                                                    : (<><CircleCheck size={16} /> Synced</>)
+                                            }
+                                        </Badge>
+                                    )
                                 }
+                            </>
+                        )
+                    }
+
+                    {
+                        !hasWritePermission && (
+                            <Badge variant={'outline'}>
+                                Read only
                             </Badge>
                         )
                     }
                 </div>
 
-                <section className={cn(
-                    isMobile
-                        ? 'ml-auto'
-                        : 'absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2'
-                )}>
-                    {
-                        projectRunning ? (
-                            <Button size="sm" variant="default" className="gap-1" type="button" onClick={onStop}>
-                                <Pause size={16} />
-                                Stop
-                            </Button>
-                        ) : (
-                            <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
-                                <Play size={16} />
-                                Run
-                            </Button>
-                        )
-                    }
-                </section>
+
+                {
+                    hasWritePermission && (
+                        <section className={cn(
+                            isMobile
+                                ? 'ml-auto'
+                                : 'absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2'
+                        )}>
+                            {
+                                projectRunning ? (
+                                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onStop}>
+                                        <Pause size={16} />
+                                        Stop
+                                    </Button>
+                                ) : (
+                                    <Button size="sm" variant="default" className="gap-1" type="button" onClick={onRun}>
+                                        <Play size={16} />
+                                        Run
+                                    </Button>
+                                )
+                            }
+                        </section>
+                    )
+                }
 
                 <div className="flex items-center gap-4">
                     <ActiveUsers />

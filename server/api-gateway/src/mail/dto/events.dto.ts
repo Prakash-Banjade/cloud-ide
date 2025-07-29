@@ -39,3 +39,14 @@ export class UserCredentialsEventDto {
         Object.assign(this, dto);
     }
 }
+export class SendInvitationEventDto {
+    url: string;
+    receiverEmail: string;
+    projectName: string;
+    projectOwner: string;
+    receiverName: string;
+
+    constructor(dto: SendInvitationEventDto) {
+        Object.assign(this, dto);
+    }
+}
