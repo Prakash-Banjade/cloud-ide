@@ -18,7 +18,6 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import LoadingButton from '../loading-button'
 import { useAppMutation } from '@/hooks/useAppMutation'
 import { ProfileAvatar } from '../ui/avatar'
 import { EPermission, ECollaboratorStatus, TCollaborator } from '@/types/types'
@@ -31,6 +30,7 @@ import { MAX_COLLABORATORS } from '@/lib/CONSTANTS'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 import { AxiosResponse } from 'axios'
+import LoadingButton from '../loading-button'
 
 const formSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }).trim(),
@@ -130,9 +130,9 @@ export default function SharePopover() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent side='bottom' align='end' className='w-fit min-w-sm space-y-6'>
-                <section className='border-yellow-500 text-yellow-500 bg-yellow-500/5 p-3 text-xs rounded-md'>
+                {/* <section className='border-yellow-500 text-yellow-500 bg-yellow-500/5 p-3 text-xs rounded-md'>
                     Work in Progress!
-                </section>
+                </section> */}
                 <section className='flex justify-between items-center gap-2'>
                     <p className='font-medium'>Share Project</p>
                     <LoadingButton
@@ -140,8 +140,7 @@ export default function SharePopover() {
                         size={'sm'}
                         isLoading={isCopyLinkPending}
                         variant={'outline'}
-                        className='text-xs'
-                        loadingText='Generating...'
+                        className='text-xs min-w-24'
                         onClick={copyLink}
                     >
                         <Link className='size-3' />

@@ -11,6 +11,7 @@ type Props = {
 
 export function CancelButton({ email }: Props) {
     const [isPending, startTransition] = useTransition()
+    const router = useRouter();
 
     const { mutateAsync } = useAppMutation();
 
@@ -21,6 +22,8 @@ export function CancelButton({ email }: Props) {
                     endpoint: `/invites/cancel?email=${email}`,
                     method: 'delete',
                 });
+                
+                router.push('/workspace')
             } catch (e) {
                 console.log(e);
             }

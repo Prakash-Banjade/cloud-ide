@@ -4,14 +4,15 @@ import { readFileSync } from 'fs';
 import Handlebars from 'handlebars';
 import { join } from 'path';
 import { OnEvent } from '@nestjs/event-emitter';
-import { EmailVerificationMailDto, ResetPasswordMailEventDto, TwoFAMailEventDto } from './dto/events.dto';
+import { EmailVerificationMailDto, ResetPasswordMailEventDto, SendInvitationEventDto, TwoFAMailEventDto } from './dto/events.dto';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 export enum MailEvents {
     EMAIL_VERIFICATION = 'mail.email-verification',
     RESET_PASSWORD = 'mail.reset-password',
-    TWOFA_OTP = 'twofa.otp',
+    TWOFA_OTP = 'mail.two-fa-otp',
+    INVITATION = 'mail.invitation',
 }
 
 const LOGO_URL = "https://res.cloudinary.com/dbj0ffzhn/image/upload/v1749668908/qubide-logo.png"
@@ -31,6 +32,7 @@ export class MailService {
             confirmation: MailService.parseTemplate('email-verification-otp.hbs'),
             resetPassword: MailService.parseTemplate('reset-password.hbs'),
             twoFaOtp: MailService.parseTemplate('two-fa-otp.hbs'),
+            invitation: MailService.parseTemplate('invitation.hbs'),
         };
     }
 
@@ -99,6 +101,17 @@ export class MailService {
             clientUrl: this.domain,
             logo: LOGO_URL
         });
+        this.sendEmail(dto.receiverEmail, subject, html);
+    }
+
+    @OnEvent(MailEvents.INVITATION)
+    public async sendInvitation(dto: SendInvitationEventDto) {
+        const subject = 'Invited to a project';
+        const html = this.templates.invitation({
+            ...dto,
+            logo: LOGO_URL
+        });
+        console.log(dto.url);
         this.sendEmail(dto.receiverEmail, subject, html);
     }
 

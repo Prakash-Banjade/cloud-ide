@@ -24,6 +24,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manager-fns";
 import { EPermission } from "@/types/types";
 import EditorFooter from "./editor/editor-footer";
+import ReadOnlyTopBar from "./readonly-top-bar";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -97,6 +98,7 @@ export const CodingPagePostPodCreation = () => {
     return (
         <div className="h-screen flex flex-col bg-secondary">
             {/* Top bar */}
+            <ReadOnlyTopBar />
             <TopBar socket={ptySocket} />
             <FileTabSwitcher />
 

@@ -15,7 +15,7 @@ type Props = {
 
 type InviteDetail = {
     id: string,
-    email: string,
+    email: string | null,
     project: {
         id: string,
         name: string,
@@ -95,8 +95,12 @@ export default async function InvitePage({ searchParams }: Props) {
 
                 <p className="mt-10"><span className="font-medium">{createdBy}</span> has invited you to their project <strong>{inviteDetail.project.name}</strong></p>
 
-                <section className="flex items-center gap-4 min-w-sm">
-                    <CancelButton email={inviteDetail.email} />
+                <section className="flex items-center gap-4 min-w-sm mt-5">
+                    {
+                        inviteDetail.email && (
+                            <CancelButton email={inviteDetail.email} />
+                        )
+                    }
                     <AcceptButton token={token} replId={inviteDetail.project.replId} />
                 </section>
 
