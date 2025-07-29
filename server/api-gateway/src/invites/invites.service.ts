@@ -6,7 +6,6 @@ import { AuthUser } from 'src/common/global.types';
 import { Project } from 'src/projects/entities/project.entity';
 import { InvitesHelperService } from './invites-helper.service';
 import { TokenExpiredError } from '@nestjs/jwt';
-import { CollaboratorsService } from 'src/collaborators/collaborators.service';
 import { BaseRepository } from 'src/common/base.repository';
 import { REQUEST } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
@@ -57,6 +56,8 @@ export class InvitesService extends BaseRepository {
         });
 
         await this.getRepository(Invite).save(invite);
+
+        console.log(invite)
 
         return { invitationLink };
     }
@@ -136,7 +137,7 @@ export class InvitesService extends BaseRepository {
                 tokenHash,
                 project: { id: payload.projectId }
             },
-            relations: { project: { createdBy: { account: true } } },
+            relations: { project: { createdBy: { account: true }, collaborators: true } },
             select: {
                 id: true,
                 email: true,
@@ -151,7 +152,8 @@ export class InvitesService extends BaseRepository {
                             firstName: true,
                             lastName: true
                         }
-                    }
+                    },
+                    collaborators: { id: true }
                 }
             }
         });
@@ -164,7 +166,7 @@ export class InvitesService extends BaseRepository {
     async getDetails(token: string, currentUser: AuthUser) {
         const invite = await this.validate(token);
 
-        if (invite.project.createdBy.id === currentUser.userId) throw new BadRequestException('Cannot accept your own invite.'); // self accepting the invite
+        if (invite.project.createdBy.id === currentUser.userId) throw new ForbiddenException('Access denied. Operation not allowed.'); // self accepting the invite
 
         if (invite.email !== currentUser.email) throw new ForbiddenException('Access denied. You aren not allowed to accept this invite.');
 
@@ -173,7 +175,7 @@ export class InvitesService extends BaseRepository {
 
     async acceptInvite(token: string, currentUser: AuthUser) {
         const invite = await this.validate(token);
-        if (invite.project.createdBy.id === currentUser.userId) throw new BadRequestException('Cannot accept your own invite.'); // self accepting the invite
+        if (invite.project.createdBy.id === currentUser.userId) throw new ForbiddenException('Access denied. Operation not allowed.'); // self accepting the invite
 
         const user = await this.getRepository(User).findOne({ // current user -> collaborator
             where: { id: currentUser.userId },
@@ -193,6 +195,8 @@ export class InvitesService extends BaseRepository {
             collaborator.status = ECollaboratorStatus.ACCEPTED;
             await this.getRepository(Collaborator).save(collaborator);
         } else { // collaborator doesn't exist (when invited through link) -> create
+            if (invite.project.collaborators.length >= MAX_COLLABORATORS) throw new BadRequestException(`Max collaborators reached. The project already has ${MAX_COLLABORATORS} collaborators. Reach out to the project owner for further details.`);
+
             const newCollaborator = this.getRepository(Collaborator).create({
                 project: invite.project,
                 user,

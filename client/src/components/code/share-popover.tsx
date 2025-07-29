@@ -30,6 +30,7 @@ import { useFetchData } from '@/hooks/useFetchData'
 import { MAX_COLLABORATORS } from '@/lib/CONSTANTS'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
+import { AxiosResponse } from 'axios'
 
 const formSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }).trim(),
@@ -39,6 +40,7 @@ export default function SharePopover() {
     const { project, isOwner } = useCodingStates();
     const { data: session } = useSession();
     const [isPending, startTransition] = useTransition();
+    const [isCopyLinkPending, startCopyLinkTransition] = useTransition();
 
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -75,15 +77,41 @@ export default function SharePopover() {
             return;
         };
 
-        startTransition(() => {
-            mutateAsync({
-                endpoint: QueryKey.INVITES + '/send',
-                method: 'post',
-                data: { email: data.email, projectId: project?.id },
-                invalidateTags: [QueryKey.COLLABORATORS],
-            });
+        startTransition(async () => {
+            try {
+                await mutateAsync({
+                    endpoint: QueryKey.INVITES + '/send',
+                    method: 'post',
+                    data: { email: data.email, projectId: project?.id },
+                    invalidateTags: [QueryKey.COLLABORATORS],
+                });
 
-            form.reset();
+                form.reset();
+            } catch (e) {
+                console.error(e);
+                toast.error('Something went wrong. Please try again.');
+            }
+        })
+    }
+
+    function copyLink() {
+        startCopyLinkTransition(async () => {
+            try {
+                const data: AxiosResponse = await mutateAsync({
+                    endpoint: QueryKey.INVITES + '/link',
+                    method: 'post',
+                    data: { projectId: project?.id },
+                    toastOnSuccess: false,
+                });
+
+                if ("invitationLink" in data.data && typeof data.data.invitationLink === 'string') {
+                    navigator.clipboard.writeText(data.data.invitationLink);
+                    toast.success('Link copied to clipboard.');
+                }
+            } catch (e) {
+                console.error(e);
+                toast.error('Something went wrong. Please try again.');
+            }
         })
     }
 
@@ -107,10 +135,18 @@ export default function SharePopover() {
                 </section>
                 <section className='flex justify-between items-center gap-2'>
                     <p className='font-medium'>Share Project</p>
-                    <Button type='button' size={'sm'} variant={'outline'} className='text-xs'>
+                    <LoadingButton
+                        type='button'
+                        size={'sm'}
+                        isLoading={isCopyLinkPending}
+                        variant={'outline'}
+                        className='text-xs'
+                        loadingText='Generating...'
+                        onClick={copyLink}
+                    >
                         <Link className='size-3' />
                         Copy Link
-                    </Button>
+                    </LoadingButton>
                 </section>
 
                 <Separator />

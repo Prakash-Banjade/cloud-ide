@@ -16,7 +16,7 @@ export default function TermTopBar({ setShowTerm, showTerm, readOnly }: Props) {
         if (readOnly) return;
 
         function handleTerminalShortcut(e: KeyboardEvent) {
-            const key = e.key.toLowerCase();
+            const key = e.key?.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === '`') {
                 e.preventDefault();
                 localStorage.setItem("showTerm", String(!showTerm));

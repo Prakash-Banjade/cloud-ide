@@ -63,7 +63,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         if (permission === EPermission.READ) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            const key = e.key.toLowerCase();
+            const key = e.key?.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === 's') {
                 e.preventDefault();
                 if (!selectedFile) return;

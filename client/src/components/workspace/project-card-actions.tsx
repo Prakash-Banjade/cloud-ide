@@ -4,29 +4,30 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuButtonItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Edit, MoreVertical, Trash } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import ProjectRenameForm from "./project-rename-form";
 import { TProjectsResponse } from "@/types/types";
-import { useAppMutation } from "@/hooks/useAppMutation";
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
+import { deleteProject } from "@/lib/actions/project.actions";
 
 export default function ProjectCardActions({ project }: { project: TProjectsResponse["data"][0] }) {
     const { data: session, status } = useSession();
-    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
     const [isOpen, setIsOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-    const { mutateAsync, isPending } = useAppMutation();
-
-    async function onDelete() {
-        await mutateAsync({
-            endpoint: `/projects/${project.id}`,
-            method: 'delete',
+    function onDelete() {
+        startTransition(async () => {
+            try {
+                const res = await deleteProject(project.id);
+                toast.success(res.message);
+            } catch (e) {
+                console.log(e);
+                toast.error('Something went wrong. Please try again.');
+            }
         });
-
-        router.refresh();
     }
 
     if (status !== "loading" && project.createdBy.id !== session?.user.userId) return null;
