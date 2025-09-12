@@ -63,9 +63,9 @@ export class FileSystemService {
         });
     }
 
-    fetchFileContent(file: string): Promise<string> {
+    fetchFileContent(filePath: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            fs.readFile(file, "utf8", (err, data) => {
+            fs.readFile(filePath, "utf8", (err, data) => {
                 if (err) {
                     reject(err);
                 } else {

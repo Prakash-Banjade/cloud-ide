@@ -9,8 +9,12 @@ import { ProjectModule } from './project/project.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { AgentOrchestratorModule } from './agent-orchestrator/agent-orchestrator.module';
 import path from 'path';
 import * as fs from 'fs';
+import { OpenaiModule } from './openai/openai.module';
+import { VectorModule } from './vector/vector.module';
+import { LocalExecModule } from './local-exec/local-exec.module';
 
 @Module({
   imports: [
@@ -45,6 +49,10 @@ import * as fs from 'fs';
     FileSystemModule,
     ChokidarModule,
     ProjectModule,
+    AgentOrchestratorModule,
+    OpenaiModule,
+    VectorModule,
+    LocalExecModule,
   ],
   providers: [
     {
