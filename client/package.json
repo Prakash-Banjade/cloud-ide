@@ -54,6 +54,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.53.1",
     "react-hot-toast": "^2.5.2",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.8",
     "sharp": "^0.34.1",
     "socket.io-client": "^4.8.1",

@@ -25,6 +25,7 @@ import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manag
 import { EPermission } from "@/types/types";
 import EditorFooter from "./editor/editor-footer";
 import ReadOnlyTopBar from "./readonly-top-bar";
+import AIChat from "./ai-chat";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -165,12 +166,18 @@ export const CodingPagePostPodCreation = () => {
                     </div>
                 </ResizablePanel>
 
+                <ResizableHandle />
+
+                <ResizablePanel order={3} defaultSize={30} minSize={20}>
+                    <AIChat />
+                </ResizablePanel>
+
                 {
                     previewOpen && (
                         <>
                             <ResizableHandle />
 
-                            <ResizablePanel order={3} defaultSize={30} minSize={20}>
+                            <ResizablePanel order={4} defaultSize={30} minSize={20}>
                                 <Preview />
                             </ResizablePanel>
 
