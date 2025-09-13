@@ -1,11 +1,10 @@
-import { MinioService } from "src/minio/minio.service";
-import { FileSystemService } from "./file-system.service";
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { SocketEvents, WORKSPACE_PATH } from "src/CONSTANTS";
+import { SocketEvents } from "src/CONSTANTS";
 import { ConfigService } from "@nestjs/config";
 import { WriteGuard } from "src/guard/write.guard";
 import { UseGuards } from "@nestjs/common";
+import { FileSystemCRUDService } from "./file-system-crud.service";
 
 @WebSocketGateway({
     cors: {
@@ -26,9 +25,8 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
     private replId: string;
 
     constructor(
-        private readonly minioService: MinioService,
-        private readonly fileSystemService: FileSystemService,
         private readonly configService: ConfigService,
+        private readonly fileSystemCRUDService: FileSystemCRUDService,
     ) {
         this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
     }
@@ -48,32 +46,17 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
     @UseGuards(WriteGuard)
     @SubscribeMessage(SocketEvents.CREATE_ITEM)
     async onCreateItem(
-        @MessageBody() payload: { path: string, type: 'file' | 'dir' },
+        @MessageBody() payload: { path: string, type: 'file' | 'dir', content?: string },
         @ConnectedSocket() socket: Socket
     ): Promise<{ success: boolean, error: string | null }> {
-        try {
-            const { path, type } = payload;
-            const fullPath = `${WORKSPACE_PATH}${path}`;
+        const result = await this.fileSystemCRUDService.createItem(payload);
 
-            if (type === 'dir') {
-                // create an on-disk folder
-                await this.fileSystemService.createDir(fullPath);
-                // mirror into Minio under same prefix
-                await this.minioService.ensurePrefix(`code/${this.replId}${path}`);
-            } else {
-                // create an empty file
-                await this.fileSystemService.createFile(fullPath, '');
-                // push empty content into Minio
-                await this.minioService.saveToMinio(`code/${this.replId}`, path, '');
-            }
-
-            socket.to(this.replId).emit(SocketEvents.ITEM_CREATED, { path, type });
-
-            return { success: true, error: null };
-        } catch (err) {
-            console.error('createItem failed', err);
-            return { success: false, error: err.message };
+        if (result.success) {
+            // emit to active users
+            socket.to(this.replId).emit(SocketEvents.ITEM_CREATED, { path: payload.path, type: payload.type });
         }
+
+        return result;
     }
 
     /**
@@ -85,28 +68,14 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
         @MessageBody() payload: { path: string, type: 'file' | 'dir' },
         @ConnectedSocket() socket: Socket
     ): Promise<boolean> {
-        try {
-            const { path, type } = payload;
-            const fullPath = `${WORKSPACE_PATH}${path}`;
+        const success = await this.fileSystemCRUDService.deleteItem(payload);
 
-            // delete on disk (recursive for dirs)
-            await this.fileSystemService.deletePath(fullPath);
-
-            // remove from Minio: if it's a folder, remove all objects under that prefix
-            if (type === 'dir') {
-                await this.minioService.removePrefix(`code/${this.replId}${path}`);
-            } else {
-                await this.minioService.removeObject(`code/${this.replId}`, path);
-            }
-
+        if (success) {
             // emit to active users
-            socket.to(this.replId).emit(SocketEvents.ITEM_DELETED, { path, type });
-
-            return true;
-        } catch (err) {
-            console.error('deleteItem failed', err);
-            return false;
+            socket.to(this.replId).emit(SocketEvents.ITEM_DELETED, { path: payload.path, type: payload.type });
         }
+
+        return success;
     }
 
     /**
@@ -118,33 +87,13 @@ export class FileSystemCRUDGateway implements OnGatewayConnection, OnGatewayDisc
     async onRenameItem(
         @MessageBody() payload: { oldPath: string, newPath: string, type: 'file' | 'dir' }
     ): Promise<{ success: boolean, error: string | null }> {
-        try {
-            const { oldPath, newPath, type } = payload;
-            const fullOld = `${WORKSPACE_PATH}${oldPath}`;
-            const fullNew = `${WORKSPACE_PATH}${newPath}`;
+        const result = await this.fileSystemCRUDService.renameItem(payload);
 
-            // rename on disk
-            await this.fileSystemService.renamePath(fullOld, fullNew);
-
-            // mirror in Minio: move each object from old prefix to new prefix
-
-            if (type === 'dir') {
-                // ensure trailing slash so listObjectsV2 will enumerate children :contentReference[oaicite:2]{index=2}
-                const srcPrefix = `code/${this.replId}${oldPath.endsWith('/') ? oldPath : oldPath + '/'}`;
-                const dstPrefix = `code/${this.replId}${newPath.endsWith('/') ? newPath : newPath + '/'}`;
-                await this.minioService.movePrefix(srcPrefix, dstPrefix);
-            } else {
-                await this.minioService.copyObject(`code/${this.replId}`, oldPath, `code/${this.replId}`, newPath);
-                await this.minioService.removeObject(`code/${this.replId}`, oldPath);
-            }
-
+        if (result.success) {
             // emit to active users
-            this.server.to(this.replId).emit(SocketEvents.ITEM_RENAMED, { oldPath, newPath });
-
-            return { success: true, error: null };
-        } catch (err) {
-            console.error('renameItem failed', err);
-            return { success: false, error: err.message };
+            this.server.to(this.replId).emit(SocketEvents.ITEM_RENAMED, { oldPath: payload.oldPath, newPath: payload.newPath });
         }
+
+        return result;
     }
 }

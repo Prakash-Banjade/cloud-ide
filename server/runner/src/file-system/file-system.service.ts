@@ -63,6 +63,23 @@ export class FileSystemService {
         });
     }
 
+    listFiles(path: string) {
+        return new Promise((resolve, reject) => {
+            fs.readdir(path, { withFileTypes: true }, (err, files) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    const fileList = files.map(f => ({
+                        type: f.isDirectory() ? 'dir' : 'file',
+                        name: f.name,
+                        path: `${path}/${f.name}`,
+                    }));
+                    resolve(fileList);
+                }
+            })
+        })
+    }
+
     fetchFileContent(filePath: string): Promise<string> {
         return new Promise((resolve, reject) => {
             fs.readFile(filePath, "utf8", (err, data) => {

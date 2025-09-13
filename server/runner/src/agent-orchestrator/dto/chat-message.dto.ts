@@ -1,5 +1,11 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
+export enum EContextSelection {
+    FILE = 'file',
+    FILES = 'files',
+    REPO = 'repo',
+}
+
 export class ChatMessageDto {
     @IsString()
     @IsNotEmpty()
@@ -9,6 +15,6 @@ export class ChatMessageDto {
     @IsOptional()
     selectedFilePath?: string
 
-    @IsEnum(['file', 'files', 'repo'])
-    contextSelection?: 'file' | 'files' | 'repo';
+    @IsEnum(EContextSelection)
+    contextSelection?: EContextSelection = EContextSelection.FILE;
 }

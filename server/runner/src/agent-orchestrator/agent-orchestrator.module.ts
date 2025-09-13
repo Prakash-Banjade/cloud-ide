@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
 import { AgentOrchestratorController } from './agent-orchestrator.controller';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
-import { OpenaiModule } from 'src/openai/openai.module';
+import { OpenAIModule } from 'src/openai/openai.module';
 import { MinioModule } from 'src/minio/minio.module';
 import { VectorModule } from 'src/vector/vector.module';
-import { LocalExecModule } from 'src/local-exec/local-exec.module';
+import { FileSystemModule } from 'src/file-system/file-system.module';
 
 @Module({
     imports: [
-        OpenaiModule,
+        OpenAIModule,
         MinioModule,
         VectorModule,
-        LocalExecModule,
+        FileSystemModule,
     ],
     controllers: [AgentOrchestratorController],
     providers: [

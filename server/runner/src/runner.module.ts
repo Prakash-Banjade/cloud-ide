@@ -12,9 +12,8 @@ import { diskStorage } from 'multer';
 import { AgentOrchestratorModule } from './agent-orchestrator/agent-orchestrator.module';
 import path from 'path';
 import * as fs from 'fs';
-import { OpenaiModule } from './openai/openai.module';
+import { OpenAIModule } from './openai/openai.module';
 import { VectorModule } from './vector/vector.module';
-import { LocalExecModule } from './local-exec/local-exec.module';
 
 @Module({
   imports: [
@@ -50,9 +49,8 @@ import { LocalExecModule } from './local-exec/local-exec.module';
     ChokidarModule,
     ProjectModule,
     AgentOrchestratorModule,
-    OpenaiModule,
+    OpenAIModule,
     VectorModule,
-    LocalExecModule,
   ],
   providers: [
     {
