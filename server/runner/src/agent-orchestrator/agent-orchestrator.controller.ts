@@ -6,12 +6,15 @@ import {
     Res,
     Sse,
     MessageEvent,
+    UseGuards,
 } from '@nestjs/common';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
 import { Observable } from 'rxjs';
 import { ChatMessageDto } from './dto/chat-message.dto';
+import { AuthGuard } from 'src/guard/auth.guard';
 
 @Controller('vibe')
+@UseGuards(AuthGuard)
 export class AgentOrchestratorController {
     constructor(private readonly orchestrator: AgentOrchestratorService) { }
 

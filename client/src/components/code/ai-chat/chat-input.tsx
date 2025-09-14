@@ -1,18 +1,29 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Paperclip, Send, Settings, X } from "lucide-react";
+import { LoaderCircle, Mic, Paperclip, Send, Settings, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { cn } from "@/lib/utils";
+import { useAIChat } from ".";
 
-export default function ChatInput() {
+export default function ChatInput({
+    submitChatMessage,
+}: {
+    submitChatMessage: (message: string) => void,
+}) {
     const [agent, setAgent] = useState("Agent")
     const [model, setModel] = useState("GPT-4.1")
     const [inputMessage, setInputMessage] = useState("")
     const { selectedFile } = useCodingStates();
+    const { isChatPending } = useAIChat();
 
-    function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+
+        if (!inputMessage || isChatPending) return;
+
+        submitChatMessage(inputMessage);
+        setInputMessage("");
     }
 
     return (
@@ -56,7 +67,7 @@ export default function ChatInput() {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {/* Agent selector */}
-                    <Select value={agent} onValueChange={setAgent}>
+                    <Select value={agent} onValueChange={setAgent} disabled={isChatPending}>
                         <SelectTrigger className="border-none">
                             <SelectValue />
                         </SelectTrigger>
@@ -74,7 +85,7 @@ export default function ChatInput() {
                     </Select>
 
                     {/* Model selector */}
-                    <Select value={model} onValueChange={setModel}>
+                    <Select value={model} onValueChange={setModel} disabled={isChatPending}>
                         <SelectTrigger className="border-none">
                             <SelectValue />
                         </SelectTrigger>
@@ -94,16 +105,25 @@ export default function ChatInput() {
 
                 {/* Right side controls */}
                 <div>
-                    <Button variant="ghost" size={'icon'}>
+                    <Button type="button" disabled={isChatPending} variant="ghost" size={'icon'}>
                         <Settings className="w-4 h-4" />
                     </Button>
 
-                    <Button variant="ghost" size={'icon'}>
+                    <Button type="button" disabled={isChatPending} variant="ghost" size={'icon'}>
                         <Mic className="w-4 h-4" />
                     </Button>
 
-                    <Button variant="ghost" size={'icon'}>
-                        <Send className="w-4 h-4" />
+                    <Button
+                        type="submit"
+                        variant="ghost"
+                        disabled={isChatPending}
+                        size={'icon'}
+                    >
+                        {
+                            isChatPending
+                                ? <LoaderCircle className="animate-spin" />
+                                : <Send className="w-4 h-4" />
+                        }
                     </Button>
                 </div>
             </div>

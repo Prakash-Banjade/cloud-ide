@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ChatInput from "./chat-input";
 import ChatContent from "./chat-content";
+import { useAppMutation } from "@/hooks/useAppMutation";
+import toast from "react-hot-toast";
+import { POD_DOMAIN } from "@/lib/CONSTANTS";
+import { useParams } from "next/navigation";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface IChatMessage {
     role: "agent" | "user",
@@ -12,8 +17,9 @@ interface IChatMessage {
 }
 
 interface AIChatContextType {
-    messages: IChatMessage[],
-    setMessages: React.Dispatch<React.SetStateAction<IChatMessage[]>>
+    messages: IChatMessage[];
+    setMessages: React.Dispatch<React.SetStateAction<IChatMessage[]>>;
+    isChatPending: boolean;
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -28,9 +34,38 @@ export const useAIChat = () => {
 
 export default function AIChat() {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
+    const { replId } = useParams();
+
+    const { mutateAsync, isPending } = useAppMutation();
+
+    const podUrl = "http://localhost:3003";
+    // const podUrl = process.env.NODE_ENV === 'production'
+    //     ? `https://${replId}.${POD_DOMAIN}`
+    //     : `http://${replId}.${POD_DOMAIN}`;
+
+    async function submitChatMessage(message: string) {
+        setMessages(prev => [...prev, { role: "user", content: message }]);
+
+        try {
+            const res = await mutateAsync({
+                endpoint: `${podUrl}/vibe/chat`,
+                method: "post",
+                data: {
+                    message: message
+                },
+                toastOnSuccess: false,
+            });
+
+            if (typeof res.data === 'string') {
+                setMessages(prev => [...prev, { role: "agent", content: res.data as string }]);
+            }
+        } catch {
+            toast.error("Something went wrong. Please try again.");
+        }
+    }
 
     return (
-        <AIChatContext.Provider value={{ messages, setMessages }}>
+        <AIChatContext.Provider value={{ messages, setMessages, isChatPending: isPending }}>
             <div className="bg-sidebar h-full flex flex-col">
 
                 {/* Header */}
@@ -43,13 +78,13 @@ export default function AIChat() {
                 </div>
 
                 {/* Chat Content */}
-                <div className="flex-1">
+                <ScrollArea className="flex-1 flex overflow-auto">
                     <ChatContent />
-                </div>
+                </ScrollArea>
 
                 {/* Chat Input */}
                 <section className="p-1.5">
-                    <ChatInput />
+                    <ChatInput submitChatMessage={submitChatMessage} />
                 </section>
 
             </div>

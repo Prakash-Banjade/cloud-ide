@@ -129,7 +129,7 @@ kubectl get svc -n ingress-nginx
 
 ## References
 
-Huge thanks to [Piyush Garg](https://www.linkedin.com/in/piyushgarg195) for the idea, [Harkirat Singh](https://www.linkedin.com/in/kirat-li) for the guidance and implementation and [TrainWithShubham](https://www.linkedin.com/company/trainwithshubham)
+Huge thanks to [Piyush Garg](https://www.linkedin.com/in/piyushgarg195) for the idea, [Harkirat Singh](https://www.linkedin.com/in/kirat-li) and [TrainWithShubham](https://www.linkedin.com/company/trainwithshubham) for the guidance and implementation.
 
 ## Contributing
 
