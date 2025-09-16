@@ -13,7 +13,7 @@ import { AgentOrchestratorModule } from './agent-orchestrator/agent-orchestrator
 import path from 'path';
 import * as fs from 'fs';
 import { OpenAIModule } from './openai/openai.module';
-import { VectorModule } from './vector/vector.module';
+import { StreamModule } from './stream/stream.module';
 
 @Module({
   imports: [
@@ -50,7 +50,7 @@ import { VectorModule } from './vector/vector.module';
     ProjectModule,
     AgentOrchestratorModule,
     OpenAIModule,
-    VectorModule,
+    StreamModule,
   ],
   providers: [
     {

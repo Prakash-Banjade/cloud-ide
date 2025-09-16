@@ -79,7 +79,6 @@ export class FileSystemCRUDService {
             await this.fileSystemService.renamePath(fullOld, fullNew);
 
             // mirror in Minio: move each object from old prefix to new prefix
-
             if (type === 'dir') {
                 // ensure trailing slash so listObjectsV2 will enumerate children :contentReference[oaicite:2]{index=2}
                 const srcPrefix = `code/${this.replId}${oldPath.endsWith('/') ? oldPath : oldPath + '/'}`;

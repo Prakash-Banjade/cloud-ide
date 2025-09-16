@@ -33,9 +33,9 @@ export default function ChatContent() {
                                 message.role === "user" ? "justify-end" : "justify-start"
                             )}
                         >
-                            <p
+                            <div
                                 className={cn(
-                                    "text-sm py-2 max-w-[75%]",
+                                    "text-sm py-2 w-fit max-w-[600px]",
                                     message.role === "user" && "px-3 bg-brand/20 rounded-md"
                                 )}
                             >
@@ -56,7 +56,7 @@ export default function ChatContent() {
                                 >
                                     {message.content}
                                 </Markdown>
-                            </p>
+                            </div>
                         </div>
                     )
                 })

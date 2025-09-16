@@ -55,7 +55,8 @@ export const CodingPagePostPodCreation = () => {
         previewOpen,
         setPreviewOpen,
         permission,
-        observingPanelRef
+        observingPanelRef,
+        setObjectsList
     } = useCodingStates();
     const isMobile = useIsMobile(1000);
 
@@ -65,9 +66,9 @@ export const CodingPagePostPodCreation = () => {
     useEffect(() => {
         if (!socket || !ptySocket) return;
 
-        socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
+        socket.on(SocketEvents.TREE_LOADED, async ({ rootContent, objectLists }: { rootContent: TreeItem[], objectLists: string[] }) => {
             setTreeLoaded(true);
-
+            setObjectsList(objectLists);
             await refreshTree({
                 content: rootContent,
                 socket,

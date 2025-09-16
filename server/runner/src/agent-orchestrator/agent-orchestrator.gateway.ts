@@ -1,28 +1,61 @@
 import { Injectable } from '@nestjs/common';
 import { Agent, AgentInputItem, run, tool, Tool } from '@openai/agents';
-import { VectorService } from 'src/vector/vector.service';
 import { FileSystemService } from 'src/file-system/file-system.service';
-import { WORKSPACE_PATH } from 'src/CONSTANTS';
+import { SocketEvents, WORKSPACE_PATH } from 'src/CONSTANTS';
 import { ConfigService } from '@nestjs/config';
-import { ChatMessageDto } from './dto/chat-message.dto';
+import { ChatMessageDto, EContextSelection } from './dto/chat-message.dto';
 import z from 'zod';
 import { FileSystemCRUDService } from 'src/file-system/file-system-crud.service';
 import { exec } from 'node:child_process';
+import { MinioService } from 'src/minio/minio.service';
+import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Server } from 'socket.io';
 
-@Injectable()
-export class AgentOrchestratorService {
+@WebSocketGateway({
+    cors: {
+        origin: (origin, cb) => {
+            if (origin === process.env.CLIENT_URL) {
+                cb(null, true);
+            } else {
+                cb(new Error('Not allowed by CORS'), false);
+            }
+        },
+        methods: ['GET', 'POST'],
+    },
+})
+export class AgentOrchestratorGateway {
+    @WebSocketServer()
+    server: Server;
 
     private replId: string;
 
     private history: AgentInputItem[] = [];
+    private agent: Agent;
 
     constructor(
-        private readonly vector: VectorService,
         private readonly fileSystem: FileSystemService,
         private readonly configService: ConfigService,
         private readonly fileSystemCRUDService: FileSystemCRUDService,
+        private readonly minioService: MinioService
     ) {
-        this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
+        const replId: string = this.configService.getOrThrow<string>('REPL_ID');
+        this.replId = replId;
+
+        const tools = this.getTools();
+        this.agent = new Agent({
+            name: 'vibecoder',
+            instructions: `
+                You are Vibe coder — a secure assistant that can read, modify, and run code inside the user project. Always explain your actions and show diffs before writing.
+                What ever application user wants to build or modify existing, you must help them achieve it by utilizing the provided tools.
+
+                IMPORTANT CONSIDERATIONS:
+                - While creating items (file or directory), ensure the path starts with a leading slash when passing the parameters, e.g. /src/index.js or /assets.
+                - If user is asking to create React.js application, you must use 'npm create vite@latest [app-name] -- --template react' command to create the app.
+                - When running commands, you must always use the 'run_command' tool. Never assume that you can run commands directly.
+            `,
+            tools,
+            model: 'gpt-4o'
+        });
     }
 
     async handleMessage(payload: ChatMessageDto) {
@@ -35,37 +68,20 @@ export class AgentOrchestratorService {
 
             const fileContent = await this.fileSystem.fetchFileContent(fullFilePath);
             this.history.push({
-                role: 'user',
+                role: 'system',
                 content: `CURRENT_FILE: ${selectedFilePath}\n\n${fileContent}`
             });
         }
 
-        if (contextSelection === 'repo') {
-            const hits = await this.vector.semanticSearch(this.replId, message, 5);
-            for (const h of hits) {
-                this.history.push({ role: 'system', content: `RETRIEVED_SNIPPET: ${h.path}\n${h.content}` });
-            }
+        if (contextSelection === EContextSelection.REPO) {
+            this.history.push({
+                role: 'system',
+                content: `CURRENT_FILE_SYSTEM: ${JSON.stringify([...this.minioService.getObjectList()])}`
+            });
         }
 
-        const tools = this.createToolset(this.replId);
-
-        const agent = new Agent({
-            name: 'vibecoder',
-            instructions: `
-                You are Vibe coder — a secure assistant that can read, modify, and run code inside the user project. Always explain your actions and show diffs before writing.
-                What ever application user wants to build or modify existing, you must help them achieve it by utilizing the provided tools.
-
-                IMPORTANT CONSIDERATIONS:
-                - While creating items (file or directory), ensure the path starts with a leading slash when passing the parameters, e.g. /src/index.js or /assets.
-                - If user is asking to create React.js application, you must use 'npm create vite@latest [app-name] -- --template react' command to create the app.
-                - When running commands, you must always use the 'run_command' tool. Never assume that you can run commands directly.
-            `,
-            tools,
-            model: 'gpt-4.1'
-        });
-
         const result = await run(
-            agent,
+            this.agent,
             this.history,
         );
 
@@ -74,7 +90,7 @@ export class AgentOrchestratorService {
         return result.finalOutput;
     }
 
-    private createToolset(replId: string): Tool<unknown>[] {
+    private getTools(): Tool<unknown>[] {
         const readFileTool = tool({
             name: 'read_file',
             description: 'Read file',
@@ -110,6 +126,20 @@ export class AgentOrchestratorService {
             },
         });
 
+        const updateFileContentTool = tool({
+            name: 'update_file_content',
+            description: 'Update the content of a file in the project',
+            parameters: z.object({
+                path: z.string(),
+                content: z.string(),
+            }),
+            execute: async ({ path, content }) => {
+                await this.fileSystem.saveFile(`${WORKSPACE_PATH}${path}`, content);
+                this.server.emit(SocketEvents.UPDATE_CONTENT, { path, content });
+                return { ok: true };
+            },
+        });
+
         const deleteItemTool = tool({
             name: 'delete_item',
             description: 'Delete a file or directory in the project',
@@ -142,25 +172,13 @@ export class AgentOrchestratorService {
             },
         });
 
-        const searchCodeTool = tool({
-            name: 'search_code',
-            description: 'Semantic search codebase',
-            parameters: z.object({
-                query: z.string(),
-                topK: z.number().min(1).default(5),
-            }),
-            execute: async ({ query, topK }) => {
-                return await this.vector.semanticSearch(replId, query, topK);
-            },
-        });
-
         return [
             readFileTool,
             fetchDirTool,
             createItemTool,
             deleteItemTool,
+            updateFileContentTool,
             runCommandTool,
-            searchCodeTool,
         ];
     }
 }

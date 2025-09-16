@@ -13,7 +13,7 @@ import { useSession } from "next-auth/react";
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
     const { data: session } = useSession();
-    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance, permission, setFileStructure } = useCodingStates();
+    const { setIsSyncing, selectedFile, setEditorInstance, editorInstance, permission } = useCodingStates();
     const remoteUsers = useRef<Record<string, {
         cursor: monaco.editor.IEditorDecorationsCollection,
         selection: monaco.editor.IEditorDecorationsCollection

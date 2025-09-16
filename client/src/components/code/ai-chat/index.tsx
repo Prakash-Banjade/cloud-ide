@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { POD_DOMAIN } from "@/lib/CONSTANTS";
 import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCodingStates } from "@/context/coding-states-provider";
 
 interface IChatMessage {
     role: "agent" | "user",
@@ -35,6 +36,7 @@ export const useAIChat = () => {
 export default function AIChat() {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
     const { replId } = useParams();
+    const { selectedFile } = useCodingStates();
 
     const { mutateAsync, isPending } = useAppMutation();
 
@@ -51,9 +53,14 @@ export default function AIChat() {
                 endpoint: `${podUrl}/vibe/chat`,
                 method: "post",
                 data: {
-                    message: message
+                    message: message,
+                    selectedFilePath: selectedFile?.path,
+                    contextSelection: 'repo'
                 },
                 toastOnSuccess: false,
+                config: {
+                    timeout: undefined
+                }
             });
 
             if (typeof res.data === 'string') {

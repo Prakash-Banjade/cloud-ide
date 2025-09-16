@@ -75,9 +75,9 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   // as the module is initialized, immediately start the timer, because there is a chance that socket connection never happens
   // which leads to never shutting down the resources
   onModuleInit() {
-    this.stopInactivityTimer();
-    this.logger.log('🕒 Starting inactivity timer for terminal gateway - OnModuleInit');
-    this.startInactivityTimer();
+    // this.stopInactivityTimer();
+    // this.logger.log('🕒 Starting inactivity timer for terminal gateway - OnModuleInit');
+    // this.startInactivityTimer();
   }
 
   private startInactivityTimer() {

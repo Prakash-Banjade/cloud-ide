@@ -1,4 +1,4 @@
-import { insertTreeItems, removeItemFromTree, renameTreeItem } from '@/app/code/[replId]/fns/tree-mutation-fns';
+import { insertTreeItems, removeItemFromTree, renameTreeItem, updateFileContent } from '@/app/code/[replId]/fns/tree-mutation-fns';
 import { useCodingStates } from '@/context/coding-states-provider';
 import { useSocket } from '@/context/socket-provider';
 import { SocketEvents } from '@/lib/CONSTANTS';
@@ -6,7 +6,7 @@ import { EItemType, TreeItem } from '@/types/tree.types';
 import { useEffect } from 'react'
 
 export default function useListenTreeMutation() {
-    const { setFileStructure } = useCodingStates();
+    const { setFileStructure, editorInstance, selectedFile } = useCodingStates();
     const { socket } = useSocket();
 
     const { deleteItem } = useDeleteTreeItem();
@@ -48,13 +48,22 @@ export default function useListenTreeMutation() {
             setFileStructure((prev) =>
                 renameTreeItem(prev, data.oldPath, data.newPath)
             );
+        });
 
+        socket.on(SocketEvents.UPDATE_CONTENT, ({ path, content }: { path: string, content: string }) => {
+            if (selectedFile?.path === undefined) console.error('selectedFile.path is undefined');
+            if (path === selectedFile?.path) {
+                console.log(content)
+                editorInstance?.setValue(content)
+            };
+            setFileStructure(prev => updateFileContent(prev, path, content));
         });
 
         return () => {
             socket.off(SocketEvents.ITEM_CREATED);
             socket.off(SocketEvents.ITEM_DELETED);
             socket.off(SocketEvents.ITEM_RENAMED);
+            socket.off(SocketEvents.UPDATE_CONTENT);
         }
     }, [socket])
 

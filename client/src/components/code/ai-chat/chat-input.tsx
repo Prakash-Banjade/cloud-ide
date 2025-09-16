@@ -17,11 +17,13 @@ export default function ChatInput({
     const { selectedFile } = useCodingStates();
     const { isChatPending } = useAIChat();
 
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        handleSend();
+    }
 
+    function handleSend() {
         if (!inputMessage || isChatPending) return;
-
         submitChatMessage(inputMessage);
         setInputMessage("");
     }
@@ -55,12 +57,18 @@ export default function ChatInput({
             </div>
 
             {/* Placeholder text replaced with actual input box */}
-            <input
-                type="text"
+            <textarea
                 placeholder="Add context (#), extensions (@), commands (/)"
-                className="w-full bg-transparent text-sm mb-4 outline-none border-none focus:ring-0"
+                className="w-full field-sizing-content max-h-[200px] resize-none bg-transparent text-sm mb-4 outline-none border-none focus:ring-0"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.ctrlKey && e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSend()
+                        return;
+                    }
+                }}
             />
 
             {/* Bottom controls */}
