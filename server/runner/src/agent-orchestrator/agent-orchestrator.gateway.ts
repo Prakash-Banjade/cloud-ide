@@ -10,6 +10,7 @@ import { exec } from 'node:child_process';
 import { MinioService } from 'src/minio/minio.service';
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
+import { StreamingService } from 'src/streaming/streaming.service';
 
 @WebSocketGateway({
     cors: {
@@ -36,7 +37,8 @@ export class AgentOrchestratorGateway {
         private readonly fileSystem: FileSystemService,
         private readonly configService: ConfigService,
         private readonly fileSystemCRUDService: FileSystemCRUDService,
-        private readonly minioService: MinioService
+        private readonly minioService: MinioService,
+        private readonly streamingService: StreamingService,
     ) {
         const replId: string = this.configService.getOrThrow<string>('REPL_ID');
         this.replId = replId;
@@ -83,11 +85,20 @@ export class AgentOrchestratorGateway {
         const result = await run(
             this.agent,
             this.history,
+            { stream: true }
         );
 
-        this.history = result.history;
+        result
+            .toTextStream({
+                compatibleWithNodeStreams: true,
+            })
+            .on("data", (chunk) => this.streamingService.emitData(chunk.toString()))
+            .on("end", () => this.streamingService.emitData("Stream ended"))
 
-        return result.finalOutput;
+        // this.streamingService.emitData(result.finalOutput || "");
+
+        // this.history = result.history;
+        // return result.finalOutput;
     }
 
     private getTools(): Tool<unknown>[] {

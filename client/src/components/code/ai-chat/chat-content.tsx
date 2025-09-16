@@ -1,4 +1,4 @@
-import { useAIChat } from "."
+import { IChatMessage, useAIChat } from "."
 import { cn } from "@/lib/utils";
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm';
@@ -9,7 +9,7 @@ import "highlight.js/styles/github-dark.css"; // import a highlight.js CSS theme
 import { LoaderCircle, Sparkles } from "lucide-react";
 
 export default function ChatContent() {
-    const { messages, isChatPending } = useAIChat();
+    const { messages, isChatPending, streamingText } = useAIChat();
 
     if (messages.length === 0) return (
         <div className="@container flex-1 grid place-items-center">
@@ -25,40 +25,7 @@ export default function ChatContent() {
         <section className="p-3 px-4 pb-40">
             {
                 messages.map((message, ind) => {
-                    return (
-                        <div
-                            key={ind}
-                            className={cn(
-                                `flex mb-5`,
-                                message.role === "user" ? "justify-end" : "justify-start"
-                            )}
-                        >
-                            <div
-                                className={cn(
-                                    "text-sm py-2 w-fit max-w-[600px]",
-                                    message.role === "user" && "px-3 bg-brand/20 rounded-md"
-                                )}
-                            >
-                                <Markdown
-                                    remarkPlugins={[remarkGfm]}
-                                    rehypePlugins={[
-                                        rehypeHighlight,
-                                        rehypeRaw,
-                                    ]}
-                                    components={{
-                                        pre({ node, ...props }) {
-                                            return <pre style={{ margin: '10px 0' }} {...props} />;
-                                        },
-                                        code({ node, ...props }) {
-                                            return <code style={{ borderRadius: '8px', border: "1px solid var(--border)" }} {...props} />;
-                                        },
-                                    }}
-                                >
-                                    {message.content}
-                                </Markdown>
-                            </div>
-                        </div>
-                    )
+                    return <RenderChatMessage key={ind} message={message} />;
                 })
             }
 
@@ -71,6 +38,48 @@ export default function ChatContent() {
                 )
             }
 
+            {
+                streamingText.length > 0 && (
+                    <RenderChatMessage message={{ role: "agent", content: streamingText }} />
+                )
+            }
+
         </section>
+    )
+}
+
+function RenderChatMessage({ message }: { message: IChatMessage }) {
+    return (
+        <div
+            className={cn(
+                `flex mb-5`,
+                message.role === "user" ? "justify-end" : "justify-start"
+            )}
+        >
+            <div
+                className={cn(
+                    "text-sm py-2 w-fit max-w-[600px]",
+                    message.role === "user" && "px-3 bg-brand/20 rounded-md"
+                )}
+            >
+                <Markdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[
+                        rehypeHighlight,
+                        rehypeRaw,
+                    ]}
+                    components={{
+                        pre({ node, ...props }) {
+                            return <pre style={{ margin: '10px 0' }} {...props} />;
+                        },
+                        code({ node, ...props }) {
+                            return <code style={{ borderRadius: '8px', border: "1px solid var(--border)" }} {...props} />;
+                        },
+                    }}
+                >
+                    {message.content}
+                </Markdown>
+            </div>
+        </div>
     )
 }

@@ -13,7 +13,7 @@ import { AgentOrchestratorModule } from './agent-orchestrator/agent-orchestrator
 import path from 'path';
 import * as fs from 'fs';
 import { OpenAIModule } from './openai/openai.module';
-import { StreamModule } from './stream/stream.module';
+import { StreamingModule } from './streaming/streaming.module';
 
 @Module({
   imports: [
@@ -50,7 +50,7 @@ import { StreamModule } from './stream/stream.module';
     ProjectModule,
     AgentOrchestratorModule,
     OpenAIModule,
-    StreamModule,
+    StreamingModule,
   ],
   providers: [
     {
