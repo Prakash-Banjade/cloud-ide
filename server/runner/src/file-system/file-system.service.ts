@@ -93,7 +93,6 @@ export class FileSystemService {
     }
 
     async saveFile(file: string, content: string): Promise<void> {
-        console.log(file)
         return new Promise((resolve, reject) => {
             fs.writeFile(file, content, "utf8", (err) => {
                 if (err) {

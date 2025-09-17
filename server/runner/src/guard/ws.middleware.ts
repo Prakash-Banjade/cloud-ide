@@ -14,16 +14,12 @@ export const AuthWsMiddleware = (
         try {
             const token = socket.handshake?.auth?.token;
 
-            console.log(token)
-            
             if (!token) {
                 throw new WsException("Authorization token is missing");
             }
 
             try {
-                const payload = await jwtService.verify(token);
-
-                console.log(payload, ' from middleware')
+                await jwtService.verify(token);
             } catch (error) {
                 throw new Error("Authorization token is invalid");
             }

@@ -7,10 +7,19 @@ import 'highlight.js/styles/github.css'; // Or any other theme you prefer
 import rehypeRaw from "rehype-raw";
 import "highlight.js/styles/github-dark.css"; // import a highlight.js CSS theme
 import { LoaderCircle, Sparkles } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 export default function ChatContent() {
     const { messages, isChatPending, streamingText } = useAIChat();
 
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.scrollIntoView();
+        }
+    }, [streamingText]);
+    
     if (messages.length === 0) return (
         <div className="@container flex-1 grid place-items-center">
             <div className="flex items-center justify-center flex-col">
@@ -22,7 +31,7 @@ export default function ChatContent() {
     );
 
     return (
-        <section className="p-3 px-4 pb-40">
+        <section className="p-3 px-4 pb-20">
             {
                 messages.map((message, ind) => {
                     return <RenderChatMessage key={ind} message={message} />;
@@ -43,6 +52,8 @@ export default function ChatContent() {
                     <RenderChatMessage message={{ role: "agent", content: streamingText }} />
                 )
             }
+
+            <div ref={ref} className="h-10" />
 
         </section>
     )

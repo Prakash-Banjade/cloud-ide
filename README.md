@@ -2,7 +2,7 @@
 
 ## Overview
 
-Qubide is a cloud-native integrated development environment that lets developers write, build, execute, and download code entirely in the browser. It leverages containerization and Kubernetes to isolate user workspaces and support multiple programming languages.
+Qubide is a cloud-native integrated development environment that lets developers write, build, execute, and download code entirely in the browser. It also provides AI chat feature which allows users to vibe code. It leverages containerization and Kubernetes to isolate user workspaces and support multiple programming languages.
 
 Key capabilities:
 
@@ -11,6 +11,7 @@ Key capabilities:
 * Automatic workspace provisioning using Kubernetes
 * Support for multiple language servers (TypeScript, Python, C, Java etc.)
 * Collaborative Editing
+* AI chat and vibe coding
 
 ## Prerequisites
 

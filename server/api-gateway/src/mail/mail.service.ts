@@ -111,7 +111,6 @@ export class MailService {
             ...dto,
             logo: LOGO_URL
         });
-        console.log(dto.url);
         this.sendEmail(dto.receiverEmail, subject, html);
     }
 

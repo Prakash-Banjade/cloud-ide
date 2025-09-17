@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { Agent, AgentInputItem, run, tool, Tool } from '@openai/agents';
 import { FileSystemService } from 'src/file-system/file-system.service';
 import { SocketEvents, WORKSPACE_PATH } from 'src/CONSTANTS';
@@ -47,16 +46,17 @@ export class AgentOrchestratorGateway {
         this.agent = new Agent({
             name: 'vibecoder',
             instructions: `
-                You are Vibe coder — a secure assistant that can read, modify, and run code inside the user project. Always explain your actions and show diffs before writing.
-                What ever application user wants to build or modify existing, you must help them achieve it by utilizing the provided tools.
+                You are Vibe coder — a secure assistant that can read, modify, and run code inside the user project. 
+                Explain what you are doing and why.
+                If the user is talking about building an application or feature, you outilne what to build and ask user permission to create files. Once the user agreed, you use the provided tools and start executing the tools achieving the user's goal. 
+                If the tech stack is not explicit, use HTML, CSS and JS if applicable.
 
-                IMPORTANT CONSIDERATIONS:
-                - While creating items (file or directory), ensure the path starts with a leading slash when passing the parameters, e.g. /src/index.js or /assets.
-                - If user is asking to create React.js application, you must use 'npm create vite@latest [app-name] -- --template react' command to create the app.
-                - When running commands, you must always use the 'run_command' tool. Never assume that you can run commands directly.
+                ---
+
+                Before updating the file content, check if the file exists, if not, create it using the 'create_item' tool.
             `,
             tools,
-            model: 'gpt-4o'
+            model: 'gpt-4.1'
         });
     }
 
@@ -75,6 +75,8 @@ export class AgentOrchestratorGateway {
             });
         }
 
+        console.log(this.minioService.getObjectList())
+        
         if (contextSelection === EContextSelection.REPO) {
             this.history.push({
                 role: 'system',
@@ -95,19 +97,20 @@ export class AgentOrchestratorGateway {
             .on("data", (chunk) => this.streamingService.emitData(chunk.toString()))
             .on("end", () => this.streamingService.emitData("Stream ended"))
 
-        // this.streamingService.emitData(result.finalOutput || "");
+        // wait for the stream to complete
+        await result.completed;
 
-        // this.history = result.history;
-        // return result.finalOutput;
+        this.history = result.history;
     }
 
     private getTools(): Tool<unknown>[] {
         const readFileTool = tool({
             name: 'read_file',
             description: 'Read file',
-            parameters: z.object({ path: z.string() }),
+            parameters: z.object({ path: z.string().describe('Path to the file with leading slash') }),
             execute: async ({ path }) => {
-                return await this.fileSystem.fetchFileContent(`${WORKSPACE_PATH}/${path}`);
+                console.log(`readFileTool: ${path}`);
+                return await this.fileSystem.fetchFileContent(`${WORKSPACE_PATH}${path}`);
             },
         });
 
@@ -115,10 +118,11 @@ export class AgentOrchestratorGateway {
             name: 'fetch_dir',
             description: 'Fetch directory listing',
             parameters: z.object({
-                path: z.string().default(''),
+                path: z.string().default('').describe('Path to the directory with leading slash'),
             }),
             execute: async ({ path }) => {
-                return await this.fileSystem.listFiles(`${WORKSPACE_PATH}/${path}`);
+                console.log(`fetchDirTool: ${path}`);
+                return await this.fileSystem.listFiles(`${WORKSPACE_PATH}${path}`);
             },
         });
 
@@ -126,13 +130,17 @@ export class AgentOrchestratorGateway {
             name: 'create_item',
             description: 'Create a new file or directory in the project',
             parameters: z.object({
-                path: z.string(),
-                content: z.string().nullable(),
-                type: z.enum(['file', 'dir']),
+                path: z.string().describe('Path to the file or directory with leading slash'),
+                content: z.string().nullable().describe('Content of the file'),
+                type: z.enum(['file', 'dir']).describe('Type of the item'),
             }),
             execute: async ({ path, content, type }) => {
                 console.log(`createItemTool: ${type} at ${path}`);
                 const result = await this.fileSystemCRUDService.createItem({ path, type, content: content ?? '' });
+                if (result.success) {
+                    // emit to active users
+                    this.server.emit(SocketEvents.ITEM_CREATED, { path, type, content });
+                }
                 return { ok: result.success, error: result.error };
             },
         });
@@ -141,10 +149,11 @@ export class AgentOrchestratorGateway {
             name: 'update_file_content',
             description: 'Update the content of a file in the project',
             parameters: z.object({
-                path: z.string(),
-                content: z.string(),
+                path: z.string().describe('Path to the file with leading slash'),
+                content: z.string().describe('Content of the file'),
             }),
             execute: async ({ path, content }) => {
+                console.log(`updateFileContentTool: ${path}`);
                 await this.fileSystem.saveFile(`${WORKSPACE_PATH}${path}`, content);
                 this.server.emit(SocketEvents.UPDATE_CONTENT, { path, content });
                 return { ok: true };
@@ -155,10 +164,11 @@ export class AgentOrchestratorGateway {
             name: 'delete_item',
             description: 'Delete a file or directory in the project',
             parameters: z.object({
-                path: z.string(),
-                type: z.enum(['file', 'dir']),
+                path: z.string().describe('Path to the file or directory with leading slash'),
+                type: z.enum(['file', 'dir']).describe('Type of the item'),
             }),
             execute: async ({ path, type }) => {
+                console.log(`deleteItemTool: ${type} at ${path}`);
                 const result = await this.fileSystemCRUDService.deleteItem({ path, type });
                 return { ok: result };
             },
@@ -168,9 +178,10 @@ export class AgentOrchestratorGateway {
             name: 'run_command',
             description: 'Run command inside project workspace',
             parameters: z.object({
-                command: z.string(),
+                command: z.string().describe('Command to run'),
             }),
             execute: async ({ command }) => {
+                console.log("Running command:", command);
                 return new Promise((resolve, reject) => {
                     exec(command, function (error, stdout, stderr) {
                         if (error) {

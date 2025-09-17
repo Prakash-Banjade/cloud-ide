@@ -69,7 +69,6 @@ export class MinioService implements OnModuleInit {
                 dataStream.pipe(writeStream)
                     .on('error', reject)
                     .on('finish', () => {
-                        console.log(`Fetched ${fileKey} → ${outPath}`);
                         resolve();
                     });
             });
