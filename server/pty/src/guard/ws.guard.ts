@@ -14,8 +14,6 @@ export class WsGuard implements CanActivate {
 
         const access_token = auth?.access_token;
 
-        console.log(access_token)
-
         return true;
     }
 }

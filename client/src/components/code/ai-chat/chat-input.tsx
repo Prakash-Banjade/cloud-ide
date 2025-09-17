@@ -15,7 +15,7 @@ export default function ChatInput({
     const [model, setModel] = useState("GPT-4.1")
     const [inputMessage, setInputMessage] = useState("")
     const { selectedFile } = useCodingStates();
-    const { isChatPending } = useAIChat();
+    const { isStreaming } = useAIChat();
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -23,7 +23,7 @@ export default function ChatInput({
     }
 
     function handleSend() {
-        if (!inputMessage || isChatPending) return;
+        if (!inputMessage || isStreaming) return;
         submitChatMessage(inputMessage);
         setInputMessage("");
     }
@@ -75,7 +75,7 @@ export default function ChatInput({
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {/* Agent selector */}
-                    <Select value={agent} onValueChange={setAgent} disabled={isChatPending}>
+                    <Select value={agent} onValueChange={setAgent} disabled={isStreaming}>
                         <SelectTrigger className="border-none">
                             <SelectValue />
                         </SelectTrigger>
@@ -93,7 +93,7 @@ export default function ChatInput({
                     </Select>
 
                     {/* Model selector */}
-                    <Select value={model} onValueChange={setModel} disabled={isChatPending}>
+                    <Select value={model} onValueChange={setModel} disabled={isStreaming}>
                         <SelectTrigger className="border-none">
                             <SelectValue />
                         </SelectTrigger>
@@ -113,22 +113,22 @@ export default function ChatInput({
 
                 {/* Right side controls */}
                 <div>
-                    <Button type="button" disabled={isChatPending} variant="ghost" size={'icon'}>
+                    <Button type="button" disabled={isStreaming} variant="ghost" size={'icon'}>
                         <Settings className="w-4 h-4" />
                     </Button>
 
-                    <Button type="button" disabled={isChatPending} variant="ghost" size={'icon'}>
+                    <Button type="button" disabled={isStreaming} variant="ghost" size={'icon'}>
                         <Mic className="w-4 h-4" />
                     </Button>
 
                     <Button
                         type="submit"
                         variant="ghost"
-                        disabled={isChatPending}
+                        disabled={isStreaming}
                         size={'icon'}
                     >
                         {
-                            isChatPending
+                            isStreaming
                                 ? <LoaderCircle className="animate-spin" />
                                 : <Send className="w-4 h-4" />
                         }

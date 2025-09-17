@@ -14,7 +14,7 @@ export default function useListenTreeMutation() {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on(SocketEvents.ITEM_CREATED, (data: { path: string, type: EItemType }) => {
+        socket.on(SocketEvents.ITEM_CREATED, (data: { path: string, type: EItemType, content?: string }) => {
             if (!data.path || !data.type) return;
 
             console.log('item-created', data);
@@ -26,7 +26,7 @@ export default function useListenTreeMutation() {
                 type: data.type,
                 ...(data.type === EItemType.FILE ? {
                     language: name.split('.').pop(),
-                    content: '',
+                    content: data.content || '',
                 } : {}),
             } as TreeItem;
 
@@ -51,8 +51,7 @@ export default function useListenTreeMutation() {
         });
 
         socket.on(SocketEvents.UPDATE_CONTENT, ({ path, content }: { path: string, content: string }) => {
-            if (selectedFile?.path === undefined) console.error('selectedFile.path is undefined');
-            if (path === selectedFile?.path) {
+            if (selectedFile && path === selectedFile?.path) {
                 console.log(content)
                 editorInstance?.setValue(content)
             };

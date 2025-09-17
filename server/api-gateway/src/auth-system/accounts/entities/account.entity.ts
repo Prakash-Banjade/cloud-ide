@@ -35,7 +35,6 @@ export class Account extends BaseEntity {
     @BeforeInsert()
     hashPassword() {
         if (this.password && !BCRYPT_HASH.test(this.password)) {
-            console.log(BCRYPT_HASH.test(this.password))
             this.password = bcrypt.hashSync(this.password, PASSWORD_SALT_COUNT);
         }
     }

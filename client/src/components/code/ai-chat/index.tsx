@@ -23,6 +23,7 @@ interface AIChatContextType {
     isChatPending: boolean;
     streamingText: string;
     setStreamingText: React.Dispatch<React.SetStateAction<string>>;
+    isStreaming: boolean;
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -40,21 +41,21 @@ export default function AIChat() {
     const { replId } = useParams();
     const { selectedFile } = useCodingStates();
     const [streamingText, setStreamingText] = useState("");
-    const [isPending, setIsPending] = useState(false);
+    const [isChatPending, setIsChatPending] = useState(false);
 
-    const { mutateAsync } = useAppMutation();
+    const { mutateAsync, isPending: isStreaming } = useAppMutation();
 
-    const podUrl = "http://localhost:3003";
-    // const podUrl = process.env.NODE_ENV === 'production'
-    //     ? `https://${replId}.${POD_DOMAIN}`
-    //     : `http://${replId}.${POD_DOMAIN}`;
+    // const podUrl = "http://localhost:3003";
+    const podUrl = process.env.NODE_ENV === 'production'
+        ? `https://${replId}.${POD_DOMAIN}`
+        : `http://${replId}.${POD_DOMAIN}`;
 
     useEffect(() => {
         const eventSource = new EventSource(`${podUrl}/stream`);
 
         let stream = "";
         eventSource.onmessage = function (event) {
-            setIsPending(false);
+            setIsChatPending(false);
             const data = event.data;
 
             if (data !== "Stream ended") {
@@ -78,10 +79,10 @@ export default function AIChat() {
 
     async function submitChatMessage(message: string) {
         setMessages(prev => [...prev, { role: "user", content: message }]);
-        setIsPending(true);
+        setIsChatPending(true);
 
         try {
-            const res = await mutateAsync({
+            await mutateAsync({
                 endpoint: `${podUrl}/vibe/chat`,
                 method: "post",
                 data: {
@@ -94,10 +95,6 @@ export default function AIChat() {
                     timeout: undefined
                 }
             });
-
-            if (typeof res.data === 'string') {
-                setMessages(prev => [...prev, { role: "agent", content: res.data as string }]);
-            }
         } catch {
             toast.error("Something went wrong. Please try again.");
         }
@@ -106,9 +103,10 @@ export default function AIChat() {
     const contextValue = {
         messages,
         setMessages,
-        isChatPending: isPending,
+        isChatPending,
         streamingText,
-        setStreamingText
+        setStreamingText,
+        isStreaming,
     };
 
     return (
