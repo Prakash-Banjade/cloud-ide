@@ -1,15 +1,38 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import { InjectMinio } from "./minio.decorator";
 import * as Minio from 'minio';
 import path from "path";
 import fs from 'fs';
 import { Readable } from "stream";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
-export class MinioService {
+export class MinioService implements OnModuleInit {
     protected _bucketName = 'cloud-ide';
+    replId: string;
 
-    constructor(@InjectMinio() private readonly minioClient: Minio.Client) { }
+    private objectsList = new Set<string>();
+
+    constructor(
+        @InjectMinio() private readonly minioClient: Minio.Client,
+        private readonly configService: ConfigService
+    ) {
+        this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
+    }
+
+    async onModuleInit() {
+        const objects = await this.listObjects(this._bucketName, `code/${this.replId}/`);
+
+        for (const obj of objects) {
+            const name = obj.name?.replace(`code/${this.replId}`, '');
+            if (name?.endsWith('.keep')) continue;
+            if (name) this.objectsList.add(name);
+        }
+    }
+
+    getObjectList() {
+        return Array.from(this.objectsList);
+    }
 
     async listObjects(
         bucket: string,
@@ -46,7 +69,6 @@ export class MinioService {
                 dataStream.pipe(writeStream)
                     .on('error', reject)
                     .on('finish', () => {
-                        console.log(`Fetched ${fileKey} → ${outPath}`);
                         resolve();
                     });
             });
@@ -87,6 +109,7 @@ export class MinioService {
     ): Promise<void> {
         const objectName = `${key}${filePath}`;
         await this.minioClient.putObject(this._bucketName, objectName, typeof content === 'string' ? Buffer.from(content) : content);
+        this.objectsList.add(objectName);
         console.log(`Uploaded to ${this._bucketName}/${objectName}`);
     };
 
@@ -101,6 +124,7 @@ export class MinioService {
     async removeObject(prefix: string, key: string): Promise<void> {
         const objectName = `${prefix}${key}`;
         await this.minioClient.removeObject(this._bucketName, objectName);  // removeObject API :contentReference[oaicite:8]{index=8}
+        this.objectsList.delete(objectName);
     }
 
     /** Remove all objects under a prefix */
@@ -113,6 +137,8 @@ export class MinioService {
         }
         // batch remove
         await this.minioClient.removeObjects(this._bucketName, toDelete.map(n => n));  // removeObjects :contentReference[oaicite:9]{index=9}
+        const newObjectLists = new Set([...this.objectsList].filter(path => !path.includes(prefix)));
+        this.objectsList = newObjectLists;
         console.log(`Prefix removed at ${this._bucketName}/${prefix}`);
     }
 
@@ -128,6 +154,7 @@ export class MinioService {
             dst,
             `/${this._bucketName}/${src}`                              // copyObject API :contentReference[oaicite:10]{index=10}
         );
+        this.objectsList = new Set([...this.objectsList].map(path => path.replace(src, dst)));
     }
 
     /** Move all objects under one prefix to another */
@@ -139,5 +166,6 @@ export class MinioService {
             await this.copyObject(oldPrefix, rel, newPrefix, rel);
         }
         await this.removePrefix(oldPrefix);
+        this.objectsList = new Set([...this.objectsList].map(path => path.replace(oldPrefix, newPrefix)));
     }
 }

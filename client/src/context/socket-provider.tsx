@@ -45,8 +45,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
             : `ws://pty.${replId}.prakashbanjade.com`
 
         const runnerSocket = io(
-            runnerUrl,
-            // "ws://localhost:3003",
+            // runnerUrl,
+            "ws://localhost:3003",
             {
                 auth: {
                     access_token: data.access_token,
@@ -55,8 +55,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         );
 
         const ptySocket = io(
-            ptyUrl,
-            // "ws://localhost:3004",
+            // ptyUrl,
+            "ws://localhost:3004",
             {
                 auth: {
                     access_token: data.access_token

@@ -32,7 +32,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
     private readonly fileSystemService: FileSystemService,
     private readonly wsGuard: WsGuard,
     private readonly configService: ConfigService,
-    private readonly multiplayerGateway: MultiplayerGateway
+    private readonly multiplayerGateway: MultiplayerGateway,
   ) {
     this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
   }
@@ -49,7 +49,8 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir(WORKSPACE_PATH, '');
-    socket.emit(SocketEvents.TREE_LOADED, { rootContent });
+    const objectLists = await this.minioService.getObjectList();
+    socket.emit(SocketEvents.TREE_LOADED, { rootContent, objectLists });
   }
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
@@ -77,7 +78,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
   async onUpdateContent(@MessageBody() payload: { path: string; content: string }) {
     try {
       const { path: filePath, content } = payload;
-      const fullPath = `${WORKSPACE_PATH}/${filePath}`;
+      const fullPath = `${WORKSPACE_PATH}${filePath}`;
       await this.fileSystemService.saveFile(fullPath, content);
       await this.minioService.saveToMinio(`code/${this.replId}`, filePath, content);
     } catch (e) {

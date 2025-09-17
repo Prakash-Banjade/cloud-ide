@@ -4,7 +4,7 @@ import imgLight from '@/assets/coding_page-light.jpeg'
 
 export default function CodingPagePreview() {
     return (
-        <section className='mt-24 px-4 max-w-7xl mx-auto'>
+        <section className='mb-24 px-4 max-w-7xl mx-auto'>
             <section className='sm:p-5 p-3 rounded-xl bg-secondary shadow-lg'>
                 <Image
                     src={imgDark}

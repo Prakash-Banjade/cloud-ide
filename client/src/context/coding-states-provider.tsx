@@ -48,7 +48,9 @@ interface CodingStatesContextType {
     setObservedUser: React.Dispatch<React.SetStateAction<RemoteUser | null>>
     observingPanelRef: React.RefObject<HTMLDivElement | null>;
     previewOpen: boolean;
-    setPreviewOpen: React.Dispatch<React.SetStateAction<boolean>>
+    setPreviewOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    objectsList: string[];
+    setObjectsList: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -72,6 +74,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const [treeLoaded, setTreeLoaded] = useState(false);
+    const [objectsList, setObjectsList] = useState<string[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
     const [permission, setPermission] = useState<EPermission>(EPermission.READ);
     const [mutedUsers, setMutedUsers] = useState<string[]>([]);
@@ -133,7 +136,9 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         setObservedUser,
         observingPanelRef,
         previewOpen,
-        setPreviewOpen
+        setPreviewOpen,
+        objectsList,
+        setObjectsList
     };
 
     useEffect(() => {

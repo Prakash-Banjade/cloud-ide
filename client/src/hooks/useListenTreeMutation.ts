@@ -1,4 +1,4 @@
-import { insertTreeItems, removeItemFromTree, renameTreeItem } from '@/app/code/[replId]/fns/tree-mutation-fns';
+import { insertTreeItems, removeItemFromTree, renameTreeItem, updateFileContent } from '@/app/code/[replId]/fns/tree-mutation-fns';
 import { useCodingStates } from '@/context/coding-states-provider';
 import { useSocket } from '@/context/socket-provider';
 import { SocketEvents } from '@/lib/CONSTANTS';
@@ -6,7 +6,7 @@ import { EItemType, TreeItem } from '@/types/tree.types';
 import { useEffect } from 'react'
 
 export default function useListenTreeMutation() {
-    const { setFileStructure } = useCodingStates();
+    const { setFileStructure, editorInstance, selectedFile } = useCodingStates();
     const { socket } = useSocket();
 
     const { deleteItem } = useDeleteTreeItem();
@@ -14,7 +14,7 @@ export default function useListenTreeMutation() {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on(SocketEvents.ITEM_CREATED, (data: { path: string, type: EItemType }) => {
+        socket.on(SocketEvents.ITEM_CREATED, (data: { path: string, type: EItemType, content?: string }) => {
             if (!data.path || !data.type) return;
 
             console.log('item-created', data);
@@ -26,7 +26,7 @@ export default function useListenTreeMutation() {
                 type: data.type,
                 ...(data.type === EItemType.FILE ? {
                     language: name.split('.').pop(),
-                    content: '',
+                    content: data.content || '',
                 } : {}),
             } as TreeItem;
 
@@ -48,13 +48,21 @@ export default function useListenTreeMutation() {
             setFileStructure((prev) =>
                 renameTreeItem(prev, data.oldPath, data.newPath)
             );
+        });
 
+        socket.on(SocketEvents.UPDATE_CONTENT, ({ path, content }: { path: string, content: string }) => {
+            if (selectedFile && path === selectedFile?.path) {
+                console.log(content)
+                editorInstance?.setValue(content)
+            };
+            setFileStructure(prev => updateFileContent(prev, path, content));
         });
 
         return () => {
             socket.off(SocketEvents.ITEM_CREATED);
             socket.off(SocketEvents.ITEM_DELETED);
             socket.off(SocketEvents.ITEM_RENAMED);
+            socket.off(SocketEvents.UPDATE_CONTENT);
         }
     }, [socket])
 

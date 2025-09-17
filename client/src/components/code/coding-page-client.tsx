@@ -25,6 +25,7 @@ import { onFileSelect, useRefreshTree } from "@/app/code/[replId]/fns/file-manag
 import { EPermission } from "@/types/types";
 import EditorFooter from "./editor/editor-footer";
 import ReadOnlyTopBar from "./readonly-top-bar";
+import AIChat from "./ai-chat";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -54,7 +55,8 @@ export const CodingPagePostPodCreation = () => {
         previewOpen,
         setPreviewOpen,
         permission,
-        observingPanelRef
+        observingPanelRef,
+        setObjectsList
     } = useCodingStates();
     const isMobile = useIsMobile(1000);
 
@@ -64,9 +66,9 @@ export const CodingPagePostPodCreation = () => {
     useEffect(() => {
         if (!socket || !ptySocket) return;
 
-        socket.on(SocketEvents.TREE_LOADED, async ({ rootContent }: { rootContent: TreeItem[] }) => {
+        socket.on(SocketEvents.TREE_LOADED, async ({ rootContent, objectLists }: { rootContent: TreeItem[], objectLists: string[] }) => {
             setTreeLoaded(true);
-
+            setObjectsList(objectLists);
             await refreshTree({
                 content: rootContent,
                 socket,
@@ -165,12 +167,18 @@ export const CodingPagePostPodCreation = () => {
                     </div>
                 </ResizablePanel>
 
+                <ResizableHandle />
+
+                <ResizablePanel order={3} defaultSize={30} minSize={20}>
+                    <AIChat />
+                </ResizablePanel>
+
                 {
                     previewOpen && (
                         <>
                             <ResizableHandle />
 
-                            <ResizablePanel order={3} defaultSize={30} minSize={20}>
+                            <ResizablePanel order={4} defaultSize={30} minSize={20}>
                                 <Preview />
                             </ResizablePanel>
 
