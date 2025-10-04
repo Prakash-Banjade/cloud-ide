@@ -49,7 +49,7 @@ export class FileSystemGateway implements OnGatewayConnection, OnGatewayDisconne
 
     // Send initial directory listing
     const rootContent = await this.fileSystemService.fetchDir(WORKSPACE_PATH, '');
-    const objectLists = await this.minioService.getObjectList();
+    const objectLists = this.minioService.getObjectList();
     socket.emit(SocketEvents.TREE_LOADED, { rootContent, objectLists });
   }
 

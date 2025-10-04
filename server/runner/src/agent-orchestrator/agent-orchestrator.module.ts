@@ -10,6 +10,9 @@ import { CoderAgent } from './agents/coder-agent.service';
 import { GraphService } from './graph.service';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
 import { ToolsService } from './tools.service';
+import { RouterAgent } from './agents/router-agent.service';
+import { DirectAgent } from './agents/direct-agent.service';
+import { ToolsGateway } from './tools.gateway';
 
 @Module({
     imports: [
@@ -28,6 +31,9 @@ import { ToolsService } from './tools.service';
                 }),
         },
         ToolsService,
+        ToolsGateway, // used to emit fs events
+        RouterAgent,
+        DirectAgent,
         PlannerAgent,
         ArchitectAgent,
         CoderAgent,

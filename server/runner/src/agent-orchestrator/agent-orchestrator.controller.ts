@@ -9,7 +9,7 @@ import { AuthGuard } from 'src/guard/auth.guard';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
 
 @Controller('vibe')
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 export class AgentOrchestratorController {
     constructor(private readonly orchestrator: AgentOrchestratorService) { }
 

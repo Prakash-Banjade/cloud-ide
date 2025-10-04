@@ -26,7 +26,7 @@ export class PromptService {
 
                 Project Plan:
                 ${plan}
-            `
+            `.trim()
         )
     }
 
@@ -42,7 +42,29 @@ export class PromptService {
                 - Implement the FULL file content, integrating with other modules.
                 - Maintain consistent naming of variables, functions, and imports.
                 - When a module is imported from another file, ensure it exists and is implemented as described.
-            `
+            `.trim()
         )
+    }
+
+    routerPrompt(userPrompt: string): string {
+        return `
+            Analyze the user prompt and determine if it requires a multi-agent project generation system or can be answered directly.
+
+            Route to "agent" if the prompt:
+            - Asks to build, create, develop, or generate a project/application/tool/website
+            - Requests code implementation, file creation, or software development
+            - Describes features, requirements, or technical specifications for a system
+            - Contains words like: "build", "create", "develop", "make", "implement", "generate", "app", "website", "tool", "project", "system"
+
+            Route to "direct" if the prompt:
+            - Is a casual conversation, greeting, or small talk
+            - Asks a general question that doesn't require code generation
+            - Requests explanation, definition, or information
+            - Is a simple query that can be answered in one response
+
+            User Prompt: "${userPrompt}"
+
+            Respond with ONLY "agent" or "direct" - nothing else.
+        `.trim();
     }
 }

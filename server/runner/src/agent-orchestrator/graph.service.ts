@@ -1,21 +1,33 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { StateGraph, END, Annotation } from '@langchain/langgraph';
+import { StateGraph, END, Annotation, CompiledStateGraph } from '@langchain/langgraph';
 import { CoderState, GraphState, Plan, TaskPlan } from './types';
 import { PlannerAgent } from './agents/planner-agent.service';
 import { ArchitectAgent } from './agents/architech-agent.service';
 import { CoderAgent } from './agents/coder-agent.service';
+import { ConfigService } from '@nestjs/config';
+import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { RouterAgent } from './agents/router-agent.service';
+import { DirectAgent } from './agents/direct-agent.service';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
-    private compiledGraph: any;
+    private compiledGraph: CompiledStateGraph<any, any, any>;
+    // private checkpointer: PostgresSaver;
 
     constructor(
         private plannerAgent: PlannerAgent,
         private architectAgent: ArchitectAgent,
         private coderAgent: CoderAgent,
-    ) { }
+        private routerAgent: RouterAgent,
+        private directAgent: DirectAgent,
+        private readonly configService: ConfigService
+    ) {
+        // this.checkpointer = PostgresSaver.fromConnString(this.configService.getOrThrow('DATABASE_URL'));
+    }
 
     async onModuleInit() {
+        // need to call checkpointer.setup() the first time you’re using Postgres checkpointer
+        // await this.checkpointer.setup();
         this.compiledGraph = this.createGraph();
     }
 
@@ -26,10 +38,17 @@ export class GraphService implements OnModuleInit {
             task_plan: Annotation<TaskPlan>,
             coder_state: Annotation<CoderState>,
             status: Annotation<string>,
+            route: Annotation<'agent' | 'direct'>,
+            direct_response: Annotation<string>,
         });
 
-        // Add nodes
-        const graph = new StateGraph(stateAnnotation)
+        const builder = new StateGraph(stateAnnotation)
+            .addNode('router', async (state: GraphState) => {
+                return await this.routerAgent.execute(state);
+            })
+            .addNode('direct', async (state: GraphState) => {
+                return await this.directAgent.execute(state);
+            })
             .addNode('planner', async (state: GraphState) => {
                 return await this.plannerAgent.execute(state);
             })
@@ -39,7 +58,19 @@ export class GraphService implements OnModuleInit {
             .addNode('coder', async (state: GraphState) => {
                 return await this.coderAgent.execute(state);
             })
-            .addEdge("__start__", "planner")
+            .addEdge("__start__", "router")
+            .addConditionalEdges(
+                'router',
+                (state: GraphState) => {
+                    console.log({ state })
+                    return state.route === 'direct' ? 'direct' : 'planner';
+                },
+                {
+                    direct: 'direct',
+                    planner: 'planner',
+                }
+            )
+            .addEdge('direct', '__end__')
             .addEdge('planner', 'architect')
             .addEdge('architect', 'coder')
             .addConditionalEdges(
@@ -51,15 +82,17 @@ export class GraphService implements OnModuleInit {
                     END: END,
                     coder: 'coder',
                 }
-            )
-            .addEdge("coder", "__end__");
+            );
 
-        return graph.compile();
+        return builder.compile({
+            // checkpointer: this.checkpointer
+        });
     }
 
     async invoke(input: { user_prompt: string }, config?: any) {
         const defaultConfig = {
             recursionLimit: 100,
+            configurable: { thread_id: this.configService.getOrThrow("REPL_ID") },
             ...config,
         };
 

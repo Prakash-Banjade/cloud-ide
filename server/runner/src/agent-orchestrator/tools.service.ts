@@ -10,12 +10,14 @@ import { FileSystemService } from 'src/file-system/file-system.service';
 import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { tool } from '@langchain/core/tools';
 import z from 'zod/v3';
+import { ToolsGateway } from './tools.gateway';
 
 @Injectable()
 export class ToolsService {
     constructor(
         private readonly fileSystemCRUDService: FileSystemCRUDService,
-        private readonly fileSystemService: FileSystemService
+        private readonly fileSystemService: FileSystemService,
+        private readonly toolsGateway: ToolsGateway
     ) { }
 
     getPath(path: string) {
@@ -35,7 +37,7 @@ export class ToolsService {
                 const result = await this.fileSystemCRUDService.createItem({ path: pathWithLeadingSlash, type, content: content ?? '' });
                 if (result.success) {
                     // emit to active users
-                    // this.server.emit(SocketEvents.ITEM_CREATED, { path, type, content });
+                    this.toolsGateway.emitItemCreated(pathWithLeadingSlash, type, content ?? '');
                 }
                 return { ok: result.success, error: result.error };
             },
