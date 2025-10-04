@@ -12,7 +12,6 @@ import { diskStorage } from 'multer';
 import { AgentOrchestratorModule } from './agent-orchestrator/agent-orchestrator.module';
 import path from 'path';
 import * as fs from 'fs';
-import { OpenAIModule } from './openai/openai.module';
 import { StreamingModule } from './streaming/streaming.module';
 
 @Module({
@@ -49,7 +48,6 @@ import { StreamingModule } from './streaming/streaming.module';
     ChokidarModule,
     ProjectModule,
     AgentOrchestratorModule,
-    OpenAIModule,
     StreamingModule,
   ],
   providers: [

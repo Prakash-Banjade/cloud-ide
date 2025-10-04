@@ -1,20 +1,38 @@
 import { Module } from '@nestjs/common';
 import { AgentOrchestratorController } from './agent-orchestrator.controller';
-import { AgentOrchestratorGateway } from './agent-orchestrator.gateway';
-import { OpenAIModule } from 'src/openai/openai.module';
 import { MinioModule } from 'src/minio/minio.module';
 import { FileSystemModule } from 'src/file-system/file-system.module';
+import { ChatOpenAI } from '@langchain/openai';
+import { PromptService } from './prompts.service';
+import { PlannerAgent } from './agents/planner-agent.service';
+import { ArchitectAgent } from './agents/architech-agent.service';
+import { CoderAgent } from './agents/coder-agent.service';
+import { GraphService } from './graph.service';
+import { AgentOrchestratorService } from './agent-orchestrator.service';
+import { ToolsService } from './tools.service';
 
 @Module({
     imports: [
-        OpenAIModule,
         MinioModule,
         FileSystemModule,
     ],
     controllers: [AgentOrchestratorController],
     providers: [
-        AgentOrchestratorGateway,
+        PromptService,
+        {
+            provide: ChatOpenAI,
+            useFactory: () =>
+                new ChatOpenAI({
+                    model: 'gpt-4o',
+                    temperature: 0.7,
+                }),
+        },
+        ToolsService,
+        PlannerAgent,
+        ArchitectAgent,
+        CoderAgent,
+        GraphService,
+        AgentOrchestratorService,
     ],
-    exports: [AgentOrchestratorGateway]
 })
 export class AgentOrchestratorModule { }
