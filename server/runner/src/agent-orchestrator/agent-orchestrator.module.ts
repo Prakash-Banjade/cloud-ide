@@ -26,8 +26,8 @@ import { ToolsGateway } from './tools.gateway';
             provide: ChatOpenAI,
             useFactory: () =>
                 new ChatOpenAI({
-                    model: 'gpt-4o',
-                    temperature: 0.7,
+                    model: 'gpt-4.1',
+                    temperature: 2,
                 }),
         },
         ToolsService,

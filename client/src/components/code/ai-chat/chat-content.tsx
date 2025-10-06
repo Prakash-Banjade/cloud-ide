@@ -19,7 +19,7 @@ export default function ChatContent() {
             ref.current.scrollIntoView();
         }
     }, [streamingText]);
-    
+
     if (messages.length === 0) return (
         <div className="@container flex-1 grid place-items-center">
             <div className="flex items-center justify-center flex-col">
@@ -86,6 +86,12 @@ function RenderChatMessage({ message }: { message: IChatMessage }) {
                         code({ node, ...props }) {
                             return <code style={{ borderRadius: '8px', border: "1px solid var(--border)" }} {...props} />;
                         },
+                        ol({ node, ...props }) {
+                            return <ol className="[&_li]:list-decimal [&_li]:list-inside" {...props} />;
+                        },
+                        ul({ node, ...props }) {
+                            return <ul className="[&_li]:list-disc [&_li]:list-inside" {...props} />;
+                        }
                     }}
                 >
                     {message.content}

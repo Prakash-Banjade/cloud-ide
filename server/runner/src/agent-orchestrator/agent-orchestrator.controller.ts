@@ -1,20 +1,37 @@
-import {
-    Controller,
-    Post,
-    Body,
-    UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Sse, MessageEvent, Query } from '@nestjs/common';
 import { ChatMessageDto } from './dto/chat-message.dto';
 import { AuthGuard } from 'src/guard/auth.guard';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
+import { from, map, Observable } from 'rxjs';
+import { StreamEvent } from './types/streaming.types';
 
 @Controller('vibe')
 // @UseGuards(AuthGuard)
 export class AgentOrchestratorController {
-    constructor(private readonly orchestrator: AgentOrchestratorService) { }
+    constructor(private readonly agentService: AgentOrchestratorService) { }
 
     @Post('chat')
     async chat(@Body() payload: ChatMessageDto) {
-        return this.orchestrator.runAgent(payload.message);
+        return this.agentService.runAgent(payload.message);
+    }
+
+    /**
+      * SSE (Server-Sent Events) streaming endpoint
+      * Usage: GET /agent/stream?user_prompt=your_prompt&thread_id=optional_thread
+      */
+    @Sse('stream')
+    stream(
+        @Query('user_prompt') userPrompt: string,
+        @Query('thread_id') threadId?: string,
+    ): Observable<MessageEvent> {
+        if (!userPrompt) {
+            throw new Error('user_prompt query parameter is required');
+        }
+
+        return from(this.agentService.streamAgent(userPrompt, threadId)).pipe(
+            map((event: StreamEvent) => ({
+                data: event,
+            })),
+        );
     }
 }

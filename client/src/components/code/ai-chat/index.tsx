@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, createContext, useContext, useEffect } from "react";
+import React, { useState, createContext, useContext, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ChatInput from "./chat-input";
@@ -15,6 +15,13 @@ import { useCodingStates } from "@/context/coding-states-provider";
 export interface IChatMessage {
     role: "agent" | "user",
     content: string,
+}
+
+export interface StreamEvent {
+    type: string;
+    agent?: string;
+    data?: any;
+    timestamp: string;
 }
 
 interface AIChatContextType {
@@ -42,13 +49,14 @@ export default function AIChat() {
     const { selectedFile } = useCodingStates();
     const [streamingText, setStreamingText] = useState("");
     const [isChatPending, setIsChatPending] = useState(false);
+    const eventSourceRef = useRef<EventSource | null>(null);
 
     const { mutateAsync, isPending: isStreaming } = useAppMutation();
 
-    // const podUrl = "http://localhost:3003";
-    const podUrl = process.env.NODE_ENV === 'production'
-        ? `https://${replId}.${POD_DOMAIN}`
-        : `http://${replId}.${POD_DOMAIN}`;
+    const podUrl = "http://localhost:3003";
+    // const podUrl = process.env.NODE_ENV === 'production'
+    //     ? `https://${replId}.${POD_DOMAIN}`
+    //     : `http://${replId}.${POD_DOMAIN}`;
 
     useEffect(() => {
         const eventSource = new EventSource(`${podUrl}/stream`);
