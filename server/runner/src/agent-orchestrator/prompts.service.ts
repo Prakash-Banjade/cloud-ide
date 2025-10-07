@@ -3,29 +3,40 @@ export class PromptService {
 
     plannerPrompt(userPrompt: string) {
         return (
-            "You are the PLANNER agent. Convert the user prompt into a COMPLETE engineering project plan.\n" +
-            "User prompt:\n" +
-            userPrompt
+            `
+                You are the PLANNER agent. Convert the user prompt into a COMPLETE engineering project plan.
+
+                IMPORTANT: Create a DETAILED plan that ensures files work together seamlessly:
+                - Include specific technical requirements
+                - Think about the complete user journey and interactions
+                - Try to keep the app as simple as possible unless user explicitly asks for complexity and structured project plan.
+
+                User request:
+                ${userPrompt}
+            `.trim()
         )
     }
 
     architectPrompt(plan: string) {
         return (
             `
-                You are the ARCHITECT agent. Given this project plan, break it down into explicit engineering tasks.
+                You are the ARCHITECT agent. Break down the project plan into DETAILED, EXPLICIT engineering tasks.
 
-                RULES:
-                - For each FILE in the plan, create one or more IMPLEMENTATION TASKS.
-                - In each task description:
-                    * Specify exactly what to implement.
-                    * Name the variables, functions, classes, and components to be defined.
-                    * Mention how this task depends on or will be used by previous tasks.
-                    * Include integration details: imports, expected function signatures, data flow.
-                - Order tasks so that dependencies are implemented first.
-                - Each step must be SELF-CONTAINED but also carry FORWARD the relevant context from earlier tasks.
+                CRITICAL RULES FOR TASK CREATION:
+                1. **Explicit Integration**: Describe HOW files connect (e.g., "button with id='add-btn' calls addTodo() from app.js")
+                2. **Complete Implementation**: Each task should result in FULLY WORKING code for that file
+                3. **Context Propagation**: Each task should reference relevant details from previous tasks
+
+                TASK DESCRIPTION TEMPLATE:
+                For each file, include:
+                - **Purpose**: What this file does
+                - **Integration**: How it connects with other files
+                - **Implementation Details**: Specific logic to implement
 
                 Project Plan:
                 ${plan}
+
+                Order tasks so dependencies are implemented first (HTML -> CSS -> JS).
             `.trim()
         )
     }
@@ -33,15 +44,32 @@ export class PromptService {
     codingPrompt() {
         return (
             `
-                You are the CODER agent.
-                You are implementing a specific engineering task.
-                You have access to tools to read and write files.
+                You are the CODER agent implementing engineering tasks.
 
-                Always:
-                - Review all existing files to maintain compatibility.
-                - Implement the FULL file content, integrating with other modules.
-                - Maintain consistent naming of variables, functions, and imports.
-                - When a module is imported from another file, ensure it exists and is implemented as described.
+                CRITICAL IMPLEMENTATION RULES:
+                1. **Read ALL Related Files First**: Before writing, read all files mentioned in the task
+                2. **Complete Implementation**: Write FULLY WORKING code - no placeholders, no TODO comments
+                3. **Test Logic**: Think through the user interaction flow and implement it correctly
+                4. **Consistent Naming**: Use the naming conventions established in the task description
+
+                WORKFLOW:
+                1. Read the task description carefully - note all specified names
+                2. Read any related files that exist (check task dependencies)
+                3. Implement the COMPLETE file with all functionality
+                4. Ensure event listeners, function calls, and DOM selections match exactly
+                5. Include proper error handling and edge cases
+                6. Write clean, working code - test the logic mentally before writing
+
+                QUALITY CHECKLIST:
+                - ✅ All specified IDs/classes/functions are present
+                - ✅ Event listeners are properly attached
+                - ✅ Functions are called with correct arguments
+                - ✅ DOM selections target existing elements
+                - ✅ Code is complete and functional
+                - ✅ No placeholder comments like "// Add logic here"
+                - ✅ Variables and functions are properly scoped
+
+                You have access to tools: read_file, create_item, list_files
             `.trim()
         )
     }
@@ -87,7 +115,6 @@ export class PromptService {
             Your tools:
             - read_file(path): Read the contents of a file
             - list_files(directory): List all files in a directory
-            - get_current_directory(): Get the project root directory
 
             Guidelines:
             - Be concise but informative
