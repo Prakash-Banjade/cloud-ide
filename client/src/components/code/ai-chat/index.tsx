@@ -5,12 +5,9 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ChatInput from "./chat-input";
 import ChatContent from "./chat-content";
-import { useAppMutation } from "@/hooks/useAppMutation";
 import toast from "react-hot-toast";
-import { POD_DOMAIN } from "@/lib/CONSTANTS";
 import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useCodingStates } from "@/context/coding-states-provider";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -31,6 +28,7 @@ interface AIChatContextType {
     streamingText: string;
     setStreamingText: React.Dispatch<React.SetStateAction<string>>;
     isStreaming: boolean;
+    statusMessage: string | null;
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -46,66 +44,171 @@ export const useAIChat = () => {
 export default function AIChat() {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
     const { replId } = useParams();
-    const { selectedFile } = useCodingStates();
     const [streamingText, setStreamingText] = useState("");
+    const streamingTextRef = useRef("");
     const [isChatPending, setIsChatPending] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const statusMessageRef = useRef<string | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const { mutateAsync, isPending: isStreaming } = useAppMutation();
-
-    const podUrl = "http://localhost:3003";
-    // const podUrl = process.env.NODE_ENV === 'production'
-    //     ? `https://${replId}.${POD_DOMAIN}`
-    //     : `http://${replId}.${POD_DOMAIN}`;
+    const podUrl = React.useMemo(() => {
+        const domain = process.env.NEXT_PUBLIC_POD_DOMAIN;
+        if (process.env.NODE_ENV === "production" && replId && domain) {
+            return `https://${replId}.${domain}`;
+        }
+        return "http://localhost:3003";
+    }, [replId]);
 
     useEffect(() => {
-        const eventSource = new EventSource(`${podUrl}/stream`);
+        streamingTextRef.current = streamingText;
+    }, [streamingText]);
 
-        let stream = "";
-        eventSource.onmessage = function (event) {
-            setIsChatPending(false);
-            const data = event.data;
+    useEffect(() => {
+        statusMessageRef.current = statusMessage;
+    }, [statusMessage]);
 
-            if (data !== "Stream ended") {
-                stream += data;
-                setStreamingText(stream);
-            } else {
-                setMessages(prev => [...prev, { role: "agent", content: stream }]);
-                setStreamingText("");
-                stream = "";
-            }
-        };
-
-        eventSource.onerror = function (error) {
-            console.error('EventSource failed:', error);
-        };
-
+    useEffect(() => {
         return () => {
-            eventSource.close();
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
         };
     }, []);
 
-    async function submitChatMessage(message: string) {
-        setMessages(prev => [...prev, { role: "user", content: message }]);
-        setIsChatPending(true);
-
-        try {
-            await mutateAsync({
-                endpoint: `${podUrl}/vibe/chat`,
-                method: "post",
-                data: {
-                    message: message,
-                    selectedFilePath: selectedFile?.path,
-                    contextSelection: 'repo'
-                },
-                toastOnSuccess: false,
-                config: {
-                    timeout: undefined
-                }
-            });
-        } catch {
-            toast.error("Something went wrong. Please try again.");
+    const closeStream = () => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
         }
+        setIsStreaming(false);
+    };
+
+    const getStatusFromEvent = (event: StreamEvent): string | null => {
+        const agentLabels: Record<string, string> = {
+            router: "Router",
+            direct: "Direct response",
+            planner: "Planner",
+            architect: "Architect",
+            coder: "Coder",
+        };
+
+        switch (event.type) {
+            case "agent_start":
+                if (event.agent === "router") return "Deciding the best approach for your request.";
+                if (event.agent === "direct") return "Drafting a direct answer.";
+                if (event.agent === "planner") return "Outlining a plan of action.";
+                if (event.agent === "architect") return "Breaking the work into tasks.";
+                if (event.agent === "coder") return "Implementing the changes.";
+                return agentLabels[event.agent ?? ""] ? `${agentLabels[event.agent ?? ""]} is working...` : "Thinking...";
+            case "router_decision":
+                if (event.data?.route === "direct") {
+                    return "Responding directly to your question.";
+                }
+                return "Setting up a multi-step plan.";
+            case "planner_plan_created":
+                return "Plan created. Handing off to implementation.";
+            case "architect_task_created":
+                return "Tasks prepared. Getting ready to code.";
+            case "coder_task_complete":
+                if (event.data?.totalSteps && event.data?.currentStep) {
+                    return `Completed step ${event.data.currentStep} of ${event.data.totalSteps}.`;
+                }
+                return "Making progress on the implementation.";
+            case "coder_all_complete":
+                return "All tasks finished. Wrapping up.";
+            case "direct_response_complete":
+                return "Writing the response.";
+            case "complete":
+                return "Finalizing the answer.";
+            case "error":
+                return event.data?.error ? `Error: ${event.data.error}` : "Something went wrong.";
+            default:
+                return null;
+        }
+    };
+
+    const handleStreamEvent = (event: StreamEvent) => {
+        const status = getStatusFromEvent(event);
+        if (status) {
+            setStatusMessage(status);
+        }
+
+        switch (event.type) {
+            case "direct_response_complete":
+                if (event.data?.response) {
+                    setStreamingText(event.data.response);
+                }
+                break;
+            case "complete":
+                if (streamingTextRef.current) {
+                    setMessages(prev => [...prev, { role: "agent", content: streamingTextRef.current }]);
+                    setStreamingText("");
+                    streamingTextRef.current = "";
+                } else {
+                    const fallback = statusMessageRef.current;
+                    const completionMessage = fallback && fallback !== "Finalizing the answer."
+                        ? fallback
+                        : "Agent run complete.";
+                    setMessages(prev => [...prev, { role: "agent", content: completionMessage }]);
+                }
+                setIsChatPending(false);
+                setStatusMessage(null);
+                closeStream();
+                break;
+            case "error":
+                setIsChatPending(false);
+                const errorMessage = statusMessageRef.current || "Something went wrong.";
+                setMessages(prev => [...prev, { role: "agent", content: errorMessage }]);
+                closeStream();
+                break;
+        }
+    };
+
+    const startStreaming = (prompt: string) => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+        }
+
+        const url = `${podUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
+        const eventSource = new EventSource(url);
+        eventSourceRef.current = eventSource;
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data: StreamEvent = JSON.parse(event.data);
+                handleStreamEvent(data);
+            } catch (error) {
+                console.error("Error parsing stream event", error);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error("EventSource failed:", error);
+            toast.error("Connection lost while streaming.");
+            setStatusMessage("Connection lost. Please try again.");
+            setIsChatPending(false);
+            closeStream();
+        };
+    };
+
+    function submitChatMessage(message: string) {
+        const trimmedMessage = message.trim();
+        if (!trimmedMessage) {
+            return;
+        }
+
+        setMessages(prev => [...prev, { role: "user", content: trimmedMessage }]);
+        setStreamingText("");
+        streamingTextRef.current = "";
+
+        setIsChatPending(true);
+        setIsStreaming(true);
+        setStatusMessage("Connecting to the agent...");
+
+        startStreaming(trimmedMessage);
     }
 
     const contextValue = {
@@ -115,6 +218,7 @@ export default function AIChat() {
         streamingText,
         setStreamingText,
         isStreaming,
+        statusMessage,
     };
 
     return (

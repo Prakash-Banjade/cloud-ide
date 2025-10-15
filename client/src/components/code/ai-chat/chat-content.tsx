@@ -10,15 +10,15 @@ import { LoaderCircle, Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 export default function ChatContent() {
-    const { messages, isChatPending, streamingText } = useAIChat();
+    const { messages, isChatPending, streamingText, statusMessage } = useAIChat();
 
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (ref.current) {
-            ref.current.scrollIntoView();
+            ref.current.scrollIntoView({ behavior: "smooth", block: "end" });
         }
-    }, [streamingText]);
+    }, [messages, streamingText, isChatPending, statusMessage]);
 
     if (messages.length === 0) return (
         <div className="@container flex-1 grid place-items-center">
@@ -38,14 +38,17 @@ export default function ChatContent() {
                 })
             }
 
-            {
-                isChatPending && (
-                    <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                        <LoaderCircle size={16} className="animate-spin" />
-                        <span>Working...</span>
+            {isChatPending && (
+                <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-sidebar-accent/60 p-3 text-sm">
+                    <LoaderCircle size={18} className="mt-0.5 animate-spin text-muted-foreground" />
+                    <div className="space-y-1">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Vibe Agent</p>
+                        <p className="font-medium text-foreground">
+                            {statusMessage ?? "Working on it..."}
+                        </p>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {
                 streamingText.length > 0 && (
