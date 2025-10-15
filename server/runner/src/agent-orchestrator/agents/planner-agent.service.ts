@@ -1,13 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { GraphState, PlanSchema, Plan } from '../types';
 import { PromptService } from '../prompts.service';
 import { ChatOpenAI } from '@langchain/openai';
+import { LlmProviderTokens } from '../agent-orchestrator.module';
 
 @Injectable()
 export class PlannerAgent {
     constructor(
         private readonly promptService: PromptService,
-        private readonly llm: ChatOpenAI
+        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatOpenAI
     ) { }
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {
@@ -30,6 +31,8 @@ export class PlannerAgent {
         console.log(`   - Project: ${response.name}`);
         console.log(`   - Tech Stack: ${response.techstack}`);
         console.log(`   - Files: ${response.files.length}`);
+        console.log(response.files);
+
 
         return { plan: response as Plan };
     }

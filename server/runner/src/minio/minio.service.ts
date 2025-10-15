@@ -1,8 +1,8 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { InjectMinio } from "./minio.decorator";
 import * as Minio from 'minio';
-import path from "path";
-import fs from 'fs';
+import * as path from "path";
+import * as fs from 'fs';
 import { Readable } from "stream";
 import { ConfigService } from "@nestjs/config";
 

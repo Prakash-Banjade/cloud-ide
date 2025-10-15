@@ -11,13 +11,16 @@ import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { tool } from '@langchain/core/tools';
 import z from 'zod/v3';
 import { ToolsGateway } from './tools.gateway';
+import { ELanguage } from './types/language.types';
+import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class ToolsService {
     constructor(
         private readonly fileSystemCRUDService: FileSystemCRUDService,
         private readonly fileSystemService: FileSystemService,
-        private readonly toolsGateway: ToolsGateway
+        private readonly toolsGateway: ToolsGateway,
+        private readonly minioService: MinioService,
     ) { }
 
     getPath(path: string) {
@@ -124,7 +127,7 @@ export class ToolsService {
 
     getRunCmdTool() {
         return tool(
-            ({ command }: { command: string }) => {
+            ({ command }) => {
                 console.log("Running command:", command);
                 return new Promise((resolve, reject) => {
                     exec(command, function (error, stdout, stderr) {
@@ -144,12 +147,39 @@ export class ToolsService {
         )
     }
 
+    getPullBaseFilesTool() {
+        return tool(
+            async ({ language, targetRelPath }: { language: ELanguage; targetRelPath?: string }) => {
+                const targetPath = targetRelPath && targetRelPath.trim().length > 0
+                    ? path.join(WORKSPACE_PATH, targetRelPath)
+                    : WORKSPACE_PATH;
+
+                // Ensure target folder exists if provided
+                if (targetRelPath && targetRelPath.trim().length > 0) {
+                    await fs.mkdir(targetPath, { recursive: true });
+                }
+
+                await this.minioService.fetchMinioFolder(`base/${language}`, targetPath);
+                return { success: true, error: null };
+            },
+            {
+                name: 'pull_base_files',
+                description: 'Pull base files for a given language/framework into the workspace or a target subfolder',
+                schema: z.object({
+                    language: z.nativeEnum(ELanguage).describe('Language to pull base files for'),
+                    targetRelPath: z.string().optional().describe('Optional relative folder (from workspace root) to place files into'),
+                }),
+            }
+        )
+    }
+
     getAllTools() {
         return [
             this.getCreateItemTool(),
             this.getReadFileTool(),
             this.getListFilesTool(),
             this.getRunCmdTool(),
+            this.getPullBaseFilesTool(),
         ];
     }
 
@@ -158,6 +188,8 @@ export class ToolsService {
             this.getCreateItemTool(),
             this.getReadFileTool(),
             this.getListFilesTool(),
+            this.getRunCmdTool(),
+            this.getPullBaseFilesTool(),
         ];
     }
 

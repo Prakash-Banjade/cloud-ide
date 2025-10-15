@@ -14,6 +14,14 @@ import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
 import { ToolsGateway } from './tools.gateway';
 
+export const enum LlmProviderTokens {
+    ROUTER_LLM = 'ROUTER_LLM',
+    PLANNER_LLM = 'PLANNER_LLM',
+    ARCHITECT_LLM = 'ARCHITECT_LLM',
+    CODER_LLM = 'CODER_LLM',
+    DIRECT_LLM = 'DIRECT_LLM'
+}
+
 @Module({
     imports: [
         MinioModule,
@@ -23,12 +31,24 @@ import { ToolsGateway } from './tools.gateway';
     providers: [
         PromptService,
         {
-            provide: ChatOpenAI,
-            useFactory: () =>
-                new ChatOpenAI({
-                    model: 'gpt-4.1',
-                    temperature: 2,
-                }),
+            provide: LlmProviderTokens.ROUTER_LLM,
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.1 }),
+        },
+        {
+            provide: LlmProviderTokens.PLANNER_LLM,
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.3 }),
+        },
+        {
+            provide: LlmProviderTokens.ARCHITECT_LLM,
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.2 }),
+        },
+        {
+            provide: LlmProviderTokens.CODER_LLM,
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.1 }),
+        },
+        {
+            provide: LlmProviderTokens.DIRECT_LLM,
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.5 }),
         },
         ToolsService,
         ToolsGateway, // used to emit fs events
