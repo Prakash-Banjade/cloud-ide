@@ -35,6 +35,7 @@ export interface StreamEvent {
   type: StreamEventType;
   agent?: string;
   data?: any;
+  message?: string;
   timestamp: string;
 }
 

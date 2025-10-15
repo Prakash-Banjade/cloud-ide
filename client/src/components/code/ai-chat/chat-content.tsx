@@ -1,4 +1,4 @@
-import { IChatMessage, useAIChat } from "."
+import { IChatMessage, StreamProgressStep, useAIChat } from "."
 import { cn } from "@/lib/utils";
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm';
@@ -10,7 +10,7 @@ import { LoaderCircle, Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 export default function ChatContent() {
-    const { messages, isChatPending, streamingText, statusMessage } = useAIChat();
+    const { messages, isChatPending, streamingText, progressSteps } = useAIChat();
 
     const ref = useRef<HTMLDivElement>(null);
 
@@ -18,7 +18,7 @@ export default function ChatContent() {
         if (ref.current) {
             ref.current.scrollIntoView({ behavior: "smooth", block: "end" });
         }
-    }, [messages, streamingText, isChatPending, statusMessage]);
+    }, [messages, streamingText, isChatPending, progressSteps]);
 
     if (messages.length === 0) return (
         <div className="@container flex-1 grid place-items-center">
@@ -39,15 +39,7 @@ export default function ChatContent() {
             }
 
             {isChatPending && (
-                <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-sidebar-accent/60 p-3 text-sm">
-                    <LoaderCircle size={18} className="mt-0.5 animate-spin text-muted-foreground" />
-                    <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Vibe Agent</p>
-                        <p className="font-medium text-foreground">
-                            {statusMessage ?? "Working on it..."}
-                        </p>
-                    </div>
-                </div>
+                <AgentProgress steps={progressSteps} />
             )}
 
             {
@@ -102,4 +94,52 @@ function RenderChatMessage({ message }: { message: IChatMessage }) {
             </div>
         </div>
     )
+}
+
+function AgentProgress({ steps }: { steps: StreamProgressStep[] }) {
+    if (steps.length === 0) {
+        return (
+            <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-sidebar-accent/60 p-3 text-sm">
+                <LoaderCircle size={18} className="mt-0.5 animate-spin text-muted-foreground" />
+                <div className="space-y-1">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Vibe Agent</p>
+                    <p className="font-medium text-foreground">Waiting for agent updates...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mb-4 rounded-lg border border-border bg-sidebar-accent/60 p-4">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <LoaderCircle size={16} className="animate-spin" />
+                Vibe Agent Progress
+            </div>
+            <ol className="relative mt-3 space-y-3 before:absolute before:left-[11px] before:top-1 before:bottom-1 before:w-px before:bg-border/80">
+                {steps.map((step, index) => {
+                    const isActive = index === steps.length - 1;
+                    return (
+                        <li key={step.id} className="relative pl-8 text-sm leading-5 text-foreground">
+                            <span className="absolute left-[3px] top-1 flex h-3 w-3 items-center justify-center">
+                                <span
+                                    className={cn(
+                                        "h-3 w-3 rounded-full border border-border bg-background",
+                                        isActive && "border-brand/70 bg-brand/60"
+                                    )}
+                                />
+                            </span>
+                            {step.agent && (
+                                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                    {step.agent}
+                                </p>
+                            )}
+                            <p className="whitespace-pre-wrap text-sm text-foreground">
+                                {step.message}
+                            </p>
+                        </li>
+                    );
+                })}
+            </ol>
+        </div>
+    );
 }

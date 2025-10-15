@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, createContext, useContext, useEffect, useRef } from "react";
+import React, { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ChatInput from "./chat-input";
@@ -18,7 +18,16 @@ export interface StreamEvent {
     type: string;
     agent?: string;
     data?: any;
+    message?: string;
     timestamp: string;
+}
+
+export interface StreamProgressStep {
+    id: string;
+    type: string;
+    agent?: string;
+    message: string;
+    acknowledged?: boolean;
 }
 
 interface AIChatContextType {
@@ -28,7 +37,7 @@ interface AIChatContextType {
     streamingText: string;
     setStreamingText: React.Dispatch<React.SetStateAction<string>>;
     isStreaming: boolean;
-    statusMessage: string | null;
+    progressSteps: StreamProgressStep[];
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -48,8 +57,8 @@ export default function AIChat() {
     const streamingTextRef = useRef("");
     const [isChatPending, setIsChatPending] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
-    const [statusMessage, setStatusMessage] = useState<string | null>(null);
-    const statusMessageRef = useRef<string | null>(null);
+    const [progressSteps, setProgressSteps] = useState<StreamProgressStep[]>([]);
+    const progressStepsRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
 
     const podUrl = React.useMemo(() => {
@@ -65,8 +74,8 @@ export default function AIChat() {
     }, [streamingText]);
 
     useEffect(() => {
-        statusMessageRef.current = statusMessage;
-    }, [statusMessage]);
+        progressStepsRef.current = progressSteps;
+    }, [progressSteps]);
 
     useEffect(() => {
         return () => {
@@ -85,55 +94,44 @@ export default function AIChat() {
         setIsStreaming(false);
     };
 
-    const getStatusFromEvent = (event: StreamEvent): string | null => {
-        const agentLabels: Record<string, string> = {
-            router: "Router",
-            direct: "Direct response",
-            planner: "Planner",
-            architect: "Architect",
-            coder: "Coder",
-        };
+    const acknowledgeConnection = useCallback(() => {
+        setProgressSteps(prev => {
+            if (prev.length === 0) return prev;
+            const firstStep = prev[0];
+            if (firstStep.type !== "connection" || firstStep.acknowledged) return prev;
+            const next = [...prev];
+            next[0] = { ...firstStep, acknowledged: true, message: "Connected. Processing your request..." };
+            return next;
+        });
+    }, []);
 
-        switch (event.type) {
-            case "agent_start":
-                if (event.agent === "router") return "Deciding the best approach for your request.";
-                if (event.agent === "direct") return "Drafting a direct answer.";
-                if (event.agent === "planner") return "Outlining a plan of action.";
-                if (event.agent === "architect") return "Breaking the work into tasks.";
-                if (event.agent === "coder") return "Implementing the changes.";
-                return agentLabels[event.agent ?? ""] ? `${agentLabels[event.agent ?? ""]} is working...` : "Thinking...";
-            case "router_decision":
-                if (event.data?.route === "direct") {
-                    return "Responding directly to your question.";
-                }
-                return "Setting up a multi-step plan.";
-            case "planner_plan_created":
-                return "Plan created. Handing off to implementation.";
-            case "architect_task_created":
-                return "Tasks prepared. Getting ready to code.";
-            case "coder_task_complete":
-                if (event.data?.totalSteps && event.data?.currentStep) {
-                    return `Completed step ${event.data.currentStep} of ${event.data.totalSteps}.`;
-                }
-                return "Making progress on the implementation.";
-            case "coder_all_complete":
-                return "All tasks finished. Wrapping up.";
-            case "direct_response_complete":
-                return "Writing the response.";
-            case "complete":
-                return "Finalizing the answer.";
-            case "error":
-                return event.data?.error ? `Error: ${event.data.error}` : "Something went wrong.";
-            default:
-                return null;
-        }
-    };
+    const appendProgressStep = useCallback((event: StreamEvent) => {
+        if (!event.message) return;
+        const id = `${event.timestamp}-${event.type}-${event.agent ?? ""}`;
+        setProgressSteps(prev => {
+            if (prev.some(step => step.id === id)) {
+                return prev;
+            }
+
+            const agentLabel = event.agent
+                ? event.agent.charAt(0).toUpperCase() + event.agent.slice(1)
+                : undefined;
+
+            return [
+                ...prev,
+                {
+                    id,
+                    type: event.type,
+                    agent: agentLabel,
+                    message: event.message,
+                },
+            ];
+        });
+    }, []);
 
     const handleStreamEvent = (event: StreamEvent) => {
-        const status = getStatusFromEvent(event);
-        if (status) {
-            setStatusMessage(status);
-        }
+        acknowledgeConnection();
+        appendProgressStep(event);
 
         switch (event.type) {
             case "direct_response_complete":
@@ -147,20 +145,21 @@ export default function AIChat() {
                     setStreamingText("");
                     streamingTextRef.current = "";
                 } else {
-                    const fallback = statusMessageRef.current;
-                    const completionMessage = fallback && fallback !== "Finalizing the answer."
-                        ? fallback
-                        : "Agent run complete.";
+                    const lastStep = progressStepsRef.current[progressStepsRef.current.length - 1];
+                    const fallback = event.message || lastStep?.message;
+                    const completionMessage = fallback ?? "Agent run complete.";
                     setMessages(prev => [...prev, { role: "agent", content: completionMessage }]);
                 }
                 setIsChatPending(false);
-                setStatusMessage(null);
+                setProgressSteps([]);
                 closeStream();
                 break;
             case "error":
                 setIsChatPending(false);
-                const errorMessage = statusMessageRef.current || "Something went wrong.";
+                const lastStep = progressStepsRef.current[progressStepsRef.current.length - 1];
+                const errorMessage = event.message || lastStep?.message || "Something went wrong.";
                 setMessages(prev => [...prev, { role: "agent", content: errorMessage }]);
+                setProgressSteps([]);
                 closeStream();
                 break;
         }
@@ -188,8 +187,19 @@ export default function AIChat() {
         eventSource.onerror = (error) => {
             console.error("EventSource failed:", error);
             toast.error("Connection lost while streaming.");
-            setStatusMessage("Connection lost. Please try again.");
+            setProgressSteps(prev => [
+                ...prev,
+                {
+                    id: `error-${Date.now()}`,
+                    type: "connection_error",
+                    message: "Connection lost. Please try again.",
+                },
+            ]);
             setIsChatPending(false);
+            setStreamingText("");
+            streamingTextRef.current = "";
+            setMessages(prev => [...prev, { role: "agent", content: "Connection lost. Please try again." }]);
+            setProgressSteps([]);
             closeStream();
         };
     };
@@ -206,7 +216,14 @@ export default function AIChat() {
 
         setIsChatPending(true);
         setIsStreaming(true);
-        setStatusMessage("Connecting to the agent...");
+        setProgressSteps([
+            {
+                id: `connecting-${Date.now()}`,
+                type: "connection",
+                message: "Connecting to the agent...",
+                acknowledged: false,
+            },
+        ]);
 
         startStreaming(trimmedMessage);
     }
@@ -218,7 +235,7 @@ export default function AIChat() {
         streamingText,
         setStreamingText,
         isStreaming,
-        statusMessage,
+        progressSteps,
     };
 
     return (

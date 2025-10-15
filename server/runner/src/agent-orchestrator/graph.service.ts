@@ -32,13 +32,75 @@ export class GraphService implements OnModuleInit {
         this.compiledGraph = this.createGraph();
     }
 
-    private createStreamEvent(type: StreamEventType, agent?: string, data?: any): StreamEvent {
+    private createStreamEvent(type: StreamEventType, agent?: string, data?: any, message?: string): StreamEvent {
         return {
             type,
             agent,
             data,
+            message,
             timestamp: new Date().toISOString(),
         };
+    }
+
+    private routerDecisionMessage(route?: string, reason?: string) {
+        if (!route) return undefined;
+        const base = route === 'direct'
+            ? 'Router chose a direct reply for this request.'
+            : 'Router escalated to the full multi-agent workflow.';
+        return reason ? `${base} Reason: ${reason}` : base;
+    }
+
+    private agentStartMessage(agent?: string) {
+        switch (agent) {
+            case 'router':
+                return 'Router is analyzing your request to determine the best path.';
+            case 'direct':
+                return 'Direct agent is composing a reply based on your request.';
+            default:
+                return undefined;
+        }
+    }
+
+    private plannerMessage(plan?: any) {
+        if (!plan) return undefined;
+        const files = Array.isArray(plan.files) ? plan.files.length : 0;
+        const techstack = plan.techstack ? ` using ${plan.techstack}` : '';
+        return `Planner created “${plan.name ?? 'the project plan'}”${techstack} covering ${files} file${files === 1 ? '' : 's'}.`;
+    }
+
+    private architectMessage(taskPlan?: any) {
+        if (!taskPlan?.implementation_steps) return undefined;
+        const total = taskPlan.implementation_steps.length;
+        if (total === 0) {
+            return 'Architect reviewed the plan with no implementation steps required.';
+        }
+        const firstTask = taskPlan.implementation_steps[0];
+        const preview = firstTask?.filepath ? ` First focus: ${firstTask.filepath}.` : '';
+        return `Architect outlined ${total} implementation step${total === 1 ? '' : 's'}.${preview}`;
+    }
+
+    private coderProgressMessage(coderState?: any, status?: string) {
+        if (!coderState?.task_plan?.implementation_steps) return undefined;
+        const steps = coderState.task_plan.implementation_steps;
+        const totalSteps = steps.length;
+        const currentStep = coderState.current_step_idx;
+
+        if (status === 'DONE') {
+            return `Coder wrapped up all ${totalSteps} implementation step${totalSteps === 1 ? '' : 's'}.`;
+        }
+
+        if (currentStep > 0 && currentStep <= totalSteps) {
+            const task = steps[currentStep - 1];
+            const filepath = task?.filepath ? ` (${task.filepath})` : '';
+            return `Coder finished step ${currentStep}/${totalSteps}${filepath}.`;
+        }
+
+        if (currentStep === 0 && steps[0]) {
+            const first = steps[0];
+            return `Coder is preparing to start with ${first.filepath ?? 'the first task'}.`;
+        }
+
+        return undefined;
     }
 
     private createGraph() {
@@ -141,13 +203,15 @@ export class GraphService implements OnModuleInit {
                 const nodeName = Object.keys(chunk)[0];
                 const nodeOutput = chunk[nodeName];
 
-                yield this.createStreamEvent(StreamEventType.AGENT_START, nodeName);
+                const startMessage = this.agentStartMessage(nodeName);
+                yield this.createStreamEvent(StreamEventType.AGENT_START, nodeName, undefined, startMessage);
 
                 if (nodeName === 'router' && nodeOutput.route) {
                     yield this.createStreamEvent(
                         StreamEventType.ROUTER_DECISION,
                         'router',
-                        { route: nodeOutput.route }
+                        { route: nodeOutput.route, reason: nodeOutput.reason },
+                        this.routerDecisionMessage(nodeOutput.route, nodeOutput.reason)
                     );
                 }
 
@@ -155,7 +219,8 @@ export class GraphService implements OnModuleInit {
                     yield this.createStreamEvent(
                         StreamEventType.DIRECT_RESPONSE_COMPLETE,
                         'direct',
-                        { response: nodeOutput.direct_response }
+                        { response: nodeOutput.direct_response },
+                        'Direct agent composed a response.'
                     );
                 }
 
@@ -167,15 +232,19 @@ export class GraphService implements OnModuleInit {
                             name: nodeOutput.plan["name"],
                             description: nodeOutput.plan["description"],
                             techstack: nodeOutput.plan["techstack"],
-                            fileCount: nodeOutput.plan?.["techstack"]?.length || 0,
-                        }
+                            fileCount: nodeOutput.plan?.["files"]?.length || 0,
+                        },
+                        this.plannerMessage(nodeOutput.plan)
                     );
                 }
 
                 if (nodeName === 'architect' && nodeOutput.task_plan) {
-                    const tasks = nodeOutput.task_plan?.["implementation_steps"]?.map((step: any) => ({
+                    const rawSteps = Array.isArray(nodeOutput.task_plan?.["implementation_steps"])
+                        ? nodeOutput.task_plan?.["implementation_steps"]
+                        : [];
+                    const tasks = rawSteps.map((step: any) => ({
                         filepath: step.filepath,
-                        description: step.task_description.substring(0, 100) + '...',
+                        description: step.task_description?.substring(0, 100) + '...',
                     }));
 
                     yield this.createStreamEvent(
@@ -184,25 +253,28 @@ export class GraphService implements OnModuleInit {
                         {
                             taskCount: tasks.length,
                             tasks,
-                        }
+                        },
+                        this.architectMessage(nodeOutput.task_plan)
                     );
                 }
 
                 if (nodeName === 'coder' && nodeOutput.coder_state) {
                     const coderState = nodeOutput.coder_state;
-                    const totalSteps = coderState?.["task_plan"]?.implementation_steps.length;
+                    const implementationSteps = coderState?.["task_plan"]?.implementation_steps ?? [];
+                    const totalSteps = implementationSteps.length;
                     const currentStep = coderState?.["current_step_idx"];
 
                     if (currentStep > 0 && currentStep <= totalSteps) {
-                        const task = coderState?.["task_plan"]?.implementation_steps[currentStep - 1];
+                        const task = implementationSteps[currentStep - 1];
                         yield this.createStreamEvent(
                             StreamEventType.CODER_TASK_COMPLETE,
                             'coder',
                             {
                                 currentStep,
                                 totalSteps,
-                                filepath: task.filepath,
-                            }
+                                filepath: task?.filepath,
+                            },
+                            this.coderProgressMessage(nodeOutput.coder_state, nodeOutput.status)
                         );
                     }
 
@@ -210,7 +282,8 @@ export class GraphService implements OnModuleInit {
                         yield this.createStreamEvent(
                             StreamEventType.CODER_ALL_COMPLETE,
                             'coder',
-                            { totalSteps }
+                            { totalSteps },
+                            this.coderProgressMessage(nodeOutput.coder_state, nodeOutput.status)
                         );
                     }
                 }
@@ -218,13 +291,14 @@ export class GraphService implements OnModuleInit {
                 yield this.createStreamEvent(StreamEventType.AGENT_END, nodeName);
             }
 
-            yield this.createStreamEvent(StreamEventType.COMPLETE);
+            yield this.createStreamEvent(StreamEventType.COMPLETE, undefined, undefined, 'Agent run finished.');
         } catch (error) {
             console.error('❌ Streaming error:', error);
             yield this.createStreamEvent(
                 StreamEventType.ERROR,
                 undefined,
-                { error: error.message }
+                { error: error.message },
+                `Error: ${error.message}`
             );
         }
 
