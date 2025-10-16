@@ -1,3 +1,5 @@
+import { ImplementationTask, Plan } from './types';
+
 export class PromptService {
     constructor() { }
 
@@ -184,5 +186,51 @@ export class PromptService {
 
             Your goal is to assist, inform, and guide users through their coding journey.
         `.trim();
+    }
+
+    completionSuccessPrompt(userPrompt: string, options: {
+        plan?: Plan | null;
+        implementationSteps?: ImplementationTask[];
+    }) {
+        const plan = options.plan ?? undefined;
+        const steps = options.implementationSteps ?? [];
+        const highlightedSteps = steps
+            .filter((step) => Boolean(step?.filepath))
+            .slice(0, 3)
+            .map((step) => {
+                const description = step.task_description?.replace(/\s+/g, ' ').trim();
+                return `${step.filepath}${description ? ` — ${description}` : ''}`;
+            });
+
+        const contextLines = [
+            `User request: ${userPrompt}`,
+        ];
+
+        if (plan?.name) {
+            contextLines.push(`Plan title: ${plan.name}`);
+        }
+
+        if (plan?.techstack) {
+            contextLines.push(`Tech stack: ${plan.techstack}`);
+        }
+
+        if (highlightedSteps.length) {
+            contextLines.push('Key updates:');
+            highlightedSteps.forEach((step) => contextLines.push(`- ${step}`));
+        }
+
+        return {
+            system: `
+                You are the closing voice of a coding assistant that has just completed the requested work.
+                Craft a brief success handoff message (no more than 2 sentences) that:
+                - Confirms the work is complete in first person
+                - References the user request directly
+                - Mentions the primary tech stack or key files if available
+                - Suggests where the user should look to review the results
+                - Sounds confident and friendly
+                Do NOT list numbered steps, implementation details, or lengthy explanations.
+            `.trim(),
+            user: contextLines.join('\n'),
+        };
     }
 }
