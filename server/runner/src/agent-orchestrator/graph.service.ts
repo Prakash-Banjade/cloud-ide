@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { StateGraph, END, Annotation, CompiledStateGraph } from '@langchain/langgraph';
 import { CoderState, GraphState, Plan, TaskPlan } from './types';
 import { PlannerAgent } from './agents/planner-agent.service';
@@ -9,6 +9,10 @@ import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
 import { StreamEvent, StreamEventType } from './types/streaming.types';
+import { PromptService } from './prompts.service';
+import { LlmProviderTokens } from './agent-orchestrator.module';
+import { ChatOpenAI } from '@langchain/openai';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
@@ -21,7 +25,9 @@ export class GraphService implements OnModuleInit {
         private coderAgent: CoderAgent,
         private routerAgent: RouterAgent,
         private directAgent: DirectAgent,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly promptService: PromptService,
+        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatOpenAI,
     ) {
         // this.checkpointer = PostgresSaver.fromConnString(this.configService.getOrThrow('DATABASE_URL'));
     }
@@ -136,63 +142,91 @@ export class GraphService implements OnModuleInit {
         return chunks;
     }
 
-    private buildCompletionSummary(state: Partial<GraphState>): string {
-        const plan = state.plan ?? state.task_plan?.plan;
+    private extractTextFromMessageChunk(chunk: any): string {
+        if (!chunk) return '';
+
+        const content = chunk.content ?? chunk.lc_kwargs?.content;
+        if (typeof content === 'string') {
+            return content;
+        }
+
+        if (Array.isArray(content)) {
+            return content
+                .map((part) => {
+                    if (!part) return '';
+                    if (typeof part === 'string') return part;
+                    if (typeof part?.text === 'string') return part.text;
+                    return '';
+                })
+                .join('');
+        }
+
+        if (typeof content?.text === 'string') {
+            return content.text;
+        }
+
+        return '';
+    }
+
+    private async *streamCompletionSuccess(state: Partial<GraphState>): AsyncGenerator<StreamEvent> {
+        const userPrompt = state.user_prompt?.trim();
+        if (!userPrompt) {
+            return;
+        }
+
+        const plan = state.plan ?? state.task_plan?.plan ?? state.coder_state?.task_plan?.plan ?? null;
         const implementationSteps = state.task_plan?.implementation_steps
             ?? state.coder_state?.task_plan?.implementation_steps
             ?? [];
-        const completedSteps = Math.max(
-            Math.min(state.coder_state?.current_step_idx ?? implementationSteps.length, implementationSteps.length),
-            implementationSteps.length ? 1 : 0,
-        );
 
-        const maxTasksToShow = 8;
-        const completedTasks = implementationSteps.slice(0, Math.min(completedSteps, maxTasksToShow));
-
-        const title = plan?.name?.trim();
-        const techstack = plan?.techstack?.trim();
-        const description = plan?.description?.trim();
-
-        const introParts: string[] = [];
-        if (title) {
-            introParts.push(`I’ve finished building ${title}${techstack ? ` using ${techstack}` : ''}.`);
-        } else {
-            introParts.push(`I’ve wrapped up the work on your request${techstack ? ` using ${techstack}` : ''}.`);
-        }
-
-        if (description) {
-            introParts.push(description);
-        }
-
-        const summaryLines: string[] = [introParts.join(' ')];
-
-        if (completedTasks.length > 0) {
-            summaryLines.push('\nHere’s what was implemented:');
-            completedTasks.forEach(task => {
-                const filepath = task.filepath ?? 'project file';
-                const detail = task.task_description?.trim() ?? '';
-                summaryLines.push(`- ${filepath}${detail ? ` — ${detail}` : ''}`);
+        try {
+            const prompts = this.promptService.completionSuccessPrompt(userPrompt, {
+                plan,
+                implementationSteps,
             });
-            if (completedSteps > completedTasks.length) {
-                summaryLines.push(`- …and ${completedSteps - completedTasks.length} more update${completedSteps - completedTasks.length === 1 ? '' : 's'}.`);
+
+            const stream = await this.summaryLlm.stream([
+                new SystemMessage(prompts.system),
+                new HumanMessage(prompts.user),
+            ]);
+
+            let response = '';
+            for await (const chunk of stream) {
+                const text = this.extractTextFromMessageChunk(chunk);
+                if (!text) {
+                    continue;
+                }
+
+                response += text;
+                yield this.createStreamEvent(
+                    StreamEventType.DIRECT_RESPONSE_CHUNK,
+                    'orchestrator',
+                    { chunk: text },
+                );
             }
-        }
 
-        const primaryFile = completedTasks[0]?.filepath ?? implementationSteps[0]?.filepath;
-        if (primaryFile) {
-            summaryLines.push(`\nYou can start by opening ${primaryFile} to review the results.`);
+            const trimmed = response.trim();
+            if (trimmed) {
+                yield this.createStreamEvent(
+                    StreamEventType.DIRECT_RESPONSE_COMPLETE,
+                    'orchestrator',
+                    { response: trimmed },
+                );
+            }
+        } catch (error) {
+            console.error('❌ Completion summary streaming error:', error);
+            const fallback = `I’ve completed your request: ${userPrompt}.`;
+            yield this.createStreamEvent(
+                StreamEventType.DIRECT_RESPONSE_CHUNK,
+                'orchestrator',
+                { chunk: fallback },
+            );
+            yield this.createStreamEvent(
+                StreamEventType.DIRECT_RESPONSE_COMPLETE,
+                'orchestrator',
+                { response: fallback },
+            );
         }
-
-        if (plan?.features?.length) {
-            const highlighted = plan.features.slice(0, 3);
-            summaryLines.push(`\nKey features covered: ${highlighted.join(', ')}${plan.features.length > 3 ? ', …' : ''}.`);
-        }
-
-        if (state.user_prompt) {
-            summaryLines.push(`\nLet me know if you’d like to refine anything else about “${state.user_prompt}”.`);
-        }
-
-        return summaryLines.join('\n').trim();
     }
 
     private createGraph() {
@@ -412,22 +446,14 @@ export class GraphService implements OnModuleInit {
             }
 
             if (!finalResponseSent) {
-                const completionSummary = this.buildCompletionSummary(finalState);
+                let streamedResponse = false;
+                for await (const event of this.streamCompletionSuccess(finalState)) {
+                    streamedResponse = true;
+                    yield event;
+                }
 
-                if (completionSummary) {
-                    for (const textChunk of this.chunkMessage(completionSummary)) {
-                        yield this.createStreamEvent(
-                            StreamEventType.DIRECT_RESPONSE_CHUNK,
-                            'orchestrator',
-                            { chunk: textChunk },
-                        );
-                    }
-
-                    yield this.createStreamEvent(
-                        StreamEventType.DIRECT_RESPONSE_COMPLETE,
-                        'orchestrator',
-                        { response: completionSummary },
-                    );
+                if (streamedResponse) {
+                    finalResponseSent = true;
                 }
             }
 
