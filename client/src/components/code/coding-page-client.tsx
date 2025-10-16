@@ -171,8 +171,8 @@ export const CodingPagePostPodCreation = () => {
                 <ResizableHandle />
 
                 <ResizablePanel order={3} defaultSize={30} minSize={20}>
-                    {/* <AIChat /> */}
-                    <StreamingAgent />
+                    <AIChat />
+                    {/* <StreamingAgent /> */}
                 </ResizablePanel>
 
                 {

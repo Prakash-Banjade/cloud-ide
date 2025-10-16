@@ -123,7 +123,7 @@ export default function AIChat() {
                     id,
                     type: event.type,
                     agent: agentLabel,
-                    message: event.message,
+                    message: event.message || "",
                 },
             ];
         });

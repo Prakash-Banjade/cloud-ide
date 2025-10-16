@@ -211,7 +211,7 @@ export class GraphService implements OnModuleInit {
                         StreamEventType.ROUTER_DECISION,
                         'router',
                         { route: nodeOutput.route, reason: nodeOutput.reason },
-                        this.routerDecisionMessage(nodeOutput.route, nodeOutput.reason)
+                        this.routerDecisionMessage(nodeOutput.route as string, nodeOutput.reason as string)
                     );
                 }
 
@@ -274,7 +274,7 @@ export class GraphService implements OnModuleInit {
                                 totalSteps,
                                 filepath: task?.filepath,
                             },
-                            this.coderProgressMessage(nodeOutput.coder_state, nodeOutput.status)
+                            this.coderProgressMessage(nodeOutput.coder_state, nodeOutput.status as string)
                         );
                     }
 
