@@ -103,6 +103,94 @@ export class GraphService implements OnModuleInit {
         return undefined;
     }
 
+    private chunkMessage(message: string, chunkSize = 200): string[] {
+        if (!message) return [];
+
+        const chunks: string[] = [];
+        let remaining = message.trim();
+
+        while (remaining.length > 0) {
+            if (remaining.length <= chunkSize) {
+                chunks.push(remaining);
+                break;
+            }
+
+            let boundary = remaining.lastIndexOf('\n', chunkSize);
+            if (boundary <= 0) {
+                boundary = remaining.lastIndexOf(' ', chunkSize);
+            }
+
+            if (boundary <= 0) {
+                boundary = chunkSize;
+            }
+
+            const chunk = remaining.slice(0, boundary).trimEnd();
+            chunks.push(chunk);
+            remaining = remaining.slice(boundary).trimStart();
+        }
+
+        return chunks;
+    }
+
+    private buildCompletionSummary(state: Partial<GraphState>): string {
+        const plan = state.plan ?? state.task_plan?.plan;
+        const implementationSteps = state.task_plan?.implementation_steps
+            ?? state.coder_state?.task_plan?.implementation_steps
+            ?? [];
+        const completedSteps = Math.max(
+            Math.min(state.coder_state?.current_step_idx ?? implementationSteps.length, implementationSteps.length),
+            implementationSteps.length ? 1 : 0,
+        );
+
+        const maxTasksToShow = 8;
+        const completedTasks = implementationSteps.slice(0, Math.min(completedSteps, maxTasksToShow));
+
+        const title = plan?.name?.trim();
+        const techstack = plan?.techstack?.trim();
+        const description = plan?.description?.trim();
+
+        const introParts: string[] = [];
+        if (title) {
+            introParts.push(`I’ve finished building ${title}${techstack ? ` using ${techstack}` : ''}.`);
+        } else {
+            introParts.push(`I’ve wrapped up the work on your request${techstack ? ` using ${techstack}` : ''}.`);
+        }
+
+        if (description) {
+            introParts.push(description);
+        }
+
+        const summaryLines: string[] = [introParts.join(' ')];
+
+        if (completedTasks.length > 0) {
+            summaryLines.push('\nHere’s what was implemented:');
+            completedTasks.forEach(task => {
+                const filepath = task.filepath ?? 'project file';
+                const detail = task.task_description?.trim() ?? '';
+                summaryLines.push(`- ${filepath}${detail ? ` — ${detail}` : ''}`);
+            });
+            if (completedSteps > completedTasks.length) {
+                summaryLines.push(`- …and ${completedSteps - completedTasks.length} more update${completedSteps - completedTasks.length === 1 ? '' : 's'}.`);
+            }
+        }
+
+        const primaryFile = completedTasks[0]?.filepath ?? implementationSteps[0]?.filepath;
+        if (primaryFile) {
+            summaryLines.push(`\nYou can start by opening ${primaryFile} to review the results.`);
+        }
+
+        if (plan?.features?.length) {
+            const highlighted = plan.features.slice(0, 3);
+            summaryLines.push(`\nKey features covered: ${highlighted.join(', ')}${plan.features.length > 3 ? ', …' : ''}.`);
+        }
+
+        if (state.user_prompt) {
+            summaryLines.push(`\nLet me know if you’d like to refine anything else about “${state.user_prompt}”.`);
+        }
+
+        return summaryLines.join('\n').trim();
+    }
+
     private createGraph() {
         const stateAnnotation = Annotation.Root({
             user_prompt: Annotation<string>,
@@ -198,10 +286,31 @@ export class GraphService implements OnModuleInit {
 
         try {
             const stream = await this.compiledGraph.stream(input, defaultConfig);
+            const finalState: Partial<GraphState> = { user_prompt: input.user_prompt };
+            let finalResponseSent = false;
 
             for await (const chunk of stream) {
                 const nodeName = Object.keys(chunk)[0];
                 const nodeOutput = chunk[nodeName];
+
+                if (nodeOutput?.plan) {
+                    finalState.plan = nodeOutput.plan;
+                }
+                if (nodeOutput?.task_plan) {
+                    finalState.task_plan = nodeOutput.task_plan;
+                }
+                if (nodeOutput?.coder_state) {
+                    finalState.coder_state = nodeOutput.coder_state;
+                }
+                if (nodeOutput?.status) {
+                    finalState.status = nodeOutput.status;
+                }
+                if (nodeOutput?.route) {
+                    finalState.route = nodeOutput.route;
+                }
+                if (nodeOutput?.direct_response) {
+                    finalState.direct_response = nodeOutput.direct_response;
+                }
 
                 const startMessage = this.agentStartMessage(nodeName);
                 yield this.createStreamEvent(StreamEventType.AGENT_START, nodeName, undefined, startMessage);
@@ -216,12 +325,20 @@ export class GraphService implements OnModuleInit {
                 }
 
                 if (nodeName === 'direct' && nodeOutput.direct_response) {
+                    for (const textChunk of this.chunkMessage(nodeOutput.direct_response)) {
+                        yield this.createStreamEvent(
+                            StreamEventType.DIRECT_RESPONSE_CHUNK,
+                            'direct',
+                            { chunk: textChunk },
+                        );
+                    }
+
                     yield this.createStreamEvent(
                         StreamEventType.DIRECT_RESPONSE_COMPLETE,
                         'direct',
                         { response: nodeOutput.direct_response },
-                        'Direct agent composed a response.'
                     );
+                    finalResponseSent = true;
                 }
 
                 if (nodeName === 'planner' && nodeOutput.plan) {
@@ -291,7 +408,27 @@ export class GraphService implements OnModuleInit {
                 yield this.createStreamEvent(StreamEventType.AGENT_END, nodeName);
             }
 
-            yield this.createStreamEvent(StreamEventType.COMPLETE, undefined, undefined, 'Agent run finished.');
+            if (!finalResponseSent) {
+                const completionSummary = this.buildCompletionSummary(finalState);
+
+                if (completionSummary) {
+                    for (const textChunk of this.chunkMessage(completionSummary)) {
+                        yield this.createStreamEvent(
+                            StreamEventType.DIRECT_RESPONSE_CHUNK,
+                            'orchestrator',
+                            { chunk: textChunk },
+                        );
+                    }
+
+                    yield this.createStreamEvent(
+                        StreamEventType.DIRECT_RESPONSE_COMPLETE,
+                        'orchestrator',
+                        { response: completionSummary },
+                    );
+                }
+            }
+
+            yield this.createStreamEvent(StreamEventType.COMPLETE);
         } catch (error) {
             console.error('❌ Streaming error:', error);
             yield this.createStreamEvent(
