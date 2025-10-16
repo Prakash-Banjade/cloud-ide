@@ -58,11 +58,18 @@ export default function useListenTreeMutation() {
             setFileStructure(prev => updateFileContent(prev, path, content));
         });
 
+        socket.on(SocketEvents.FETCH_DIR, ({ targetPath }: { targetPath: string }) => {
+            socket.emit(SocketEvents.FETCH_DIR, targetPath, (data: TreeItem[]) => {
+                setFileStructure(prev => insertTreeItems(prev, data, targetPath));
+            })
+        })
+
         return () => {
             socket.off(SocketEvents.ITEM_CREATED);
             socket.off(SocketEvents.ITEM_DELETED);
             socket.off(SocketEvents.ITEM_RENAMED);
             socket.off(SocketEvents.UPDATE_CONTENT);
+            socket.off(SocketEvents.FETCH_DIR);
         }
     }, [socket])
 

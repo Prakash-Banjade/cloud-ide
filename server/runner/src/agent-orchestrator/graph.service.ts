@@ -42,6 +42,10 @@ export class GraphService implements OnModuleInit {
         };
     }
 
+/*************  ✨ Windsurf Command ⭐  *************/
+    /**
+
+/*******  9208ebce-da7d-4b47-95db-a4cea37d53c0  *******/
     private routerDecisionMessage(route?: string, reason?: string) {
         if (!route) return undefined;
         const base = route === 'direct'
@@ -282,7 +286,6 @@ export class GraphService implements OnModuleInit {
 
         console.log('\n🚀 Starting Streaming Agent Graph Execution');
         console.log(`📝 User Prompt: ${input.user_prompt}`);
-        // console.log(`🔗 Thread ID: ${threadId}\n`);
 
         try {
             const stream = await this.compiledGraph.stream(input, defaultConfig);
@@ -294,22 +297,22 @@ export class GraphService implements OnModuleInit {
                 const nodeOutput = chunk[nodeName];
 
                 if (nodeOutput?.plan) {
-                    finalState.plan = nodeOutput.plan;
+                    finalState.plan = nodeOutput.plan as Plan;
                 }
                 if (nodeOutput?.task_plan) {
-                    finalState.task_plan = nodeOutput.task_plan;
+                    finalState.task_plan = nodeOutput.task_plan as TaskPlan;
                 }
                 if (nodeOutput?.coder_state) {
-                    finalState.coder_state = nodeOutput.coder_state;
+                    finalState.coder_state = nodeOutput.coder_state as CoderState;
                 }
                 if (nodeOutput?.status) {
-                    finalState.status = nodeOutput.status;
+                    finalState.status = nodeOutput.status as string;
                 }
                 if (nodeOutput?.route) {
-                    finalState.route = nodeOutput.route;
+                    finalState.route = nodeOutput.route as 'agent' | 'direct';
                 }
                 if (nodeOutput?.direct_response) {
-                    finalState.direct_response = nodeOutput.direct_response;
+                    finalState.direct_response = nodeOutput.direct_response as string;
                 }
 
                 const startMessage = this.agentStartMessage(nodeName);
@@ -325,7 +328,7 @@ export class GraphService implements OnModuleInit {
                 }
 
                 if (nodeName === 'direct' && nodeOutput.direct_response) {
-                    for (const textChunk of this.chunkMessage(nodeOutput.direct_response)) {
+                    for (const textChunk of this.chunkMessage(nodeOutput.direct_response as string)) {
                         yield this.createStreamEvent(
                             StreamEventType.DIRECT_RESPONSE_CHUNK,
                             'direct',
