@@ -48,10 +48,6 @@ export class GraphService implements OnModuleInit {
         };
     }
 
-/*************  ✨ Windsurf Command ⭐  *************/
-    /**
-
-/*******  9208ebce-da7d-4b47-95db-a4cea37d53c0  *******/
     private routerDecisionMessage(route?: string, reason?: string) {
         if (!route) return undefined;
         const base = route === 'direct'
@@ -320,6 +316,7 @@ export class GraphService implements OnModuleInit {
 
         console.log('\n🚀 Starting Streaming Agent Graph Execution');
         console.log(`📝 User Prompt: ${input.user_prompt}`);
+        // console.log(`🔗 Thread ID: ${threadId}\n`);
 
         try {
             const stream = await this.compiledGraph.stream(input, defaultConfig);
@@ -357,7 +354,7 @@ export class GraphService implements OnModuleInit {
                         StreamEventType.ROUTER_DECISION,
                         'router',
                         { route: nodeOutput.route, reason: nodeOutput.reason },
-                        this.routerDecisionMessage(nodeOutput.route as string, nodeOutput.reason as string)
+                        this.routerDecisionMessage(nodeOutput.route as string, nodeOutput.reason as string),
                     );
                 }
 
