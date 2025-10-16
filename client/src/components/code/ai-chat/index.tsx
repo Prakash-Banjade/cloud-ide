@@ -134,6 +134,15 @@ export default function AIChat() {
         appendProgressStep(event);
 
         switch (event.type) {
+            case "direct_response_chunk":
+                if (event.data?.chunk) {
+                    setStreamingText(prev => {
+                        const next = prev + event.data.chunk;
+                        streamingTextRef.current = next;
+                        return next;
+                    });
+                }
+                break;
             case "direct_response_complete":
                 if (event.data?.response) {
                     setStreamingText(event.data.response);
