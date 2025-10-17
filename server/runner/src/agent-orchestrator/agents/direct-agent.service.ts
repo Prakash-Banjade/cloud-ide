@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { GraphState } from '../types';
 import { PromptService } from '../prompts.service';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatGroq } from '@langchain/groq';
 import { ToolsService } from '../tools.service';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
@@ -11,7 +11,7 @@ import { LlmProviderTokens } from '../agent-orchestrator.module';
 export class DirectAgent {
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatOpenAI,
+        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq,
         private readonly toolsService: ToolsService
     ) { }
 

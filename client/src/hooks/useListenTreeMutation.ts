@@ -52,7 +52,6 @@ export default function useListenTreeMutation() {
 
         socket.on(SocketEvents.UPDATE_CONTENT, ({ path, content }: { path: string, content: string }) => {
             if (selectedFile && path === selectedFile?.path) {
-                console.log(content)
                 editorInstance?.setValue(content)
             };
             setFileStructure(prev => updateFileContent(prev, path, content));

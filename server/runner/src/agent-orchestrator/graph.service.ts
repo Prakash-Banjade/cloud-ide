@@ -11,7 +11,7 @@ import { DirectAgent } from './agents/direct-agent.service';
 import { StreamEvent, StreamEventType } from './types/streaming.types';
 import { PromptService } from './prompts.service';
 import { LlmProviderTokens } from './agent-orchestrator.module';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatGroq } from '@langchain/groq';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class GraphService implements OnModuleInit {
         private directAgent: DirectAgent,
         private readonly configService: ConfigService,
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatOpenAI,
+        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGroq,
     ) {
         // this.checkpointer = PostgresSaver.fromConnString(this.configService.getOrThrow('DATABASE_URL'));
     }
