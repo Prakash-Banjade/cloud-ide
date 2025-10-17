@@ -10,7 +10,7 @@ import { LoaderCircle, Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 export default function ChatContent() {
-    const { messages, isChatPending, streamingText, progressSteps } = useAIChat();
+    const { messages, isChatPending, streamingText, progressSteps, route } = useAIChat();
 
     const ref = useRef<HTMLDivElement>(null);
 
@@ -38,7 +38,11 @@ export default function ChatContent() {
                 })
             }
 
-            {isChatPending && (
+            {isChatPending && route !== "agent" && streamingText.length === 0 && (
+                <AgentThinking />
+            )}
+
+            {isChatPending && route === "agent" && (
                 <AgentProgress steps={progressSteps} />
             )}
 
@@ -94,6 +98,18 @@ function RenderChatMessage({ message }: { message: IChatMessage }) {
             </div>
         </div>
     )
+}
+
+function AgentThinking() {
+    return (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-sidebar-accent/60 p-3 text-sm">
+            <LoaderCircle size={18} className="mt-0.5 animate-spin text-muted-foreground" />
+            <div className="space-y-1">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Vibe Agent</p>
+                <p className="font-medium text-foreground">Thinking...</p>
+            </div>
+        </div>
+    );
 }
 
 function AgentProgress({ steps }: { steps: StreamProgressStep[] }) {
