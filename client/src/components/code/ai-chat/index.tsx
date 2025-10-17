@@ -30,6 +30,8 @@ export interface StreamProgressStep {
     acknowledged?: boolean;
 }
 
+type RouteChoice = "agent" | "direct" | null;
+
 interface AIChatContextType {
     messages: IChatMessage[];
     setMessages: React.Dispatch<React.SetStateAction<IChatMessage[]>>;
@@ -38,6 +40,7 @@ interface AIChatContextType {
     setStreamingText: React.Dispatch<React.SetStateAction<string>>;
     isStreaming: boolean;
     progressSteps: StreamProgressStep[];
+    route: RouteChoice;
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -58,7 +61,10 @@ export default function AIChat() {
     const [isChatPending, setIsChatPending] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [progressSteps, setProgressSteps] = useState<StreamProgressStep[]>([]);
+    const [route, setRoute] = useState<RouteChoice>(null);
     const progressStepsRef = useRef<StreamProgressStep[]>([]);
+    const routeRef = useRef<RouteChoice>(null);
+    const pendingProgressRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
 
     const podUrl = React.useMemo(() => {
@@ -94,43 +100,73 @@ export default function AIChat() {
         setIsStreaming(false);
     };
 
-    const acknowledgeConnection = useCallback(() => {
-        setProgressSteps(prev => {
-            if (prev.length === 0) return prev;
-            const firstStep = prev[0];
-            if (firstStep.type !== "connection" || firstStep.acknowledged) return prev;
-            const next = [...prev];
-            next[0] = { ...firstStep, acknowledged: true, message: "Connected. Processing your request..." };
-            return next;
-        });
-    }, []);
-
     const appendProgressStep = useCallback((event: StreamEvent) => {
         if (!event.message) return;
         const id = `${event.timestamp}-${event.type}-${event.agent ?? ""}`;
+        const agentLabel = event.agent
+            ? event.agent.charAt(0).toUpperCase() + event.agent.slice(1)
+            : undefined;
+
+        const step: StreamProgressStep = {
+            id,
+            type: event.type,
+            agent: agentLabel,
+            message: event.message,
+        };
+
+        const currentRoute = routeRef.current;
+
+        if (currentRoute === "direct") {
+            return;
+        }
+
+        if (currentRoute === "agent") {
+            setProgressSteps(prev => {
+                if (prev.some(existing => existing.id === id)) {
+                    return prev;
+                }
+                return [...prev, step];
+            });
+            return;
+        }
+
+        if (!pendingProgressRef.current.some(existing => existing.id === id)) {
+            pendingProgressRef.current = [...pendingProgressRef.current, step];
+        }
+    }, []);
+
+    const promotePendingProgress = useCallback(() => {
+        if (pendingProgressRef.current.length === 0) {
+            return;
+        }
+
         setProgressSteps(prev => {
-            if (prev.some(step => step.id === id)) {
-                return prev;
+            const next = [...prev];
+            for (const step of pendingProgressRef.current) {
+                if (!next.some(existing => existing.id === step.id)) {
+                    next.push(step);
+                }
             }
-
-            const agentLabel = event.agent
-                ? event.agent.charAt(0).toUpperCase() + event.agent.slice(1)
-                : undefined;
-
-            return [
-                ...prev,
-                {
-                    id,
-                    type: event.type,
-                    agent: agentLabel,
-                    message: event.message || "",
-                },
-            ];
+            return next;
         });
+
+        pendingProgressRef.current = [];
     }, []);
 
     const handleStreamEvent = (event: StreamEvent) => {
-        acknowledgeConnection();
+        if (event.type === "router_decision" && event.data?.route) {
+            const routeChoice: RouteChoice = event.data.route === "direct" ? "direct" : "agent";
+            setRoute(routeChoice);
+            routeRef.current = routeChoice;
+
+            if (routeChoice === "agent") {
+                promotePendingProgress();
+            } else {
+                pendingProgressRef.current = [];
+                setProgressSteps([]);
+            }
+        }
+
         appendProgressStep(event);
 
         switch (event.type) {
@@ -161,6 +197,9 @@ export default function AIChat() {
                 }
                 setIsChatPending(false);
                 setProgressSteps([]);
+                setRoute(null);
+                routeRef.current = null;
+                pendingProgressRef.current = [];
                 closeStream();
                 break;
             case "error":
@@ -169,6 +208,9 @@ export default function AIChat() {
                 const errorMessage = event.message || lastStep?.message || "Something went wrong.";
                 setMessages(prev => [...prev, { role: "agent", content: errorMessage }]);
                 setProgressSteps([]);
+                setRoute(null);
+                routeRef.current = null;
+                pendingProgressRef.current = [];
                 closeStream();
                 break;
         }
@@ -209,6 +251,9 @@ export default function AIChat() {
             streamingTextRef.current = "";
             setMessages(prev => [...prev, { role: "agent", content: "Connection lost. Please try again." }]);
             setProgressSteps([]);
+            setRoute(null);
+            routeRef.current = null;
+            pendingProgressRef.current = [];
             closeStream();
         };
     };
@@ -225,14 +270,10 @@ export default function AIChat() {
 
         setIsChatPending(true);
         setIsStreaming(true);
-        setProgressSteps([
-            {
-                id: `connecting-${Date.now()}`,
-                type: "connection",
-                message: "Connecting to the agent...",
-                acknowledged: false,
-            },
-        ]);
+        setProgressSteps([]);
+        setRoute(null);
+        routeRef.current = null;
+        pendingProgressRef.current = [];
 
         startStreaming(trimmedMessage);
     }
@@ -245,6 +286,7 @@ export default function AIChat() {
         setStreamingText,
         isStreaming,
         progressSteps,
+        route,
     };
 
     return (
