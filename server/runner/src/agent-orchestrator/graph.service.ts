@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { StateGraph, END, Annotation, CompiledStateGraph } from '@langchain/langgraph';
 import { CoderState, GraphState, Plan, TaskPlan } from './types';
 import { PlannerAgent } from './agents/planner-agent.service';
@@ -9,6 +9,10 @@ import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
 import { StreamEvent, StreamEventType } from './types/streaming.types';
+import { PromptService } from './prompts.service';
+import { LlmProviderTokens } from './agent-orchestrator.module';
+import { ChatGroq } from '@langchain/groq';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
@@ -21,7 +25,9 @@ export class GraphService implements OnModuleInit {
         private coderAgent: CoderAgent,
         private routerAgent: RouterAgent,
         private directAgent: DirectAgent,
-        private readonly configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly promptService: PromptService,
+        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGroq,
     ) {
         // this.checkpointer = PostgresSaver.fromConnString(this.configService.getOrThrow('DATABASE_URL'));
     }
@@ -32,13 +38,191 @@ export class GraphService implements OnModuleInit {
         this.compiledGraph = this.createGraph();
     }
 
-    private createStreamEvent(type: StreamEventType, agent?: string, data?: any): StreamEvent {
+    private createStreamEvent(type: StreamEventType, agent?: string, data?: any, message?: string): StreamEvent {
         return {
             type,
             agent,
             data,
+            message,
             timestamp: new Date().toISOString(),
         };
+    }
+
+    private routerDecisionMessage(route?: string, reason?: string) {
+        if (!route) return undefined;
+        const base = route === 'direct'
+            ? 'Router chose a direct reply for this request.'
+            : 'Router escalated to the full multi-agent workflow.';
+        return reason ? `${base} Reason: ${reason}` : base;
+    }
+
+    private agentStartMessage(agent?: string) {
+        switch (agent) {
+            case 'router':
+                return 'Router is analyzing your request to determine the best path.';
+            case 'direct':
+                return 'Direct agent is composing a reply based on your request.';
+            default:
+                return undefined;
+        }
+    }
+
+    private plannerMessage(plan?: any) {
+        if (!plan) return undefined;
+        const files = Array.isArray(plan.files) ? plan.files.length : 0;
+        const techstack = plan.techstack ? ` using ${plan.techstack}` : '';
+        return `Planner created “${plan.name ?? 'the project plan'}”${techstack} covering ${files} file${files === 1 ? '' : 's'}.`;
+    }
+
+    private architectMessage(taskPlan?: any) {
+        if (!taskPlan?.implementation_steps) return undefined;
+        const total = taskPlan.implementation_steps.length;
+        if (total === 0) {
+            return 'Architect reviewed the plan with no implementation steps required.';
+        }
+        const firstTask = taskPlan.implementation_steps[0];
+        const preview = firstTask?.filepath ? ` First focus: ${firstTask.filepath}.` : '';
+        return `Architect outlined ${total} implementation step${total === 1 ? '' : 's'}.${preview}`;
+    }
+
+    private coderProgressMessage(coderState?: any, status?: string) {
+        if (!coderState?.task_plan?.implementation_steps) return undefined;
+        const steps = coderState.task_plan.implementation_steps;
+        const totalSteps = steps.length;
+        const currentStep = coderState.current_step_idx;
+
+        if (status === 'DONE') {
+            return `Coder wrapped up all ${totalSteps} implementation step${totalSteps === 1 ? '' : 's'}.`;
+        }
+
+        if (currentStep > 0 && currentStep <= totalSteps) {
+            const task = steps[currentStep - 1];
+            const filepath = task?.filepath ? ` (${task.filepath})` : '';
+            return `Coder finished step ${currentStep}/${totalSteps}${filepath}.`;
+        }
+
+        if (currentStep === 0 && steps[0]) {
+            const first = steps[0];
+            return `Coder is preparing to start with ${first.filepath ?? 'the first task'}.`;
+        }
+
+        return undefined;
+    }
+
+    private chunkMessage(message: string, chunkSize = 200): string[] {
+        if (!message) return [];
+
+        const chunks: string[] = [];
+        let remaining = message.trim();
+
+        while (remaining.length > 0) {
+            if (remaining.length <= chunkSize) {
+                chunks.push(remaining);
+                break;
+            }
+
+            let boundary = remaining.lastIndexOf('\n', chunkSize);
+            if (boundary <= 0) {
+                boundary = remaining.lastIndexOf(' ', chunkSize);
+            }
+
+            if (boundary <= 0) {
+                boundary = chunkSize;
+            }
+
+            const chunk = remaining.slice(0, boundary).trimEnd();
+            chunks.push(chunk);
+            remaining = remaining.slice(boundary).trimStart();
+        }
+
+        return chunks;
+    }
+
+    private extractTextFromMessageChunk(chunk: any): string {
+        if (!chunk) return '';
+
+        const content = chunk.content ?? chunk.lc_kwargs?.content;
+        if (typeof content === 'string') {
+            return content;
+        }
+
+        if (Array.isArray(content)) {
+            return content
+                .map((part) => {
+                    if (!part) return '';
+                    if (typeof part === 'string') return part;
+                    if (typeof part?.text === 'string') return part.text;
+                    return '';
+                })
+                .join('');
+        }
+
+        if (typeof content?.text === 'string') {
+            return content.text;
+        }
+
+        return '';
+    }
+
+    private async *streamCompletionSuccess(state: Partial<GraphState>): AsyncGenerator<StreamEvent> {
+        const userPrompt = state.user_prompt?.trim();
+        if (!userPrompt) {
+            return;
+        }
+
+        const plan = state.plan ?? state.task_plan?.plan ?? state.coder_state?.task_plan?.plan ?? null;
+        const implementationSteps = state.task_plan?.implementation_steps
+            ?? state.coder_state?.task_plan?.implementation_steps
+            ?? [];
+
+        try {
+            const prompts = this.promptService.completionSuccessPrompt(userPrompt, {
+                plan,
+                implementationSteps,
+            });
+
+            const stream = await this.summaryLlm.stream([
+                new SystemMessage(prompts.system),
+                new HumanMessage(prompts.user),
+            ]);
+
+            let response = '';
+            for await (const chunk of stream) {
+                const text = this.extractTextFromMessageChunk(chunk);
+                if (!text) {
+                    continue;
+                }
+
+                response += text;
+                yield this.createStreamEvent(
+                    StreamEventType.DIRECT_RESPONSE_CHUNK,
+                    'orchestrator',
+                    { chunk: text },
+                );
+            }
+
+            const trimmed = response.trim();
+            if (trimmed) {
+                yield this.createStreamEvent(
+                    StreamEventType.DIRECT_RESPONSE_COMPLETE,
+                    'orchestrator',
+                    { response: trimmed },
+                );
+            }
+        } catch (error) {
+            console.error('❌ Completion summary streaming error:', error);
+            const fallback = `I’ve completed your request: ${userPrompt}.`;
+            yield this.createStreamEvent(
+                StreamEventType.DIRECT_RESPONSE_CHUNK,
+                'orchestrator',
+                { chunk: fallback },
+            );
+            yield this.createStreamEvent(
+                StreamEventType.DIRECT_RESPONSE_COMPLETE,
+                'orchestrator',
+                { response: fallback },
+            );
+        }
     }
 
     private createGraph() {
@@ -136,27 +320,59 @@ export class GraphService implements OnModuleInit {
 
         try {
             const stream = await this.compiledGraph.stream(input, defaultConfig);
+            const finalState: Partial<GraphState> = { user_prompt: input.user_prompt };
+            let finalResponseSent = false;
 
             for await (const chunk of stream) {
                 const nodeName = Object.keys(chunk)[0];
                 const nodeOutput = chunk[nodeName];
 
-                yield this.createStreamEvent(StreamEventType.AGENT_START, nodeName);
+                if (nodeOutput?.plan) {
+                    finalState.plan = nodeOutput.plan as Plan;
+                }
+                if (nodeOutput?.task_plan) {
+                    finalState.task_plan = nodeOutput.task_plan as TaskPlan;
+                }
+                if (nodeOutput?.coder_state) {
+                    finalState.coder_state = nodeOutput.coder_state as CoderState;
+                }
+                if (nodeOutput?.status) {
+                    finalState.status = nodeOutput.status as string;
+                }
+                if (nodeOutput?.route) {
+                    finalState.route = nodeOutput.route as 'agent' | 'direct';
+                }
+                if (nodeOutput?.direct_response) {
+                    finalState.direct_response = nodeOutput.direct_response as string;
+                }
+
+                const startMessage = this.agentStartMessage(nodeName);
+                yield this.createStreamEvent(StreamEventType.AGENT_START, nodeName, undefined, startMessage);
 
                 if (nodeName === 'router' && nodeOutput.route) {
                     yield this.createStreamEvent(
                         StreamEventType.ROUTER_DECISION,
                         'router',
-                        { route: nodeOutput.route }
+                        { route: nodeOutput.route, reason: nodeOutput.reason },
+                        this.routerDecisionMessage(nodeOutput.route as string, nodeOutput.reason as string),
                     );
                 }
 
                 if (nodeName === 'direct' && nodeOutput.direct_response) {
+                    for (const textChunk of this.chunkMessage(nodeOutput.direct_response as string)) {
+                        yield this.createStreamEvent(
+                            StreamEventType.DIRECT_RESPONSE_CHUNK,
+                            'direct',
+                            { chunk: textChunk },
+                        );
+                    }
+
                     yield this.createStreamEvent(
                         StreamEventType.DIRECT_RESPONSE_COMPLETE,
                         'direct',
-                        { response: nodeOutput.direct_response }
+                        { response: nodeOutput.direct_response },
                     );
+                    finalResponseSent = true;
                 }
 
                 if (nodeName === 'planner' && nodeOutput.plan) {
@@ -167,15 +383,19 @@ export class GraphService implements OnModuleInit {
                             name: nodeOutput.plan["name"],
                             description: nodeOutput.plan["description"],
                             techstack: nodeOutput.plan["techstack"],
-                            fileCount: nodeOutput.plan?.["techstack"]?.length || 0,
-                        }
+                            fileCount: nodeOutput.plan?.["files"]?.length || 0,
+                        },
+                        this.plannerMessage(nodeOutput.plan)
                     );
                 }
 
                 if (nodeName === 'architect' && nodeOutput.task_plan) {
-                    const tasks = nodeOutput.task_plan?.["implementation_steps"]?.map((step: any) => ({
+                    const rawSteps = Array.isArray(nodeOutput.task_plan?.["implementation_steps"])
+                        ? nodeOutput.task_plan?.["implementation_steps"]
+                        : [];
+                    const tasks = rawSteps.map((step: any) => ({
                         filepath: step.filepath,
-                        description: step.task_description.substring(0, 100) + '...',
+                        description: step.task_description?.substring(0, 100) + '...',
                     }));
 
                     yield this.createStreamEvent(
@@ -184,25 +404,28 @@ export class GraphService implements OnModuleInit {
                         {
                             taskCount: tasks.length,
                             tasks,
-                        }
+                        },
+                        this.architectMessage(nodeOutput.task_plan)
                     );
                 }
 
                 if (nodeName === 'coder' && nodeOutput.coder_state) {
                     const coderState = nodeOutput.coder_state;
-                    const totalSteps = coderState?.["task_plan"]?.implementation_steps.length;
+                    const implementationSteps = coderState?.["task_plan"]?.implementation_steps ?? [];
+                    const totalSteps = implementationSteps.length;
                     const currentStep = coderState?.["current_step_idx"];
 
                     if (currentStep > 0 && currentStep <= totalSteps) {
-                        const task = coderState?.["task_plan"]?.implementation_steps[currentStep - 1];
+                        const task = implementationSteps[currentStep - 1];
                         yield this.createStreamEvent(
                             StreamEventType.CODER_TASK_COMPLETE,
                             'coder',
                             {
                                 currentStep,
                                 totalSteps,
-                                filepath: task.filepath,
-                            }
+                                filepath: task?.filepath,
+                            },
+                            this.coderProgressMessage(nodeOutput.coder_state, nodeOutput.status as string)
                         );
                     }
 
@@ -210,12 +433,25 @@ export class GraphService implements OnModuleInit {
                         yield this.createStreamEvent(
                             StreamEventType.CODER_ALL_COMPLETE,
                             'coder',
-                            { totalSteps }
+                            { totalSteps },
+                            this.coderProgressMessage(nodeOutput.coder_state, nodeOutput.status)
                         );
                     }
                 }
 
                 yield this.createStreamEvent(StreamEventType.AGENT_END, nodeName);
+            }
+
+            if (!finalResponseSent) {
+                let streamedResponse = false;
+                for await (const event of this.streamCompletionSuccess(finalState)) {
+                    streamedResponse = true;
+                    yield event;
+                }
+
+                if (streamedResponse) {
+                    finalResponseSent = true;
+                }
             }
 
             yield this.createStreamEvent(StreamEventType.COMPLETE);
@@ -224,7 +460,8 @@ export class GraphService implements OnModuleInit {
             yield this.createStreamEvent(
                 StreamEventType.ERROR,
                 undefined,
-                { error: error.message }
+                { error: error.message },
+                `Error: ${error.message}`
             );
         }
 

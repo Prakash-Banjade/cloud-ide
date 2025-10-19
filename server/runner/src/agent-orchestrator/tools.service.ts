@@ -160,6 +160,8 @@ export class ToolsService {
                 }
 
                 await this.minioService.fetchMinioFolder(`base/${language}`, targetPath);
+                this.toolsGateway.emitBaseImagePulled(targetPath || "");
+
                 return { success: true, error: null };
             },
             {

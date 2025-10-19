@@ -4,11 +4,11 @@ import { motion } from "framer-motion";
 import {
     Zap,
     Code,
-    Eye,
     HardDrive,
     Cpu,
     RotateCcw,
-    Shield
+    Shield,
+    BotMessageSquare,
 } from "lucide-react";
 
 const Features = () => {
@@ -21,14 +21,14 @@ const Features = () => {
         },
         {
             icon: Code,
-            title: "Browser Editor + Terminal",
-            description: "Rich editor with syntax highlighting and integrated terminal. Everything you need in one place.",
+            title: "Browser Editor + Terminal + Live Preview",
+            description: "Rich editor with syntax highlighting and integrated terminal. See your changes in real-time with instant preview updates.",
             gridClass: "md:col-span-2 md:row-span-1",
         },
         {
-            icon: Eye,
-            title: "Live Application Preview",
-            description: "See your changes in real-time with instant preview updates.",
+            icon: BotMessageSquare,
+            title: "AI Assistant",
+            description: "Ask, build and debug code with powerful AI assistance right in your coding environment.",
             gridClass: "md:col-span-2 md:row-span-1",
         },
         {
