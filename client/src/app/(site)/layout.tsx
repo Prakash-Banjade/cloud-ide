@@ -1,13 +1,13 @@
 import Navbar from "@/components/landing-page/navbar";
 import Footer from "@/components/layout/footer";
+import MaintenanceNotice from "./notice";
 
 export default function LandingPageLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen flex flex-col">
+            <MaintenanceNotice />
             <Navbar />
-            <div className="pt-16">
-                {children}
-            </div>
+            {children}
             <div className="mt-auto">
                 <Footer />
             </div>

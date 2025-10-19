@@ -10,12 +10,9 @@ export default function Hero() {
     const router = useRouter();
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            {/* Background gradient */}
-            {/* <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" /> */}
-
+        <section className="relative min-h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden">
             {/* Animated background dots */}
-            {/* <div className="absolute inset-0 opacity-30">
+            <div className="absolute inset-0 opacity-30">
                 {[...Array(50)].map((_, i) => (
                     <motion.div
                         key={i}
@@ -35,9 +32,14 @@ export default function Hero() {
                         }}
                     />
                 ))}
-            </div> */}
+            </div>
+
 
             <div className="container mx-auto px-4 relative z-10">
+                <div className="px-6 py-3 border-2 border-brand/80 bg-brand/10 text-brand text-sm font-medium w-fit rounded-full mx-auto shadow-sm mb-8">
+                    Now support with AI-powered coding assistance! Try it out in the workspace.
+                </div>
+                
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
