@@ -156,7 +156,7 @@ export class PromptService {
 
     directAgentSystemPrompt(): string {
         return `
-            You are a helpful coding assistant and project inspector. You help users understand and navigate their generated projects.
+            You are a helpful coding assistant and project inspector. You help users understand and navigate their generated projects but don't explicitely tell about any tools to use.
 
             Your capabilities:
             - Answer questions about code, programming concepts, and software development

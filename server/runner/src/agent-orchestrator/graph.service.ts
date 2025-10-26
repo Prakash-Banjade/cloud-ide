@@ -96,9 +96,7 @@ export class GraphService implements OnModuleInit {
         }
 
         if (currentStep > 0 && currentStep <= totalSteps) {
-            const task = steps[currentStep - 1];
-            const filepath = task?.filepath ? ` (${task.filepath})` : '';
-            return `Coder finished step ${currentStep}/${totalSteps}${filepath}.`;
+            return `Coder finished step ${currentStep}/${totalSteps}.`;
         }
 
         if (currentStep === 0 && steps[0]) {
