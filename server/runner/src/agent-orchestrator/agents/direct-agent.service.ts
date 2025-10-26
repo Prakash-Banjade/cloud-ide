@@ -49,7 +49,7 @@ export class DirectAgent {
         const lastMessage = messages[messages.length - 1];
         const directResponse = lastMessage.content.toString();
 
-        console.log('✅ Direct Agent: Response generated');
+        console.log('✅ Direct Agent: Response generated: ', directResponse);
 
         return {
             direct_response: directResponse,

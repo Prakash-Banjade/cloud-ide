@@ -102,12 +102,9 @@ function RenderChatMessage({ message }: { message: IChatMessage }) {
 
 function AgentThinking() {
     return (
-        <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-sidebar-accent/60 p-3 text-sm">
-            <LoaderCircle size={18} className="mt-0.5 animate-spin text-muted-foreground" />
-            <div className="space-y-1">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Vibe Agent</p>
-                <p className="font-medium text-foreground">Thinking...</p>
-            </div>
+        <div className="mb-4 flex items-center gap-2">
+            <LoaderCircle size={18} className="animate-spin text-muted-foreground" />
+            <p className="font-medium text-muted-foreground">Thinking...</p>
         </div>
     );
 }
@@ -118,7 +115,7 @@ function AgentProgress({ steps }: { steps: StreamProgressStep[] }) {
             <div className="mb-4 flex items-start gap-3 rounded-lg border border-border bg-sidebar-accent/60 p-3 text-sm">
                 <LoaderCircle size={18} className="mt-0.5 animate-spin text-muted-foreground" />
                 <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Vibe Agent</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Agent working...</p>
                     <p className="font-medium text-foreground">Waiting for agent updates...</p>
                 </div>
             </div>

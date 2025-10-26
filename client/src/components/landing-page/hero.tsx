@@ -36,21 +36,26 @@ export default function Hero() {
 
 
             <div className="container mx-auto px-4 relative z-10">
-                <div className="px-6 py-3 border-2 border-brand/80 bg-brand/10 text-brand text-sm font-medium w-fit rounded-full mx-auto shadow-sm mb-8">
-                    Now support with AI-powered coding assistance! Try it out in the workspace.
+                <div
+                    // initial={{ opacity: 0, y: -20 }}
+                    // animate={{ opacity: 1, y: 0 }}
+                    // transition={{ duration: 0.5 }}
+                    className="px-5 py-2 border-2 border-brand/80 bg-brand/10 text-brand sm:text-sm text-xs text-center font-medium w-fit rounded-full mx-auto shadow-sm mb-8"
+                >
+                    Now support with AI-powered coding assistance!
                 </div>
-                
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+
+                <div
+                    // initial={{ opacity: 0, y: 20 }}
+                    // animate={{ opacity: 1, y: 0 }}
+                    // transition={{ duration: 0.5 }}
                     className="text-center max-w-4xl mx-auto"
                 >
                     {/* Main heading */}
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
+                    <h2
+                        // initial={{ opacity: 0, y: 20 }}
+                        // animate={{ opacity: 1, y: 0 }}
+                        // transition={{ duration: 0.5, delay: 0.4 }}
                         className={cn(
                             "text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-shadow-lg font-bold mb-6 lg:leading-[115px] md:leading-[90px] leading-[50px]",
                             "gradient-text bg-linear-120 from-foreground from-50% to-foreground/60 to-100%"
@@ -59,23 +64,23 @@ export default function Hero() {
                         C<Code className="inline text-brand sm:size-12 md:size-16 lg:size-20 stroke-[4px]" />de Anywhere,
                         <br />
                         Build Everything
-                    </motion.h2>
+                    </h2>
 
                     {/* Subtitle */}
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.6 }}
+                    <p
+                        // initial={{ opacity: 0, y: 20 }}
+                        // animate={{ opacity: 1, y: 0 }}
+                        // transition={{ duration: 0.5, delay: 0.6 }}
                         className="sm:text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed"
                     >
                         The ultimate cloud IDE. Fully browser-based coding platform that&apos;s accessible anywhere and supports multiple programming languages.
-                    </motion.p>
+                    </p>
 
                     {/* CTA Button */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.8 }}
+                    <div
+                    // initial={{ opacity: 0, y: 20 }}
+                    // animate={{ opacity: 1, y: 0 }}
+                    // transition={{ duration: 0.5, delay: 0.8 }}
                     >
                         <Button
                             size="lg"
@@ -85,13 +90,13 @@ export default function Hero() {
                             Get Started
                             <ArrowRight className="size-5 group-hover:translate-x-2 transition-transform duration-300" />
                         </Button>
-                    </motion.div>
+                    </div>
 
                     {/* Stats */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 1 }}
+                    <div
+                        // initial={{ opacity: 0, y: 20 }}
+                        // animate={{ opacity: 1, y: 0 }}
+                        // transition={{ duration: 0.5, delay: 1 }}
                         className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto"
                     >
                         {[
@@ -104,8 +109,8 @@ export default function Hero() {
                                 <div className="text-sm text-muted-foreground">{stat.label}</div>
                             </div>
                         ))}
-                    </motion.div>
-                </motion.div>
+                    </div>
+                </div>
             </div>
         </section>
     );
