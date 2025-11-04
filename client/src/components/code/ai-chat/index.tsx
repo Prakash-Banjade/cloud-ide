@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useState, createContext, useContext, useEffect, useRef } from "react";
+import React, { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import ChatInput from "./chat-input";
 import ChatContent from "./chat-content";
-import { useAppMutation } from "@/hooks/useAppMutation";
 import toast from "react-hot-toast";
-import { POD_DOMAIN } from "@/lib/CONSTANTS";
 import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useCodingStates } from "@/context/coding-states-provider";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -21,8 +18,19 @@ export interface StreamEvent {
     type: string;
     agent?: string;
     data?: any;
+    message?: string;
     timestamp: string;
 }
+
+export interface StreamProgressStep {
+    id: string;
+    type: string;
+    agent?: string;
+    message: string;
+    acknowledged?: boolean;
+}
+
+type RouteChoice = "agent" | "direct" | null;
 
 interface AIChatContextType {
     messages: IChatMessage[];
@@ -31,6 +39,8 @@ interface AIChatContextType {
     streamingText: string;
     setStreamingText: React.Dispatch<React.SetStateAction<string>>;
     isStreaming: boolean;
+    progressSteps: StreamProgressStep[];
+    route: RouteChoice;
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -46,66 +56,229 @@ export const useAIChat = () => {
 export default function AIChat() {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
     const { replId } = useParams();
-    const { selectedFile } = useCodingStates();
     const [streamingText, setStreamingText] = useState("");
+    const streamingTextRef = useRef("");
     const [isChatPending, setIsChatPending] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [progressSteps, setProgressSteps] = useState<StreamProgressStep[]>([]);
+    const [route, setRoute] = useState<RouteChoice>(null);
+    const progressStepsRef = useRef<StreamProgressStep[]>([]);
+    const routeRef = useRef<RouteChoice>(null);
+    const pendingProgressRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const { mutateAsync, isPending: isStreaming } = useAppMutation();
-
-    const podUrl = "http://localhost:3003";
-    // const podUrl = process.env.NODE_ENV === 'production'
-    //     ? `https://${replId}.${POD_DOMAIN}`
-    //     : `http://${replId}.${POD_DOMAIN}`;
+    const podUrl = React.useMemo(() => {
+        const domain = process.env.NEXT_PUBLIC_POD_DOMAIN;
+        if (process.env.NODE_ENV === "production" && replId && domain) {
+            return `https://${replId}.${domain}`;
+        }
+        return "http://localhost:3003";
+    }, [replId]);
 
     useEffect(() => {
-        const eventSource = new EventSource(`${podUrl}/stream`);
+        streamingTextRef.current = streamingText;
+    }, [streamingText]);
 
-        let stream = "";
-        eventSource.onmessage = function (event) {
-            setIsChatPending(false);
-            const data = event.data;
+    useEffect(() => {
+        progressStepsRef.current = progressSteps;
+    }, [progressSteps]);
 
-            if (data !== "Stream ended") {
-                stream += data;
-                setStreamingText(stream);
-            } else {
-                setMessages(prev => [...prev, { role: "agent", content: stream }]);
-                setStreamingText("");
-                stream = "";
-            }
-        };
-
-        eventSource.onerror = function (error) {
-            console.error('EventSource failed:', error);
-        };
-
+    useEffect(() => {
         return () => {
-            eventSource.close();
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
         };
     }, []);
 
-    async function submitChatMessage(message: string) {
-        setMessages(prev => [...prev, { role: "user", content: message }]);
-        setIsChatPending(true);
-
-        try {
-            await mutateAsync({
-                endpoint: `${podUrl}/vibe/chat`,
-                method: "post",
-                data: {
-                    message: message,
-                    selectedFilePath: selectedFile?.path,
-                    contextSelection: 'repo'
-                },
-                toastOnSuccess: false,
-                config: {
-                    timeout: undefined
-                }
-            });
-        } catch {
-            toast.error("Something went wrong. Please try again.");
+    const closeStream = () => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
         }
+        setIsStreaming(false);
+    };
+
+    const appendProgressStep = useCallback((event: StreamEvent) => {
+        if (!event.message) return;
+        const id = `${event.timestamp}-${event.type}-${event.agent ?? ""}`;
+        const agentLabel = event.agent
+            ? event.agent.charAt(0).toUpperCase() + event.agent.slice(1)
+            : undefined;
+
+        const step: StreamProgressStep = {
+            id,
+            type: event.type,
+            agent: agentLabel,
+            message: event.message,
+        };
+
+        const currentRoute = routeRef.current;
+
+        if (currentRoute === "direct") {
+            return;
+        }
+
+        if (currentRoute === "agent") {
+            setProgressSteps(prev => {
+                if (prev.some(existing => existing.id === id)) {
+                    return prev;
+                }
+                return [...prev, step];
+            });
+            return;
+        }
+
+        if (!pendingProgressRef.current.some(existing => existing.id === id)) {
+            pendingProgressRef.current = [...pendingProgressRef.current, step];
+        }
+    }, []);
+
+    const promotePendingProgress = useCallback(() => {
+        if (pendingProgressRef.current.length === 0) {
+            return;
+        }
+
+        setProgressSteps(prev => {
+            const next = [...prev];
+            for (const step of pendingProgressRef.current) {
+                if (!next.some(existing => existing.id === step.id)) {
+                    next.push(step);
+                }
+            }
+            return next;
+        });
+
+        pendingProgressRef.current = [];
+    }, []);
+
+    const handleStreamEvent = (event: StreamEvent) => {
+        if (event.type === "router_decision" && event.data?.route) {
+            const routeChoice: RouteChoice = event.data.route === "direct" ? "direct" : "agent";
+            setRoute(routeChoice);
+            routeRef.current = routeChoice;
+
+            if (routeChoice === "agent") {
+                promotePendingProgress();
+            } else {
+                pendingProgressRef.current = [];
+                setProgressSteps([]);
+            }
+        }
+
+        appendProgressStep(event);
+
+        switch (event.type) {
+            case "direct_response_chunk":
+                if (event.data?.chunk) {
+                    setStreamingText(prev => {
+                        const next = prev + event.data.chunk;
+                        streamingTextRef.current = next;
+                        return next;
+                    });
+                }
+                break;
+            case "direct_response_complete":
+                if (event.data?.response) {
+                    const next = event.data.response;
+                    streamingTextRef.current = next;
+                    setStreamingText(next);
+                }
+                break;
+            case "complete":
+                if (streamingTextRef.current) {
+                    const finalMessage = streamingTextRef.current;
+                    setMessages(prev => [...prev, { role: "agent", content: finalMessage }]);
+                    setStreamingText("");
+                    streamingTextRef.current = "";
+                } else {
+                    const lastStep = progressStepsRef.current[progressStepsRef.current.length - 1];
+                    const fallback = event.message || lastStep?.message;
+                    const completionMessage = fallback ?? "Agent run complete.";
+                    setMessages(prev => [...prev, { role: "agent", content: completionMessage }]);
+                }
+                setIsChatPending(false);
+                setProgressSteps([]);
+                setRoute(null);
+                routeRef.current = null;
+                pendingProgressRef.current = [];
+                closeStream();
+                break;
+            case "error":
+                setIsChatPending(false);
+                const lastStep = progressStepsRef.current[progressStepsRef.current.length - 1];
+                const errorMessage = event.message || lastStep?.message || "Something went wrong.";
+                setMessages(prev => [...prev, { role: "agent", content: errorMessage }]);
+                setProgressSteps([]);
+                setRoute(null);
+                routeRef.current = null;
+                pendingProgressRef.current = [];
+                closeStream();
+                break;
+        }
+    };
+
+    const startStreaming = (prompt: string) => {
+        if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+        }
+
+        const url = `${podUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
+        const eventSource = new EventSource(url);
+        eventSourceRef.current = eventSource;
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data: StreamEvent = JSON.parse(event.data);
+                handleStreamEvent(data);
+            } catch (error) {
+                console.error("Error parsing stream event", error);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error("EventSource failed:", error);
+            toast.error("Connection lost while streaming.");
+            setProgressSteps(prev => [
+                ...prev,
+                {
+                    id: `error-${Date.now()}`,
+                    type: "connection_error",
+                    message: "Connection lost. Please try again.",
+                },
+            ]);
+            setIsChatPending(false);
+            setStreamingText("");
+            streamingTextRef.current = "";
+            setMessages(prev => [...prev, { role: "agent", content: "Connection lost. Please try again." }]);
+            setProgressSteps([]);
+            setRoute(null);
+            routeRef.current = null;
+            pendingProgressRef.current = [];
+            closeStream();
+        };
+    };
+
+    function submitChatMessage(message: string) {
+        const trimmedMessage = message.trim();
+        if (!trimmedMessage) {
+            return;
+        }
+
+        setMessages(prev => [...prev, { role: "user", content: trimmedMessage }]);
+        setStreamingText("");
+        streamingTextRef.current = "";
+
+        setIsChatPending(true);
+        setIsStreaming(true);
+        setProgressSteps([]);
+        setRoute(null);
+        routeRef.current = null;
+        pendingProgressRef.current = [];
+
+        startStreaming(trimmedMessage);
     }
 
     const contextValue = {
@@ -115,6 +288,8 @@ export default function AIChat() {
         streamingText,
         setStreamingText,
         isStreaming,
+        progressSteps,
+        route,
     };
 
     return (

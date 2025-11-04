@@ -19,7 +19,8 @@ export const enum LlmProviderTokens {
     PLANNER_LLM = 'PLANNER_LLM',
     ARCHITECT_LLM = 'ARCHITECT_LLM',
     CODER_LLM = 'CODER_LLM',
-    DIRECT_LLM = 'DIRECT_LLM'
+    DIRECT_LLM = 'DIRECT_LLM',
+    SUMMARY_LLM = 'SUMMARY_LLM'
 }
 
 @Module({
@@ -49,6 +50,10 @@ export const enum LlmProviderTokens {
         {
             provide: LlmProviderTokens.DIRECT_LLM,
             useFactory: () => new ChatOpenAI({ model: 'gpt-4.1', temperature: 0.5 }),
+        },
+        {
+            provide: LlmProviderTokens.SUMMARY_LLM,
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0.3 }),
         },
         ToolsService,
         ToolsGateway, // used to emit fs events
