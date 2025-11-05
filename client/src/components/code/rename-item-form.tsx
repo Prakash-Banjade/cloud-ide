@@ -13,8 +13,6 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
 import { findItem } from "@/app/code/[replId]/fns/file-manager-fns"
-import { renameTreeItem } from "@/app/code/[replId]/fns/tree-mutation-fns"
-
 
 interface RenameItemFormProps {
     parentFolderPath: string,
@@ -29,7 +27,7 @@ const renameformSchema = z.object({
 type RenameItemFormValues = z.infer<typeof renameformSchema>;
 
 export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "parentFolderPath">) {
-    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, selectedFile, setMruFiles, setOpenedFiles } = useCodingStates();
+    const { fileStructure, setSelectedFile, setSelectedItem, selectedFile, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
 
     const form = useForm<RenameItemFormValues>({
@@ -74,9 +72,6 @@ export function RenameItemForm({ item, setIsOpen }: Omit<RenameItemFormProps, "p
                     : {}),
             } as TreeItem;
 
-            setFileStructure((prev) =>
-                renameTreeItem(prev, item.path, newPath)
-            );
             setSelectedItem(newTreeItem);
 
             // helper to rewrite paths under a renamed folder

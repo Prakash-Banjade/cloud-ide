@@ -8,6 +8,7 @@ import ChatContent from "./chat-content";
 import toast from "react-hot-toast";
 import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { POD_DOMAIN } from "@/lib/CONSTANTS";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -68,9 +69,8 @@ export default function AIChat() {
     const eventSourceRef = useRef<EventSource | null>(null);
 
     const podUrl = React.useMemo(() => {
-        const domain = process.env.NEXT_PUBLIC_POD_DOMAIN;
-        if (process.env.NODE_ENV === "production" && replId && domain) {
-            return `https://${replId}.${domain}`;
+        if (process.env.NODE_ENV === "production" && replId) {
+            return `https://${replId}.${POD_DOMAIN}`;
         }
         return "http://localhost:3003";
     }, [replId]);

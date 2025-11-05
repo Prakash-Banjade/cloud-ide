@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
+import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { promisify } from 'util';
 
 const rm = promisify(fs.rm);
@@ -20,6 +22,13 @@ const excludeItems = [
 
 @Injectable()
 export class FileSystemService {
+    private replId: string;
+
+    constructor(
+        private readonly configService: ConfigService,
+    ) {
+        this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
+    }
 
     fetchDir(dir: string, baseDir: string): Promise<File[]> {
         return new Promise((resolve, reject) => {
@@ -63,23 +72,9 @@ export class FileSystemService {
         });
     }
 
-    listFiles(path: string) {
-        return new Promise((resolve, reject) => {
-            fs.readdir(path, { withFileTypes: true }, (err, files) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    const fileList = files.map(f => ({
-                        type: f.isDirectory() ? 'dir' : 'file',
-                        name: f.name,
-                        path: `${path}/${f.name}`,
-                    }));
-                    resolve(fileList);
-                }
-            })
-        })
-    }
-
+    /**
+     * @param filePath - with leading '/workspace'
+     */
     fetchFileContent(filePath: string): Promise<string> {
         return new Promise((resolve, reject) => {
             fs.readFile(filePath, "utf8", (err, data) => {
@@ -92,7 +87,7 @@ export class FileSystemService {
         })
     }
 
-    async saveFile(file: string, content: string): Promise<void> {
+    async updateContent(file: string, content: string): Promise<void> {
         return new Promise((resolve, reject) => {
             fs.writeFile(file, content, "utf8", (err) => {
                 if (err) {
@@ -103,26 +98,63 @@ export class FileSystemService {
         });
     }
 
-    /** Create a directory (including parents) */
-    async createDir(dir: string): Promise<void> {
-        await mkdir(dir, { recursive: true });       // recursive mkdir :contentReference[oaicite:5]{index=5}
+    async createItem(payload: {
+        path: string,
+        type: 'file' | 'dir',
+        content?: string
+    }): Promise<{ success: boolean, error: string | null }> {
+        try {
+            const { path, type, content = "" } = payload;
+            const fullPath = `${WORKSPACE_PATH}${path}`;
+
+            if (type === 'dir') {
+                await mkdir(fullPath, { recursive: true });       // recursive mkdir :contentReference[oaicite:5]{index=5}
+            } else {
+                await writeFile(fullPath, content, 'utf8');
+            }
+
+            return { success: true, error: null };
+        } catch (err) {
+            console.error('createItem failed', err);
+            return { success: false, error: err.message };
+        }
     }
 
-    /** Create an empty file */
-    async createFile(file: string, content = ''): Promise<File> {
-        await writeFile(file, content, 'utf8');
+    /**
+     * Delete a file or directory (recursively) at payload.path.
+     */
+    async deleteItem(payload: { path: string, type: 'file' | 'dir' }): Promise<boolean> {
+        try {
+            const { path } = payload;
+            const fullPath = `${WORKSPACE_PATH}${path}`;
 
-        return { type: 'file', name: file, path: file };
+            // rm with { recursive: true, force: true } handles both files and non-empty dirs :contentReference[oaicite:6]{index=6}
+            await rm(fullPath, { recursive: true, force: true });
+
+            return true;
+        } catch (err) {
+            console.error('deleteItem failed', err);
+            return false;
+        }
     }
 
-    /** Delete a file or folder recursively */
-    async deletePath(path: string): Promise<void> {
-        // rm with { recursive: true, force: true } handles both files and non-empty dirs :contentReference[oaicite:6]{index=6}
-        await rm(path, { recursive: true, force: true });
-    }
 
-    /** Rename or move a file or folder */
-    async renamePath(oldPath: string, newPath: string): Promise<void> {
-        await rename(oldPath, newPath);               // fs.rename for move/rename :contentReference[oaicite:7]{index=7}
+    /**
+     * Rename or move a file or directory.
+     * Assumes payload contains both oldPath and newPath.
+     */
+    async renameItem(payload: { oldPath: string, newPath: string, type: 'file' | 'dir' }): Promise<{ success: boolean, error: string | null }> {
+        try {
+            const { oldPath, newPath, type } = payload;
+            const fullOld = `${WORKSPACE_PATH}${oldPath}`;
+            const fullNew = `${WORKSPACE_PATH}${newPath}`;
+
+            await rename(fullOld, fullNew);
+
+            return { success: true, error: null };
+        } catch (err) {
+            console.error('renameItem failed', err);
+            return { success: false, error: err.message };
+        }
     }
 }

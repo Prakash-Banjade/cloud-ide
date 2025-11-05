@@ -9,14 +9,11 @@ export const enum SocketEvents {
     UPDATE_CONTENT = "content:update",
     RENAME_ITEM = "item:rename",
 
-    ITEM_CREATED = "item:created",
-    ITEM_DELETED = "item:deleted",
-    ITEM_UPDATED = "item:updated",
-    ITEM_RENAMED = "item:renamed",
-
-    PROCESS_STATUS = "process:status",
-    PROCESS_RUN = "process:run",
-    PROCESS_STOP = "process:stop",
+    FILE_CREATED = "file:created",
+    FILE_REMOVED = "file:removed",
+    DIR_CREATED = "dir:created",
+    DIR_REMOVED = "dir:removed",
+    FILE_CHANGED = "file:changed",
 
     USERS_ACTIVE = "users:active",
     CURSOR_MOVE = "cursor:move",

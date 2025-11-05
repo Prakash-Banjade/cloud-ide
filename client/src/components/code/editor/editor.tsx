@@ -227,7 +227,6 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             cursorDisposable?.dispose();
             selectionDisposable?.dispose();
             contentDisposable?.dispose();
-            socket.off(SocketEvents.ITEM_UPDATED);
             socket.off(SocketEvents.CURSOR_MOVE)
             socket.off(SocketEvents.SELECTION_CHANGE)
             socket.off(SocketEvents.USER_LEFT)

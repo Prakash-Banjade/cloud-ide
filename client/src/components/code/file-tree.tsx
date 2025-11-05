@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { TreeItemContextMenu } from "./context-menu"
 import { sortFolderFirst } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/types/tree.types"
-import useListenTreeMutation from "@/hooks/useListenTreeMutation"
 
 interface FileTreeProps {
     onSelectFile: (treeItem: TreeItem) => void
@@ -54,7 +53,7 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
     }
 
     // listen for tree mutations by other active users
-    useListenTreeMutation();
+    // useListenTreeMutation();
 
     return (
         <div className="file-tree text-sm overflow-auto h-full">

@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import chokidar, { FSWatcher } from 'chokidar';
 import { Socket } from 'socket.io';
+import { SocketEvents, WORKSPACE_PATH } from 'src/CONSTANTS';
 import { MinioService } from 'src/minio/minio.service';
+import * as fs from 'fs';
 
 @Injectable()
 export class ChokidarService {
@@ -11,14 +13,14 @@ export class ChokidarService {
 
     private fileWatchers = new Map<string, FSWatcher>();
 
-    startProjectSession(projectPath: string, replId: string, socket: Socket) {
+    startProjectSession(replId: string, socket: Socket) {
         console.log('chokidar started for socketId=', socket.id);
 
         if (this.fileWatchers.has(replId)) {
             this.stopProjectSession(replId);
         }
 
-        const watcher = chokidar.watch(projectPath, {
+        const watcher = chokidar.watch(WORKSPACE_PATH, {
             ignored: [
                 /(^|[\/\\])\../, // ignore dotfiles
                 /node_modules/,  // ignore node_modules
@@ -28,44 +30,60 @@ export class ChokidarService {
             ],
             persistent: true,
             ignoreInitial: true, // don’t fire events for existing files
-            depth: 10,
+            depth: 20,
         });
 
         watcher.on('add', async (filePath: string) => {
-            const relPath = filePath.replace(projectPath, '');
+            const relPath = this.getRelativePath(filePath);
+
+            /**
+             * if file is created, this content will be ""
+             * but if the file is renamed, `add` is triggered which causes minio to save an empty file, so we need to read the content
+             */
+            const content = await new Promise((resolve, reject) => {
+                fs.readFile(filePath, "utf8", (err, data) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(data);
+                    }
+                });
+            });
+
+            const stringContent = typeof content === 'string' ? content : "";
 
             // emit event in frontend so that it can update it's tree
-            socket.emit('chokidar:file-added', { path: relPath });
+            socket.emit(SocketEvents.FILE_CREATED, { path: relPath, content: stringContent });
 
             // save to minio
-            await this.minioService.saveToMinio(`code/${replId}`, relPath, '');
+            await this.minioService.saveToMinio(`code/${replId}`, relPath, stringContent);
         });
 
         watcher.on('unlink', async (filePath: string) => {
-            const relPath = filePath.replace(projectPath, '');
-            socket.emit('chokidar:file-removed', { path: relPath });
+            const relPath = this.getRelativePath(filePath);
+            socket.emit(SocketEvents.FILE_REMOVED, { path: relPath });
 
             await this.minioService.removeObject(`code/${replId}`, relPath);
         });
 
         watcher.on('addDir', async (dirPath: string) => {
-            const relPath = dirPath.replace(projectPath, '');
-            socket.emit('chokidar:dir-added', { path: relPath });
+            const relPath = this.getRelativePath(dirPath);
+            socket.emit(SocketEvents.DIR_CREATED, { path: relPath });
 
             await this.minioService.ensurePrefix(`code/${replId}${relPath}`);
         });
 
         watcher.on('unlinkDir', async (dirPath: string) => {
-            const relPath = dirPath.replace(projectPath, '');
-            socket.emit('chokidar:dir-removed', { path: relPath });
+            const relPath = this.getRelativePath(dirPath);
+            socket.emit(SocketEvents.DIR_REMOVED, { path: relPath });
 
             await this.minioService.removePrefix(`code/${replId}${relPath}`);
         });
 
-        // watcher.on('change', (filePath: string) => {
-        //     const relPath = filePath.replace(projectPath, '');
-        //     socket.emit('chokidar:file-changed', { path: relPath });
-        // });
+        watcher.on('change', async (filePath: string) => {
+            const relPath = this.getRelativePath(filePath);
+            socket.emit(SocketEvents.FILE_CHANGED, { path: relPath });
+        });
 
         // Store the watcher so we can close it later
         this.fileWatchers.set(replId, watcher);
@@ -78,5 +96,12 @@ export class ChokidarService {
             this.fileWatchers.delete(replId);
             console.log(`chokidar stopped for replId=${replId}`);
         }
+    }
+
+    /**
+     * Replace \ with / and Remove leading /workspace
+     */
+    getRelativePath(filePath: string) {
+        return filePath.replaceAll('\\', '/').replace(WORKSPACE_PATH, '');
     }
 }

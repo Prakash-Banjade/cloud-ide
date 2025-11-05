@@ -26,6 +26,7 @@ import { EPermission } from "@/types/types";
 import EditorFooter from "./editor/editor-footer";
 import ReadOnlyTopBar from "./readonly-top-bar";
 import AIChat from "./ai-chat";
+import useChokidar from "@/hooks/useChokidar";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -92,6 +93,8 @@ export const CodingPagePostPodCreation = () => {
             setPreviewOpen(false);
         }
     }, [project, isMobile, projectRunning]);
+
+    useChokidar(socket);
 
     if (!treeLoaded) return <CodingPageLoader state="setup" />;
 
