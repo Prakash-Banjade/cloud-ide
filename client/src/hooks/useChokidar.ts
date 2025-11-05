@@ -26,7 +26,9 @@ export default function useChokidar(socket: Socket | null) {
                 content: '',
             };
 
-            // setFileStructure(prev => insertTreeItems(prev, fileItem)); // insert the new item in the tree
+            const parentFolder = fileItem.path.split('/').slice(0, -1).join('/');
+
+            setFileStructure(prev => insertTreeItems(prev, [fileItem], parentFolder)); // insert the new item in the tree
         });
 
         socket.on('chokidar:file-removed', (data: { path: string }) => {
@@ -50,7 +52,9 @@ export default function useChokidar(socket: Socket | null) {
                 expanded: false,
             };
 
-            // setFileStructure(prev => insertTreeItem(prev, folderItem)); // insert the new item in the tree
+            const parentFolder = folderItem.path.split('/').slice(0, -1).join('/');
+
+            setFileStructure(prev => insertTreeItems(prev, [folderItem], parentFolder)); // insert the new item in the tree
         });
 
         socket.on('chokidar:dir-removed', (data: { path: string }) => {

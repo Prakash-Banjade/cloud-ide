@@ -26,7 +26,6 @@ import { EPermission } from "@/types/types";
 import EditorFooter from "./editor/editor-footer";
 import ReadOnlyTopBar from "./readonly-top-bar";
 import AIChat from "./ai-chat";
-import { StreamingAgent } from "./ai-chat/streaming-agent";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,

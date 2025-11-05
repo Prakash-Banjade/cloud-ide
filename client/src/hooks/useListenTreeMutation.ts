@@ -32,6 +32,8 @@ export default function useListenTreeMutation() {
 
             const parentFolder = newTreeItem.path.split('/').slice(0, -1).join('/');
 
+            console.log({ parentFolder })
+
             setFileStructure(prev => insertTreeItems(prev, [newTreeItem], parentFolder)); // insert the new item in the tree
         });
 

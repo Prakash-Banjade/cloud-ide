@@ -181,12 +181,15 @@ export default function AIChat() {
                 break;
             case "direct_response_complete":
                 if (event.data?.response) {
-                    setStreamingText(event.data.response);
+                    const next = event.data.response;
+                    streamingTextRef.current = next;
+                    setStreamingText(next);
                 }
                 break;
             case "complete":
                 if (streamingTextRef.current) {
-                    setMessages(prev => [...prev, { role: "agent", content: streamingTextRef.current }]);
+                    const finalMessage = streamingTextRef.current;
+                    setMessages(prev => [...prev, { role: "agent", content: finalMessage }]);
                     setStreamingText("");
                     streamingTextRef.current = "";
                 } else {
@@ -316,4 +319,3 @@ export default function AIChat() {
         </AIChatContext.Provider>
     );
 }
-
