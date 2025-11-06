@@ -155,7 +155,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 const { data, success } = z.array(z.string()).safeParse(parsedData);
 
                 if (success) {
-                    setOpenedFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined, setFileStructure)).filter(f => !!f) as TFileItem[]);
+                    setOpenedFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined)).filter(f => !!f) as TFileItem[]);
                 }
             }
             if (mruFiles) {
@@ -164,11 +164,11 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
                 const { data, success } = z.array(z.string()).safeParse(parsedData);
 
                 if (success) {
-                    setMruFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined, setFileStructure)).filter(f => !!f) as TFileItem[]);
+                    setMruFiles(data.map(f => findItem(fileStructure, f, socket ?? undefined)).filter(f => !!f) as TFileItem[]);
                 }
             }
             if (selectedFile) {
-                const file = findItem(fileStructure, selectedFile, socket ?? undefined, setFileStructure);
+                const file = findItem(fileStructure, selectedFile, socket ?? undefined);
 
                 if (file && file.type === EItemType.FILE) {
                     socket?.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => { // load data
