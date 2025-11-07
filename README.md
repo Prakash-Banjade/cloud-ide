@@ -41,11 +41,12 @@ kubectl create ns ingress-nginx
 kubectl apply -f server/k8s/ingress-nginx-controller.yaml
 ```
 
-### 3. Create namespace `qubide`
+### 3. Create namespace `qubide` and `qubide-main`
 
 ```bash
-kubectl create namespace qubide
+kubectl apply -f server/k8s/project-ns.yaml
 ```
+Just to separate the main backend and other pods (user apps), separate ns is choosed.
 
 ### 4. Setup MinIO
 

@@ -1,0 +1,10 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: qubide
+
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: qubide-main
