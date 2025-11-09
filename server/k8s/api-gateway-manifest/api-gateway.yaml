@@ -8,7 +8,7 @@ metadata:
   namespace: qubide-main
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: local-path
+  storageClassName: standard
   resources:
     requests:
       storage: 5Gi
@@ -20,7 +20,7 @@ metadata:
   namespace: qubide-main
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: local-path
+  storageClassName: standard
   resources:
     requests:
       storage: 1Gi
@@ -157,6 +157,7 @@ spec:
       labels: { app: api-gateway }
     spec:
       serviceAccountName: orchestrator-sa
+      initContainers: 
       containers:
         - name: api-gateway
           image: prakashbanjade/cloud-ide-api-gateway:latest
@@ -164,16 +165,22 @@ spec:
           envFrom:
             - secretRef: { name: gateway-env }
           env:
-            - name: DATABASE_URL
-              value: postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+            - name: PG_USER
+              valueFrom: { secretKeyRef: { name: postgres-secret, key: POSTGRES_USER } }
+            - name: PG_PWD
+              valueFrom: { secretKeyRef: { name: postgres-secret, key: POSTGRES_PASSWORD } }
+            - name: PG_DB
+              valueFrom: { secretKeyRef: { name: postgres-secret, key: POSTGRES_DB } }
+            - name: PG_HOST
+              value: postgres
             - name: REDIS_URL
-              value: redis://:$(REDIS_PASSWORD)@redis:6379
+              value: redis://redis:6379
           ports:
             - containerPort: 3002
-          readinessProbe:
-            httpGet: { path: /health, port: 3002 }
-            initialDelaySeconds: 5
-            periodSeconds: 5
+          # readinessProbe:
+          #   httpGet: { path: /api/health, port: 3002 }
+          #   initialDelaySeconds: 5
+          #   periodSeconds: 5
           resources:
             requests:
               cpu: "100m"

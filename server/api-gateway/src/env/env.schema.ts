@@ -1,7 +1,10 @@
 import * as Joi from 'joi';
 
 export const envSchema = Joi.object({
-    DATABASE_URL: Joi.string().uri().required(), // Validates that it's a valid URL
+    PG_USER: Joi.string().required(),
+    PG_PWD: Joi.string().required(),
+    PG_HOST: Joi.string().required(),
+    PG_DB: Joi.string().required(),
 
     REDIS_URL: Joi.string().uri().required(), // Validates that it's a valid URL
 
