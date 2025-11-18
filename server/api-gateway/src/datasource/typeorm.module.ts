@@ -12,7 +12,10 @@ import { Global, Module } from '@nestjs/common';
                 try {
                     const dataSource = new DataSource({
                         type: 'postgres',
-                        url: process.env.DATABASE_URL,
+                        username: process.env.PG_USER,
+                        password: process.env.PG_PWD,
+                        database: process.env.PG_DB,
+                        host: process.env.PG_HOST,
                         entities: [`${__dirname}/../**/**.entity{.ts,.js}`],
                         synchronize: process.env.DB_SYNCHRONIZE === 'true',
                         // logger: 'advanced-console',

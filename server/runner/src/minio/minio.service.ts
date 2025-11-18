@@ -83,25 +83,6 @@ export class MinioService implements OnModuleInit {
         });
     }
 
-    async copyMinioFolder(
-        sourcePrefix: string,
-        destinationPrefix: string
-    ): Promise<void> {
-        const objects = await this.listObjects(this._bucketName, sourcePrefix);
-        if (objects.length === 0) return;
-
-        await Promise.all(
-            objects.map(async (object) => {
-                const destinationKey = object.name?.replace(sourcePrefix, destinationPrefix);
-                const src = `/${this._bucketName}/${object.name}`;
-
-                if (!destinationKey) return;
-
-                await this.minioClient.copyObject(this._bucketName, destinationKey, src);
-            })
-        );
-    }
-
     async saveToMinio(
         key: string,
         filePath: string,
@@ -140,32 +121,5 @@ export class MinioService implements OnModuleInit {
         const newObjectLists = new Set([...this.objectsList].filter(path => !path.includes(prefix)));
         this.objectsList = newObjectLists;
         console.log(`Prefix removed at ${this._bucketName}/${prefix}`);
-    }
-
-    /** Copy one object */
-    async copyObject(
-        srcPrefix: string, srcKey: string,
-        dstPrefix: string, dstKey: string
-    ): Promise<void> {
-        const src = `${srcPrefix}${srcKey}`;
-        const dst = `${dstPrefix}${dstKey}`;
-        await this.minioClient.copyObject(
-            this._bucketName,
-            dst,
-            `/${this._bucketName}/${src}`                              // copyObject API :contentReference[oaicite:10]{index=10}
-        );
-        this.objectsList = new Set([...this.objectsList].map(path => path.replace(src, dst)));
-    }
-
-    /** Move all objects under one prefix to another */
-    async movePrefix(oldPrefix: string, newPrefix: string): Promise<void> {
-        // list & copy each, then delete old prefix :contentReference[oaicite:11]{index=11}
-        const objects = this.minioClient.listObjectsV2(this._bucketName, oldPrefix, true);
-        for await (const obj of objects) {
-            const rel = obj.name!.replace(oldPrefix, '');
-            await this.copyObject(oldPrefix, rel, newPrefix, rel);
-        }
-        await this.removePrefix(oldPrefix);
-        this.objectsList = new Set([...this.objectsList].map(path => path.replace(oldPrefix, newPrefix)));
     }
 }

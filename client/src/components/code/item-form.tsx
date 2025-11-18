@@ -8,7 +8,6 @@ import { getFileIcon } from "./file-icons"
 import { useCodingStates } from "@/context/coding-states-provider"
 import { fileNameRgx } from "@/lib/utils"
 import { SocketEvents } from "@/lib/CONSTANTS"
-import { insertTreeItems } from "@/app/code/[replId]/fns/tree-mutation-fns"
 import { findItem } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EItemType, TreeItem } from "@/types/tree.types"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
@@ -27,7 +26,7 @@ interface NewItemFormProps {
 }
 
 export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
-    const { fileStructure, setFileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
+    const { fileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
 
     const form = useForm({
@@ -65,7 +64,6 @@ export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFo
                     } : {}),
                 } as TreeItem;
 
-                setFileStructure(prev => insertTreeItems(prev, [newTreeItem], parentFolderPath)); // insert the new item in the tree
                 setSelectedItem(newTreeItem);
 
                 if (newTreeItem.type === EItemType.FILE) {

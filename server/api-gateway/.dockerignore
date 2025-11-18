@@ -18,11 +18,12 @@ coverage
 .editorconfig
 Dockerfile
 README.md
-pnpm-lock.yaml
 .eslintrc.js
 nodemon.json
 LICENSE
-INITIAL_DB_SETUP.md
 wwwroot
 test
 public
+docker-compose.yml
+npm-debug.log
+pnpm-debug.log

@@ -5,21 +5,17 @@ import {
 import * as path from 'path';
 import { existsSync, promises as fs } from 'fs';
 import { exec } from 'child_process';
-import { FileSystemCRUDService } from 'src/file-system/file-system-crud.service';
 import { FileSystemService } from 'src/file-system/file-system.service';
 import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { tool } from '@langchain/core/tools';
 import z from 'zod/v3';
-import { ToolsGateway } from './tools.gateway';
 import { ELanguage } from './types/language.types';
 import { MinioService } from 'src/minio/minio.service';
 
 @Injectable()
 export class ToolsService {
     constructor(
-        private readonly fileSystemCRUDService: FileSystemCRUDService,
         private readonly fileSystemService: FileSystemService,
-        private readonly toolsGateway: ToolsGateway,
         private readonly minioService: MinioService,
     ) { }
 
@@ -37,11 +33,7 @@ export class ToolsService {
                 const pathWithLeadingSlash = path.startsWith('/') ? path : `/${path}`;
                 console.log(`createItemTool: ${type} at ${pathWithLeadingSlash}`);
 
-                const result = await this.fileSystemCRUDService.createItem({ path: pathWithLeadingSlash, type, content: content ?? '' });
-                if (result.success) {
-                    // emit to active users
-                    this.toolsGateway.emitItemCreated(pathWithLeadingSlash, type, content ?? '');
-                }
+                const result = await this.fileSystemService.createItem({ path: pathWithLeadingSlash, type, content: content ?? '' });
                 return { ok: result.success, error: result.error };
             },
             {
@@ -160,7 +152,6 @@ export class ToolsService {
                 }
 
                 await this.minioService.fetchMinioFolder(`base/${language}`, targetPath);
-                this.toolsGateway.emitBaseImagePulled(targetPath || "");
 
                 return { success: true, error: null };
             },

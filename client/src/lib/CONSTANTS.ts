@@ -12,7 +12,7 @@ export const REFRESH_TOKEN_HEADER = 'x-refresh-token' as const;
 
 export const NAME_REGEX = /^[A-Za-z]+$/;
 
-export const POD_DOMAIN = "prakashbanjade.com" as const;
+export const QUBIDE_DOMAIN = "qubide.cloud" as const;
 
 export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;
 
@@ -36,10 +36,11 @@ export const enum SocketEvents {
     UPDATE_CONTENT = "content:update",
     RENAME_ITEM = "item:rename",
 
-    ITEM_CREATED = "item:created",
-    ITEM_DELETED = "item:deleted",
-    ITEM_UPDATED = "item:updated",
-    ITEM_RENAMED = "item:renamed",
+    FILE_CREATED = "file:created",
+    FILE_REMOVED = "file:removed",
+    DIR_CREATED = "dir:created",
+    DIR_REMOVED = "dir:removed",
+    FILE_CHANGED = "file:changed",
 
     PROCESS_STATUS = "process:status",
     PROCESS_RUN = "process:run",

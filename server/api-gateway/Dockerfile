@@ -1,36 +1,32 @@
-# Base image with build dependencies
 FROM node:22-slim AS build
 
-# Set working directory
 WORKDIR /usr/src/app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+# Enable pnpm via Corepack
+RUN corepack enable
 
-# Copy source files and build
+# Copy manifest + lockfile
+COPY package.json pnpm-lock.yaml ./
+
+# Install deps (dev + prod) using pnpm
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the source and build
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
-# Production image
+# Remove devDependencies from node_modules, keep only production deps
+RUN pnpm prune --prod
+
 FROM node:22-slim AS production
 
 WORKDIR /usr/src/app
+ENV NODE_ENV=production
 
-# Copy only necessary files from the build stage
+# Copy production node_modules and built dist from build stage
+COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
-COPY package*.json ./
+COPY package.json ./
 
-# Install dependencies
-RUN npm install --only=production && npm cache clean --force
-
-# Remove package json files
-RUN rm -rf package*.json
-
-# Set NODE_ENV to production
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-# Expose port and set the start command
 EXPOSE 3002
 CMD ["node", "dist/main.js"]

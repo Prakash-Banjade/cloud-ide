@@ -7,9 +7,7 @@ export default function Preview() {
     const replId = params.replId ?? '';
 
     const previewRef = useRef<HTMLIFrameElement>(null);
-    const link = process.env.NODE_ENV === 'production'
-        ? `https://${replId}.qubide.cloud`
-        : `http://${replId}.qubide.cloud`;
+    const link = `https://${replId}.qubide.cloud`;
 
     const [isServerReady, setIsServerReady] = useState(false);
     const [key, setKey] = useState(0); // forces iframe reload

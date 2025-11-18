@@ -24,9 +24,6 @@ export function useRefreshTree() {
         const path = cookie.get(`selectedFile:${replId}`);
         if (!path) return;
 
-        // const path = getDeepestPath(getCookieAllPaths(replId as string)); // this is done to fetch to the deepest path of combined openedFiles + mruFiles and selectedFile from cookie
-        // if (!path) return
-
         // break “/a/b/c.txt” into ["a","b","c.txt"]
         const segments = path.split('/').filter(Boolean)
         let cumulative = ''
@@ -144,7 +141,7 @@ export function updateTree(
 }
 
 // helper to recursively find any item by path
-export function findItem(items: TreeItem[], targetPath: string, socket?: Socket, setFileStructure?: Dispatch<SetStateAction<TreeItem[]>>): TreeItem | undefined {
+export function findItem(items: TreeItem[], targetPath: string, socket?: Socket): TreeItem | undefined {
     let tree = items;
     let children: TreeItem[] = [];
 

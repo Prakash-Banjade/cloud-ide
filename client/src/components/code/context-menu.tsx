@@ -11,7 +11,6 @@ import { SocketEvents } from "@/lib/CONSTANTS"
 import { NewItemForm } from "./item-form"
 import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EPermission } from "@/types/types"
-import { useDeleteTreeItem } from "@/hooks/useListenTreeMutation"
 import useUpload from "@/hooks/useUpload"
 import toast from "react-hot-toast"
 
@@ -21,7 +20,7 @@ type Props = {
 }
 
 export function TreeItemContextMenu({ children, item }: Props) {
-    const { setFileStructure, setOpenedFiles, setMruFiles, setSelectedFile, mruFiles, permission } = useCodingStates();
+    const { setFileStructure, permission } = useCodingStates();
     const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
     const [isRenameOpen, setIsRenameOpen] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -181,4 +180,26 @@ export function TreeItemContextMenu({ children, item }: Props) {
         </>
 
     )
+}
+
+
+export function useDeleteTreeItem() {
+    const { setMruFiles, setOpenedFiles, setSelectedFile, mruFiles } = useCodingStates();
+
+    function deleteItem({ path, type }: { path: string, type: EItemType }) {
+        setOpenedFiles(prev => prev.filter(f =>
+            type === EItemType.FILE
+                ? f.path !== path
+                : !f.path.startsWith(path)
+        ));
+        const newMruFiles = mruFiles.filter(f =>
+            type === EItemType.FILE
+                ? f.path !== path
+                : !f.path.startsWith(path)
+        );
+        setMruFiles(newMruFiles);
+        setSelectedFile(newMruFiles[0]);
+    }
+
+    return { deleteItem };
 }

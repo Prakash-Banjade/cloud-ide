@@ -31,7 +31,6 @@ export default async function WorkspacePage(props: WorkspacePageProps) {
                 <ProjectsListTabs
                     projectList={<MyProjectsList searchParams={await props.searchParams} />}
                 />
-                {/* <MyProjectsList searchParams={await props.searchParams} /> */}
             </Suspense>
         </div>
     )

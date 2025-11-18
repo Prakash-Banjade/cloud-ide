@@ -1,12 +1,8 @@
-import { EItemType, TreeItem } from "@/types/tree.types"
+import { EItemType } from "@/types/tree.types"
 import { useAppMutation } from "./useAppMutation";
 import { ChangeEvent, useTransition } from "react";
-import { POD_DOMAIN, SocketEvents } from "@/lib/CONSTANTS";
-import { useSocket } from "@/context/socket-provider";
-import { useCodingStates } from "@/context/coding-states-provider";
-import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns";
-import { useParams } from "next/navigation";
-import { insertTreeItems } from "@/app/code/[replId]/fns/tree-mutation-fns";
+import toast from "react-hot-toast";
+import useUrl from "./useUrl";
 
 type Props = {
   type: EItemType,
@@ -19,8 +15,8 @@ const MAX_FILES = 100;
 export default function useUpload() {
   const [isPending, startTransition] = useTransition();
   const { mutateAsync } = useAppMutation();
-  const { setFileStructure } = useCodingStates();
-  const { replId } = useParams();
+
+  const { runnerUrl } = useUrl();
 
   const upload = (e: ChangeEvent<HTMLInputElement>, { type, path }: Props) => {
     const files = e.target.files;
@@ -49,22 +45,14 @@ export default function useUpload() {
 
     startTransition(async () => {
       try {
-        const res = await mutateAsync({
-          endpoint: `https://${replId}.${POD_DOMAIN}/project/upload`,
-          // endpoint: `http://localhost:3003/project/upload`,
+        await mutateAsync({
+          endpoint: runnerUrl + "/project/upload",
           method: 'post',
           data: formData,
         });
-
-        if (res.data) {
-          setFileStructure(prev => insertTreeItems(
-            prev,
-            res.data as TreeItem[],
-            path
-          ));
-        }
       } catch (e) {
-        console.log(e)
+        console.log(e);
+        toast.error("Failed to upload");
       }
     });
   }

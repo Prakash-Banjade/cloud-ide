@@ -12,7 +12,6 @@ import { AgentOrchestratorService } from './agent-orchestrator.service';
 import { ToolsService } from './tools.service';
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
-import { ToolsGateway } from './tools.gateway';
 
 export const enum LlmProviderTokens {
     ROUTER_LLM = 'ROUTER_LLM',
@@ -37,7 +36,7 @@ export const enum LlmProviderTokens {
         },
         {
             provide: LlmProviderTokens.PLANNER_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.3 }),
+            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.2 }),
         },
         {
             provide: LlmProviderTokens.ARCHITECT_LLM,
@@ -56,7 +55,6 @@ export const enum LlmProviderTokens {
             useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.3 }),
         },
         ToolsService,
-        ToolsGateway, // used to emit fs events
         RouterAgent,
         DirectAgent,
         PlannerAgent,

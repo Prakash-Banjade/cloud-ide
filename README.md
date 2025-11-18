@@ -29,7 +29,7 @@ Follow these steps to run Qubide on your local machine using a kind cluster.
 ### 1. Create a kind cluster
 
 ```bash
-kind create cluster --name qubide
+kind create cluster --name dev --config server/k8s/kind-config.yaml
 ```
 
 ### 2. Install Ingress Controller
@@ -41,19 +41,30 @@ kubectl create ns ingress-nginx
 kubectl apply -f server/k8s/ingress-nginx-controller.yaml
 ```
 
-### 3. Create namespace `qubide`
+### 3. Create namespace `qubide` and `qubide-main`
 
 ```bash
-kubectl create namespace qubide
+kubectl apply -f server/k8s/project-ns.yaml
 ```
+Just to separate the main backend and other pods (user apps), separate ns is choosed.
 
 ### 4. Setup MinIO
 
-Install the MinIO:
+1. Install the MinIO:
 
 ```bash
 kubectl apply -f server/k8s/minio/minio-dev.yaml
 ```
+
+2. Run minio (inside cluster)
+
+```bash
+kubectl port-forward service/minio 9000:9000 9090:9090 -n minio-dev --address=0.0.0.0
+```
+
+3. Open minio client by navigating to `http://localhost:9000`
+4. Create a bucket with name `cloud-ide`
+5. Upload the server/base directory. This will upload the base files for each project langauges. You can customize based on your need.
 
 ### 5. Apply `ServiceAccount` for runner
 

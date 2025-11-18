@@ -23,7 +23,6 @@ export const useAxiosPrivate = (): AxiosInstance => {
                 Authorization: `Bearer ${access_token}`,
             },
             withCredentials: true,
-            // timeout: 10000,
         });
     }, [access_token]); // re-create if the access_token string changes
 

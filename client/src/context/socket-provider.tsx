@@ -4,7 +4,7 @@ import { useFetchData } from '@/hooks/useFetchData';
 import { QueryKey } from '@/lib/query-keys';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface SocketContextType {
@@ -33,36 +33,32 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         }
     });
 
+    const runnerUrl = useMemo(() => {
+        return process.env.NODE_ENV === "production"
+            ? `wss://runner.${replId}.qubide.cloud`
+            : "ws://localhost:3003"
+    }, [replId]);
+
+    const ptyUrl = useMemo(() => {
+        return process.env.NODE_ENV === "production"
+            ? `wss://pty.${replId}.qubide.cloud`
+            : "ws://localhost:3004"
+    }, [replId]);
+
     useEffect(() => {
         if (!replId || !data?.access_token) return;
 
-        const runnerUrl = process.env.NODE_ENV === 'production'
-            ? `wss://${replId}.prakashbanjade.com`
-            : `ws://${replId}.prakashbanjade.com`
-
-        const ptyUrl = process.env.NODE_ENV === 'production'
-            ? `wss://pty.${replId}.prakashbanjade.com`
-            : `ws://pty.${replId}.prakashbanjade.com`
-
-        const runnerSocket = io(
-            // runnerUrl,
-            "ws://localhost:3003",
-            {
-                auth: {
-                    access_token: data.access_token,
-                }
+        const runnerSocket = io(runnerUrl, {
+            auth: {
+                access_token: data.access_token,
             }
-        );
+        });
 
-        const ptySocket = io(
-            // ptyUrl,
-            "ws://localhost:3004",
-            {
-                auth: {
-                    access_token: data.access_token
-                }
+        const ptySocket = io(ptyUrl, {
+            auth: {
+                access_token: data.access_token
             }
-        );
+        });
 
         setSocket(runnerSocket);
         setPtySocket(ptySocket);

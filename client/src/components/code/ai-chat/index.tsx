@@ -6,8 +6,8 @@ import { X } from "lucide-react";
 import ChatInput from "./chat-input";
 import ChatContent from "./chat-content";
 import toast from "react-hot-toast";
-import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import useUrl from "@/hooks/useUrl";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -55,7 +55,6 @@ export const useAIChat = () => {
 
 export default function AIChat() {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
-    const { replId } = useParams();
     const [streamingText, setStreamingText] = useState("");
     const streamingTextRef = useRef("");
     const [isChatPending, setIsChatPending] = useState(false);
@@ -67,13 +66,7 @@ export default function AIChat() {
     const pendingProgressRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const podUrl = React.useMemo(() => {
-        const domain = process.env.NEXT_PUBLIC_POD_DOMAIN;
-        if (process.env.NODE_ENV === "production" && replId && domain) {
-            return `https://${replId}.${domain}`;
-        }
-        return "http://localhost:3003";
-    }, [replId]);
+    const { runnerUrl } = useUrl();
 
     useEffect(() => {
         streamingTextRef.current = streamingText;
@@ -181,12 +174,15 @@ export default function AIChat() {
                 break;
             case "direct_response_complete":
                 if (event.data?.response) {
-                    setStreamingText(event.data.response);
+                    const next = event.data.response;
+                    streamingTextRef.current = next;
+                    setStreamingText(next);
                 }
                 break;
             case "complete":
                 if (streamingTextRef.current) {
-                    setMessages(prev => [...prev, { role: "agent", content: streamingTextRef.current }]);
+                    const finalMessage = streamingTextRef.current;
+                    setMessages(prev => [...prev, { role: "agent", content: finalMessage }]);
                     setStreamingText("");
                     streamingTextRef.current = "";
                 } else {
@@ -222,7 +218,7 @@ export default function AIChat() {
             eventSourceRef.current = null;
         }
 
-        const url = `${podUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
+        const url = `${runnerUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
         const eventSource = new EventSource(url);
         eventSourceRef.current = eventSource;
 
@@ -316,4 +312,3 @@ export default function AIChat() {
         </AIChatContext.Provider>
     );
 }
-

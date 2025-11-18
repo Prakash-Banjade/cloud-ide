@@ -30,6 +30,7 @@ export class WebAuthnService extends BaseRepository {
     async registerPassKey(req: FastifyRequest) {
         const accountIdFromSudoGuard = req['accountId']; // this is available from sudo guard in the controller
 
+        console.log(0)
         if (!accountIdFromSudoGuard) throw new ForbiddenException('Unauthorized');
 
         const account = await this.getAccount(
@@ -37,7 +38,10 @@ export class WebAuthnService extends BaseRepository {
             { webAuthnCredentials: true }
         );
 
+        console.log(1)
         if (account.id !== accountIdFromSudoGuard) throw new ForbiddenException('Unauthorized');
+
+        console.log(2)
 
         const challengePayload = await generateRegistrationOptions({
             rpID: this.envService.CLIENT_DOMAIN,

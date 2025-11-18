@@ -6,8 +6,9 @@ import { ELanguage } from 'src/global-types';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { KubernetesService } from 'src/kubernetes/kubernetes.service';
 import { ConfigService } from '@nestjs/config';
-import { Logger, OnModuleInit } from '@nestjs/common';
+import { Logger, OnModuleInit, UseGuards } from '@nestjs/common';
 import { SocketEvents } from 'src/CONSTANTS';
+import { WsGuard } from 'src/guard/ws.guard';
 
 @WebSocketGateway({
   cors: {
@@ -21,7 +22,7 @@ import { SocketEvents } from 'src/CONSTANTS';
     methods: ['GET', 'POST'],
   },
 })
-// @UseGuards(WsGuard)
+@UseGuards(WsGuard)
 export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer()
   server: Server;
@@ -35,7 +36,6 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly kubernetesService: KubernetesService,
     private readonly configService: ConfigService,
-    // private readonly chokidarService: ChokidarService,
   ) {
     this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
   }
@@ -66,18 +66,14 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (this.connectedSocketsIds.size === 0 && this.replId) { // if no active sockets, set timeout
       this.startInactivityTimer();
     }
-
-    // if (replId) {
-    //   this.chokidarService.stopProjectSession(replId);
-    // }
   }
 
   // as the module is initialized, immediately start the timer, because there is a chance that socket connection never happens
   // which leads to never shutting down the resources
   onModuleInit() {
-    // this.stopInactivityTimer();
-    // this.logger.log('🕒 Starting inactivity timer for terminal gateway - OnModuleInit');
-    // this.startInactivityTimer();
+    this.stopInactivityTimer();
+    this.logger.log('🕒 Starting inactivity timer for terminal gateway - OnModuleInit');
+    this.startInactivityTimer();
   }
 
   private startInactivityTimer() {
@@ -99,8 +95,6 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage(SocketEvents.TERMINAL_REQUEST)
   onRequestTerminal(@ConnectedSocket() socket: Socket) {
-    // this.chokidarService.startProjectSession(PROJECT_PATH, replId, socket); // start chokidar
-
     this.terminalManager.createPty(
       socket,
       (data) => {

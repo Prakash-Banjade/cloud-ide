@@ -9,7 +9,7 @@ export class EnvService implements OnModuleInit {
         private readonly configService: ConfigService,
     ) { }
 
-    DATABASE_URL: string;
+    // DATABASE_URL: string;
     REDIS_URL: string;
     ACCESS_TOKEN_SECRET: string;
     ACCESS_TOKEN_EXPIRATION_SEC: number;
@@ -34,7 +34,7 @@ export class EnvService implements OnModuleInit {
     NODE_ENV: TNodeEnv;
 
     onModuleInit() {
-        this.DATABASE_URL = this.configService.getOrThrow<string>('DATABASE_URL');
+        // this.DATABASE_URL = this.configService.getOrThrow<string>('DATABASE_URL');
         this.REDIS_URL = this.configService.getOrThrow<string>('REDIS_URL');
         this.ACCESS_TOKEN_SECRET = this.configService.getOrThrow<string>('ACCESS_TOKEN_SECRET');
         this.ACCESS_TOKEN_EXPIRATION_SEC = +this.configService.getOrThrow<string>('ACCESS_TOKEN_EXPIRATION_SEC');
