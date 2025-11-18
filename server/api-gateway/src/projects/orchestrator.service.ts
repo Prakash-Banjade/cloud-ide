@@ -1,5 +1,5 @@
 import { AppsV1Api, CoreV1Api, NetworkingV1Api } from '@kubernetes/client-node';
-import { ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as yaml from 'yaml';
 import * as path from 'path';

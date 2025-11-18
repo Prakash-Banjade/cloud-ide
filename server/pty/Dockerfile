@@ -1,33 +1,42 @@
-# Base image with build dependencies, no alpine because to include Python, make needed by 'node-pty' as build dependency
-FROM node:22 AS build
+FROM node:22-slim AS build
 
-# Set working directory
+# Build tools required for native modules like node-pty
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /usr/src/app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm install
+# Enable pnpm via Corepack
+RUN corepack enable
 
-# Copy source files and build
+# Copy manifest + lockfile
+COPY package.json pnpm-lock.yaml ./
+
+# Install deps (dev + prod) using pnpm
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the source and build
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
-# Production image
-FROM node:22 AS production
+# Remove devDependencies from node_modules, keep only production deps
+RUN pnpm prune --prod
+
+FROM node:22-slim AS production
 
 WORKDIR /usr/src/app
 
-# Copy only necessary files from the build stage
+ENV NODE_ENV=production
+
+# Copy production node_modules and built dist from build stage
+COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
-COPY package*.json ./
+COPY package.json ./
 
-# Install dependencies
-RUN npm install --only=production && npm cache clean --force
-
-# Remove package json files
-RUN rm -rf package*.json
-
-# Expose ports and set the start command
 EXPOSE 3004
 EXPOSE 3000
 EXPOSE 5173

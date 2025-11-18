@@ -13,6 +13,7 @@ import paginatedData from 'src/common/utilities/paginated-data';
 import { OrchestratorService } from './orchestrator.service';
 import { JwtService } from 'src/auth-system/jwt/jwt.service';
 import { EPermission } from 'src/collaborators/entities/collaborator.entity';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProjectsService {
@@ -22,11 +23,13 @@ export class ProjectsService {
     private readonly usersService: UsersService,
     private readonly orchestratorService: OrchestratorService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
-    // const replId = await this.getReplId(createProjectDto.projectName);
-    const replId = "node-node";
+    const replId = this.configService.get("NODE_ENV") === "production"
+      ? await this.getReplId(createProjectDto.projectName)
+      : "node-node";
 
     const user = await this.usersService.findOne(currentUser.userId);
 
@@ -121,7 +124,7 @@ export class ProjectsService {
     if (!project) throw new NotFoundException('Project not found');
 
     // update last opened
-    await this.projectRepo.update({ id: project.id }, { updatedAt: new Date().toISOString() });
+    this.projectRepo.update({ id: project.id }, { updatedAt: new Date().toISOString() });
 
     return project;
   }

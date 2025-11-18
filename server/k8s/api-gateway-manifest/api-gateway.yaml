@@ -8,7 +8,6 @@ metadata:
   namespace: qubide-main
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: standard
   resources:
     requests:
       storage: 5Gi
@@ -20,7 +19,6 @@ metadata:
   namespace: qubide-main
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: standard
   resources:
     requests:
       storage: 1Gi
@@ -148,7 +146,7 @@ metadata:
   namespace: qubide-main
   labels: { app: api-gateway }
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: api-gateway }
   template:
