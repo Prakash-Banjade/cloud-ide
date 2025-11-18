@@ -6,9 +6,8 @@ import { X } from "lucide-react";
 import ChatInput from "./chat-input";
 import ChatContent from "./chat-content";
 import toast from "react-hot-toast";
-import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { POD_DOMAIN } from "@/lib/CONSTANTS";
+import useUrl from "@/hooks/useUrl";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -56,7 +55,6 @@ export const useAIChat = () => {
 
 export default function AIChat() {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
-    const { replId } = useParams();
     const [streamingText, setStreamingText] = useState("");
     const streamingTextRef = useRef("");
     const [isChatPending, setIsChatPending] = useState(false);
@@ -68,12 +66,7 @@ export default function AIChat() {
     const pendingProgressRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const podUrl = React.useMemo(() => {
-        if (process.env.NODE_ENV === "production" && replId) {
-            return `https://${replId}.${POD_DOMAIN}`;
-        }
-        return "http://localhost:3003";
-    }, [replId]);
+    const { runnerUrl } = useUrl();
 
     useEffect(() => {
         streamingTextRef.current = streamingText;
@@ -225,7 +218,7 @@ export default function AIChat() {
             eventSourceRef.current = null;
         }
 
-        const url = `${podUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
+        const url = `${runnerUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
         const eventSource = new EventSource(url);
         eventSourceRef.current = eventSource;
 

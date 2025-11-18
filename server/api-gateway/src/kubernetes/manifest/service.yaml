@@ -23,7 +23,7 @@ spec:
       initContainers:
         - name: copy-minio-resources
           image: minio/mc
-          command: ["sh", "-c"]
+          command: ['sh', '-c']
           args:
             - |
               set -e
@@ -39,7 +39,6 @@ spec:
       containers:
         - name: pty
           image: prakashbanjade/cloud-ide-pty:latest
-          imagePullPolicy: Always
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
@@ -50,9 +49,9 @@ spec:
                   name: runner-env
                   key: CLIENT_URL
             - name: REPL_ID
-              value: "service_name"
+              value: 'service_name'
             - name: LANG
-              value: "PROJ_LANG" # will be replace with the actual language, e.g. "java", "python", etc.
+              value: 'PROJ_LANG' # will be replace with the actual language, e.g. "java", "python", etc.
           lifecycle:
             postStart:
               exec:
@@ -81,23 +80,22 @@ spec:
             - containerPort: LANG_PORT # expose the port where the application might run on. eg: a node app running on port 3000
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
-              ephemeral-storage: "2Gi"
+              cpu: '100m'
+              memory: '256Mi'
+              ephemeral-storage: '2Gi'
             limits:
-              cpu: "250m"
-              memory: "1Gi"
-              ephemeral-storage: "5Gi"
-      
+              cpu: '250m'
+              memory: '1Gi'
+              ephemeral-storage: '5Gi'
+
         - name: runner
           image: prakashbanjade/cloud-ide-runner:latest
-          imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: runner-env
           env:
             - name: REPL_ID
-              value: "service_name"
+              value: 'service_name'
           ports:
             - containerPort: 3003 # ws for runner
           volumeMounts:
@@ -105,13 +103,13 @@ spec:
               mountPath: /workspace
           resources:
             requests:
-              cpu: "100m"
-              memory: "256Mi"
-              ephemeral-storage: "2Gi"
+              cpu: '100m'
+              memory: '256Mi'
+              ephemeral-storage: '2Gi'
             limits:
-              cpu: "300m"
-              memory: "512Mi"
-              ephemeral-storage: "3Gi"
+              cpu: '300m'
+              memory: '512Mi'
+              ephemeral-storage: '3Gi'
 
 ---
 apiVersion: v1
@@ -142,25 +140,25 @@ metadata:
   name: service_name
   namespace: qubide
   annotations:
-    kubernetes.io/ingress.class: "nginx" # Use the NGINX Ingress controller
-    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Tell cert‑manager which ClusterIssuer to use
+    kubernetes.io/ingress.class: 'nginx' # Use the NGINX Ingress controller
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod' # Tell cert‑manager which ClusterIssuer to use
 
     # Redirect all HTTP traffic to HTTPS
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
 spec:
   ingressClassName: nginx
 
   # Terminate TLS for both hostnames into one Kubernetes Secret
   tls:
     - hosts:
-        - pty.service_name.prakashbanjade.com
-        - service_name.prakashbanjade.com
+        - pty.service_name.qubide.cloud
+        - runner.service_name.qubide.cloud
         - service_name.qubide.cloud
       secretName: service_name-tls
 
   rules:
-    - host: pty.service_name.prakashbanjade.com # ws for pty
+    - host: pty.service_name.qubide.cloud # ws for pty
       http:
         paths:
           - path: /
@@ -170,8 +168,8 @@ spec:
                 name: service_name
                 port:
                   number: 3004
-  
-    - host: service_name.prakashbanjade.com # ws for runner
+
+    - host: runner.service_name.qubide.cloud # ws for runner
       http:
         paths:
           - path: /
@@ -191,5 +189,5 @@ spec:
               service:
                 name: service_name
                 port:
-                  number: LANG_PORT  # e.g. replace with 3000 or your configured port
+                  number: LANG_PORT # will be replaced with language port
 

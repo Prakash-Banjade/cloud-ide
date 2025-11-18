@@ -36,7 +36,7 @@ export const enum LlmProviderTokens {
         },
         {
             provide: LlmProviderTokens.PLANNER_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.3 }),
+            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.2 }),
         },
         {
             provide: LlmProviderTokens.ARCHITECT_LLM,

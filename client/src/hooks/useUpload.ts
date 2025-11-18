@@ -1,9 +1,8 @@
 import { EItemType } from "@/types/tree.types"
 import { useAppMutation } from "./useAppMutation";
-import { ChangeEvent, useMemo, useTransition } from "react";
-import { POD_DOMAIN } from "@/lib/CONSTANTS";
-import { useParams } from "next/navigation";
+import { ChangeEvent, useTransition } from "react";
 import toast from "react-hot-toast";
+import useUrl from "./useUrl";
 
 type Props = {
   type: EItemType,
@@ -16,14 +15,8 @@ const MAX_FILES = 100;
 export default function useUpload() {
   const [isPending, startTransition] = useTransition();
   const { mutateAsync } = useAppMutation();
-  const { replId } = useParams();
 
-  const podUrl = useMemo(() => {
-    if (process.env.NODE_ENV === "production" && replId) {
-      return `https://${replId}.${POD_DOMAIN}/project/upload`;
-    }
-    return `http://localhost:3003/project/upload`;
-  }, [replId])
+  const { runnerUrl } = useUrl();
 
   const upload = (e: ChangeEvent<HTMLInputElement>, { type, path }: Props) => {
     const files = e.target.files;
@@ -53,7 +46,7 @@ export default function useUpload() {
     startTransition(async () => {
       try {
         await mutateAsync({
-          endpoint: podUrl,
+          endpoint: runnerUrl + "/project/upload",
           method: 'post',
           data: formData,
         });

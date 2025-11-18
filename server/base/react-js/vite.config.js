@@ -6,6 +6,11 @@ export default ({ mode }) => {
 
   return defineConfig({
     plugins: [react()],
+    /**
+    |--------------------------------------------------
+    | ! Below `server` configuration is set automatically by Qubide, do not modify
+    |--------------------------------------------------
+    */
     server: {
       host: true,
       // Tell Vite to send the appropriate CORS headers:

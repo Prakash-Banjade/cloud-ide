@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { promisify } from 'util';
@@ -16,20 +15,8 @@ export interface File {
     language?: string
 }
 
-const excludeItems = [
-    /vite\.config\.(ts|js)/, // Vite config files
-]
-
 @Injectable()
 export class FileSystemService {
-    private replId: string;
-
-    constructor(
-        private readonly configService: ConfigService,
-    ) {
-        this.replId = this.configService.getOrThrow<string>('REPL_ID')!;
-    }
-
     fetchDir(dir: string, baseDir: string): Promise<File[]> {
         return new Promise((resolve, reject) => {
             fs.readdir(dir, { withFileTypes: true }, async (err, files) => {
@@ -37,9 +24,6 @@ export class FileSystemService {
                     reject(err);
                 } else {
                     resolve((await Promise.all(files.map(async f => {
-                        if (excludeItems.some(regex => regex.test(f.name))) {
-                            return null; // skip excluded items
-                        }
 
                         const objWithKeep = f.name.endsWith('.keep');
 
@@ -108,7 +92,7 @@ export class FileSystemService {
             const fullPath = `${WORKSPACE_PATH}${path}`;
 
             if (type === 'dir') {
-                await mkdir(fullPath, { recursive: true });       // recursive mkdir :contentReference[oaicite:5]{index=5}
+                await mkdir(fullPath, { recursive: true });
             } else {
                 await writeFile(fullPath, content, 'utf8');
             }
@@ -128,7 +112,7 @@ export class FileSystemService {
             const { path } = payload;
             const fullPath = `${WORKSPACE_PATH}${path}`;
 
-            // rm with { recursive: true, force: true } handles both files and non-empty dirs :contentReference[oaicite:6]{index=6}
+            // rm with { recursive: true, force: true } handles both files and non-empty dirs
             await rm(fullPath, { recursive: true, force: true });
 
             return true;
@@ -143,9 +127,9 @@ export class FileSystemService {
      * Rename or move a file or directory.
      * Assumes payload contains both oldPath and newPath.
      */
-    async renameItem(payload: { oldPath: string, newPath: string, type: 'file' | 'dir' }): Promise<{ success: boolean, error: string | null }> {
+    async renameItem(payload: { oldPath: string, newPath: string }): Promise<{ success: boolean, error: string | null }> {
         try {
-            const { oldPath, newPath, type } = payload;
+            const { oldPath, newPath } = payload;
             const fullOld = `${WORKSPACE_PATH}${oldPath}`;
             const fullNew = `${WORKSPACE_PATH}${newPath}`;
 

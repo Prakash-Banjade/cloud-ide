@@ -12,7 +12,7 @@ export const REFRESH_TOKEN_HEADER = 'x-refresh-token' as const;
 
 export const NAME_REGEX = /^[A-Za-z]+$/;
 
-export const POD_DOMAIN = "prakashbanjade.com" as const;
+export const QUBIDE_DOMAIN = "qubide.cloud" as const;
 
 export const NAME_WITH_SPACE_REGEX = /^[A-Za-z]+( [A-Za-z]+)*$/;
 

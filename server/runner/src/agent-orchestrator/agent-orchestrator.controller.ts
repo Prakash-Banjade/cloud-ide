@@ -6,11 +6,11 @@ import { StreamEvent } from './types/streaming.types';
 import { AuthGuard } from 'src/guard/auth.guard';
 
 @Controller('vibe')
-// @UseGuards(AuthGuard)
 export class AgentOrchestratorController {
     constructor(private readonly agentService: AgentOrchestratorService) { }
 
     @Post('chat')
+    @UseGuards(AuthGuard)
     async chat(@Body() payload: ChatMessageDto) {
         return this.agentService.runAgent(payload.message);
     }
