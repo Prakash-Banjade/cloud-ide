@@ -62,13 +62,6 @@ spec:
                   - |
                     set -e
 
-                    # If Node project, install deps
-                    if [ -f /workspace/package.json ] && [ ! -d /workspace/node_modules ]; then
-                      echo "Installing npm dependencies…"
-                      cd /workspace
-                      npm install
-                    fi
-
                     # If Java project, install JDK
                     if [ "$LANG" = "java" ]; then
                       echo "Installing JDK for Java project…"

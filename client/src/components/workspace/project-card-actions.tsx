@@ -23,6 +23,7 @@ export default function ProjectCardActions({ project }: { project: TProjectsResp
             try {
                 const res = await deleteProject(project.id);
                 toast.success(res.message);
+                setIsDeleteOpen(false);
             } catch (e) {
                 console.log(e);
                 toast.error('Something went wrong. Please try again.');
