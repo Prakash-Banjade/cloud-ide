@@ -1,7 +1,7 @@
 import React from 'react'
 import ExplorerActions from './explorer-actions'
 import { TreeItem } from "@/types/tree.types"
-import { useCodingStates } from '@/context/coding-states-provider';
+import { EPanel, useCodingStates } from '@/context/coding-states-provider';
 import { Socket } from 'socket.io-client';
 import { PanelLeftIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ export default function FileTreePanel({ socket }: Props) {
         setFileStructure,
         setSelectedFile,
         setOpenedFiles,
-        setTreePanelOpen
+        togglePanel
     } = useCodingStates();
 
     const isMobile = useIsMobile();
@@ -35,7 +35,7 @@ export default function FileTreePanel({ socket }: Props) {
                 <section className='flex items-center gap-2'>
                     {
                         isMobile && (
-                            <Button variant={'ghost'} size={'icon'} type="button" onClick={() => setTreePanelOpen(false)}>
+                            <Button variant={'ghost'} size={'icon'} type="button" onClick={() => togglePanel(EPanel.FileTree, false)}>
                                 <PanelLeftIcon size={16} />
                             </Button>
                         )

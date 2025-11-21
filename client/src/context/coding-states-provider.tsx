@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +15,14 @@ import { SocketEvents } from '@/lib/CONSTANTS';
 import { EItemType, TFileItem, TreeItem } from '@/types/tree.types';
 import CodingPageLoader from '@/components/code/coding-page-loader';
 import { RemoteUser } from '@/components/code/active-users';
+import { ImperativePanelHandle } from 'react-resizable-panels';
+
+export enum EPanel {
+    FileTree = "fileTree",
+    Terminal = "terminal",
+    Preview = "preview",
+    AiChat = "aiChat"
+}
 
 interface CodingStatesContextType {
     fileStructure: TreeItem[];
@@ -32,25 +40,23 @@ interface CodingStatesContextType {
     project: TProject | undefined;
     permission: EPermission;
     isOwner: boolean;
-    projectRunning: boolean;
-    setProjectRunning: React.Dispatch<React.SetStateAction<boolean>>;
     mruFiles: TFileItem[];
     setMruFiles: React.Dispatch<React.SetStateAction<TFileItem[]>>;
     treeLoaded: boolean;
     setTreeLoaded: React.Dispatch<React.SetStateAction<boolean>>;
-    treePanelOpen: boolean;
-    setTreePanelOpen: React.Dispatch<React.SetStateAction<boolean>>
-    showTerm: boolean;
-    setShowTerm: React.Dispatch<React.SetStateAction<boolean>>;
     mutedUsers: string[];
     setMutedUsers: React.Dispatch<React.SetStateAction<string[]>>;
     observedUser: RemoteUser | null;
     setObservedUser: React.Dispatch<React.SetStateAction<RemoteUser | null>>
-    observingPanelRef: React.RefObject<HTMLDivElement | null>;
-    previewOpen: boolean;
-    setPreviewOpen: React.Dispatch<React.SetStateAction<boolean>>;
     objectsList: string[];
     setObjectsList: React.Dispatch<React.SetStateAction<string[]>>;
+    showPanel: Record<EPanel, boolean>;
+    togglePanel: (panel: EPanel, open?: boolean) => void
+    observingPanelRef: React.RefObject<HTMLDivElement | null>;
+    terminalPanelRef: React.RefObject<ImperativePanelHandle | null>;
+    previewPanelRef: React.RefObject<ImperativePanelHandle | null>;
+    aiChatPanelRef: React.RefObject<ImperativePanelHandle | null>;
+    treePanelRef: React.RefObject<ImperativePanelHandle | null>;
 }
 
 export type IStandaloneCodeEditor = monacoEditor.editor.IStandaloneCodeEditor
@@ -68,21 +74,29 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [fileStructure, setFileStructure] = useState<TreeItem[]>([]);
     const [selectedFile, setSelectedFile] = useState<TFileItem | undefined>(undefined);
     const [selectedItem, setSelectedItem] = useState<TreeItem | undefined>(undefined);
+    const [permission, setPermission] = useState<EPermission>(EPermission.READ);
     const [editorInstance, setEditorInstance] = useState<IStandaloneCodeEditor | null>(null);
-    const [treePanelOpen, setTreePanelOpen] = useState(false);
     const [openedFiles, setOpenedFiles] = useState<TFileItem[]>([]);
-    const [projectRunning, setProjectRunning] = useState(false);
     const [mruFiles, setMruFiles] = useState<TFileItem[]>([]);
     const [treeLoaded, setTreeLoaded] = useState(false);
     const [objectsList, setObjectsList] = useState<string[]>([]);
     const [isSyncing, setIsSyncing] = useState(false);
-    const [permission, setPermission] = useState<EPermission>(EPermission.READ);
     const [mutedUsers, setMutedUsers] = useState<string[]>([]);
     const [observedUser, setObservedUser] = useState<RemoteUser | null>(null);
-    const [showTerm, setShowTerm] = useState(() => permission === EPermission.WRITE && localStorage.getItem("showTerm") === "true");
-    const [previewOpen, setPreviewOpen] = useState(false);
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
+
+    const [showPanel, setShowPanel] = useState<Record<EPanel, boolean>>(() => ({
+        aiChat: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.AiChat}`) === "true",
+        fileTree: localStorage.getItem(`show:${EPanel.FileTree}`) === "true",
+        preview: localStorage.getItem(`show:${EPanel.Preview}`) === "true",
+        terminal: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.Terminal}`) === "true",
+    }));
+
+    const termPanelRef = React.useRef<ImperativePanelHandle | null>(null);
+    const previewPanelRef = React.useRef<ImperativePanelHandle | null>(null);
+    const aiChatPanelRef = React.useRef<ImperativePanelHandle | null>(null);
+    const treePanelRef = React.useRef<ImperativePanelHandle | null>(null);
     const observingPanelRef = React.useRef<HTMLDivElement>(null);
 
     const replId = params.replId;
@@ -100,46 +114,64 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
             const project = data.data;
             const [collaborator] = project.collaborators;
             const isOwner = project.createdBy.id === session?.user.userId;
-            setPermission(isOwner ? EPermission.WRITE : (collaborator?.permission || EPermission.READ));
+            const permission = isOwner ? EPermission.WRITE : (collaborator?.permission || EPermission.READ);
+            setPermission(permission);
+            setShowPanel({
+                aiChat: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.AiChat}`) === "true",
+                fileTree: localStorage.getItem(`show:${EPanel.FileTree}`) === "true",
+                preview: localStorage.getItem(`show:${EPanel.Preview}`) === "true",
+                terminal: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.Terminal}`) === "true",
+            });
         }
     }, [data])
 
-    const value = {
-        fileStructure,
-        setFileStructure,
-        selectedFile,
-        setSelectedFile,
-        selectedItem,
-        setSelectedItem,
-        openedFiles,
-        setOpenedFiles,
-        isSyncing,
-        setIsSyncing,
-        editorInstance,
-        setEditorInstance,
-        project: data?.data,
-        isOwner: data?.data.createdBy.id === session?.user.userId,
-        permission,
-        projectRunning,
-        setProjectRunning,
-        mruFiles,
-        setMruFiles,
-        treeLoaded,
-        setTreeLoaded,
-        treePanelOpen,
-        setTreePanelOpen,
-        showTerm,
-        setShowTerm,
-        mutedUsers,
-        setMutedUsers,
-        observedUser,
-        setObservedUser,
-        observingPanelRef,
-        previewOpen,
-        setPreviewOpen,
-        objectsList,
-        setObjectsList
-    };
+    const togglePanel = (panel: EPanel, open?: boolean) => {
+        setShowPanel(prev => {
+            const panelOpen = typeof open === "boolean" ? open : !prev[panel];
+
+            localStorage.setItem(`show:${panel}`, `${panelOpen}`);
+
+
+            switch (panel) {
+                case EPanel.Terminal: {
+                    if (termPanelRef.current) {
+                        termPanelRef.current.resize(panelOpen ? 30 : 0);
+                    }
+                    break;
+                }
+                case EPanel.AiChat: {
+                    if (aiChatPanelRef.current) {
+                        aiChatPanelRef.current.resize(panelOpen ? 30 : 0);
+                    }
+                    break;
+                }
+                case EPanel.Preview: {
+                    if (previewPanelRef.current) {
+                        previewPanelRef.current.resize(panelOpen ? 30 : 0);
+                    }
+                    break;
+                }
+                case EPanel.FileTree: {
+                    if (treePanelRef.current) {
+                        treePanelRef.current.resize(panelOpen ? 30 : 0);
+                    }
+                    break;
+                }
+            }
+
+            return {
+                ...prev,
+                [panel]: panelOpen
+            };
+        });
+    }
+
+    useEffect(() => {
+        termPanelRef.current?.resize(showPanel.terminal ? 30 : 0);
+        previewPanelRef.current?.resize(showPanel.preview ? 30 : 0);
+        aiChatPanelRef.current?.resize(showPanel.aiChat ? 30 : 0);
+        treePanelRef.current?.resize(showPanel.fileTree ? 30 : 0);
+    }, [showPanel]);
 
     useEffect(() => {
         if (!treeLoaded) return;
@@ -197,6 +229,41 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         if (!selectedFile) return;
         cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
     }, [selectedFile]);
+
+    const value = {
+        fileStructure,
+        setFileStructure,
+        selectedFile,
+        setSelectedFile,
+        selectedItem,
+        setSelectedItem,
+        openedFiles,
+        setOpenedFiles,
+        isSyncing,
+        setIsSyncing,
+        editorInstance,
+        setEditorInstance,
+        project: data?.data,
+        isOwner: data?.data.createdBy.id === session?.user.userId,
+        permission,
+        mruFiles,
+        setMruFiles,
+        treeLoaded,
+        setTreeLoaded,
+        mutedUsers,
+        setMutedUsers,
+        observedUser,
+        setObservedUser,
+        observingPanelRef,
+        objectsList,
+        setObjectsList,
+        showPanel,
+        togglePanel,
+        terminalPanelRef: termPanelRef,
+        previewPanelRef: previewPanelRef,
+        aiChatPanelRef: aiChatPanelRef,
+        treePanelRef: treePanelRef
+    };
 
     if (isLoading || status === 'loading') return <CodingPageLoader state='loading_project' />;
 

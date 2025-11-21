@@ -5,7 +5,7 @@ import { signOut, useSession } from 'next-auth/react'
 import axiosClient from '@/lib/axios-client'
 import { useMutation } from '@tanstack/react-query'
 import { REFRESH_TOKEN_HEADER } from '@/lib/CONSTANTS'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Skeleton } from '../ui/skeleton'
 import { EllipsisVertical, FolderKanban, LogOut, Moon, Newspaper, Settings, Sun, SunMoon } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -19,8 +19,6 @@ export default function ProfileDropdown() {
     const isMobile = useIsMobile();
     const { setTheme } = useTheme()
     const [isPending, startTransition] = useTransition()
-
-    const isCodingPage = usePathname().startsWith("/code");
 
     const { mutateAsync } = useMutation({
         mutationFn: async () => {
@@ -77,22 +75,16 @@ export default function ProfileDropdown() {
             <DropdownMenuContent side='bottom' align='end'>
                 <DropdownMenuLabel className="truncate max-w-[20ch]" title={data?.user.email}>{data?.user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {
-                    (isMobile && !isCodingPage) && (
-                        <>
-                            <DropdownMenuItem asChild>
-                                <Link href="/workspace">
-                                    <FolderKanban /> Workspace
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/docs">
-                                    <Newspaper /> Documentation
-                                </Link>
-                            </DropdownMenuItem>
-                        </>
-                    )
-                }
+                <DropdownMenuItem asChild>
+                    <Link href="/workspace">
+                        <FolderKanban /> Workspace
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/docs" target="_blank">
+                        <Newspaper /> Documentation
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                         <SunMoon size={16} className="text-muted-foreground mr-2" />

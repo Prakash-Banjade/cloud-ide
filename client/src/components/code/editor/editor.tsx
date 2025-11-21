@@ -9,6 +9,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { getLanguageFromName, NoFileSelected, removeInjectedCss, udpateRemoteSelectionStyle, updateRemoteCursorStyle } from "./editor-utils";
 import { debounce } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { EditorSkeleton } from "./editor-skeleton";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
@@ -249,6 +250,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             height="100%"
             language={getLanguageFromName(selectedFile.name)}
             value={selectedFile.content}
+            loading={<EditorSkeleton />}
             options={{
                 padding: {
                     top: 6,
@@ -260,3 +262,4 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         />
     )
 }
+

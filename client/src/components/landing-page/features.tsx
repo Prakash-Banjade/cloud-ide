@@ -67,7 +67,7 @@ const Features = () => {
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                    <h2 className="text-4xl md:text-5xl font-semibold mb-6">
                         Everything You Need to
                         <span className="text-brand"> Code</span>
                     </h2>

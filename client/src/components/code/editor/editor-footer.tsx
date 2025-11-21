@@ -11,7 +11,7 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card"
 
-export default function EditorFooter() {
+export default function CodingClientFooter() {
     const { editorInstance, selectedFile, project } = useCodingStates();
     const [position, setPosition] = useState<monaco.Position>();
     const [modelOptions, setModelOptions] = useState<monaco.editor.TextModelResolvedOptions>();
@@ -59,20 +59,19 @@ export default function EditorFooter() {
     }
 
     return (
-        <section className="text-xs px-2 flex items-center justify-between bg-card font-sans">
+        <section className="text-xs px-2 flex items-center justify-between bg-card font-sans border-t">
             {
                 project && (project.language in availablePort) && (
                     <p className="flex items-center gap-1 p-1">
-                        <HoverCard>
-                            <HoverCardTrigger>
-                                <Info size={12} />
+                        <HoverCard openDelay={100}>
+                            <HoverCardTrigger className="flex items-center-safe gap-1">
+                                <Info size={12} /> Exposed port: {availablePort[project.language]}
                             </HoverCardTrigger>
-                            <HoverCardContent className="text-sm">
+                            <HoverCardContent className="text-sm" >
                                 Internally the application will be live on port {availablePort[project.language]}. If you programatically change the port, your application
                                 won&apos;t be live on that port. Not recommended to change the port.
                             </HoverCardContent>
                         </HoverCard>
-                        Exposed port: {availablePort[project.language]}
                     </p>
                 )
             }

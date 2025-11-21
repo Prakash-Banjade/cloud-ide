@@ -1,7 +1,7 @@
 
 export function NoFileSelected() {
     return (
-        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+        <div className="h-full flex flex-col items-center justify-center text-muted-foreground bg-sidebar">
             <img src="/logo-white.png" alt="logo" className="opacity-5 hidden dark:block h-[30%] w-auto select-none" />
             <img src="/logo-dark.png" alt="logo" className="opacity-5 block dark:hidden h-[30%] w-auto select-none" />
             <table className="text-sm">

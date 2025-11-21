@@ -1,7 +1,7 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayDisconnect, MessageBody, ConnectedSocket, OnGatewayConnection } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { TerminalManagerService } from '../terminal-manager/terminal-manager.service';
-import { getRunCommand, longRunningProcesses } from './run-commands';
+import { getRunCommand } from './run-commands';
 import { ELanguage } from 'src/global-types';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { KubernetesService } from 'src/kubernetes/kubernetes.service';
@@ -49,7 +49,6 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
     console.log(`✅ CONNECTED - ${socket.id}`);
 
     socket.join(this.replId); // join project room
-    this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: this.terminalManager.isRunning() });
 
     this.connectedSocketsIds.add(socket.id);
 
@@ -71,6 +70,9 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
   // as the module is initialized, immediately start the timer, because there is a chance that socket connection never happens
   // which leads to never shutting down the resources
   onModuleInit() {
+    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    if (!isProduction) return; // only in production
+
     this.stopInactivityTimer();
     this.logger.log('🕒 Starting inactivity timer for terminal gateway - OnModuleInit');
     this.startInactivityTimer();
@@ -99,57 +101,25 @@ export class TerminalGateway implements OnGatewayConnection, OnGatewayDisconnect
       socket,
       (data) => {
         socket.emit(SocketEvents.TERMINAL, { data: Buffer.from(data, 'utf-8') });
-
-        const isProjectRunning = this.terminalManager.isRunning();
-
-        if (isProjectRunning) {
-          socket.emit(SocketEvents.TERMINAL, { data: this.terminalManager.getRunScrollback() });
-        }
       },
     );
   }
 
   @SubscribeMessage(SocketEvents.TERMINAL_DATA)
   onTerminalData(@MessageBody() payload: { data: string }, @ConnectedSocket() socket: Socket) {
-    // Check for Ctrl+C (0x03)
-    if (payload.data === '\x03') {
-      // kill the runPty
-      this.terminalManager.stopProcess();
-      this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: false });
-    }
-
-    this.terminalManager.write(socket.id, payload.data);
+       this.terminalManager.write(socket.id, payload.data);
   }
 
   @SubscribeMessage(SocketEvents.PROCESS_RUN)
-  onRun(@MessageBody() payload: { lang: ELanguage, path?: string }, @ConnectedSocket() socket: Socket) {
+  onRun(@MessageBody() payload: { lang: ELanguage, path?: string }, @ConnectedSocket() socket: Socket): { error: string | null } {
     const cmd = getRunCommand(payload.lang, payload.path);
 
     if (!cmd) return {
       error: 'Language not supported',
     }
 
-    if (!longRunningProcesses[payload.lang]) {
-      this.terminalManager.write(socket.id, cmd + '\r');
-      return;
-    }
+    this.terminalManager.write(socket.id, cmd + '\r');
 
-    // this is for long running processes like react, next
-    this.terminalManager.run(cmd, (data, id) => {
-      socket.emit(SocketEvents.TERMINAL, { data: Buffer.from(data, 'utf-8'), id });
-      this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: this.terminalManager.isRunning() }); // send the status to all clients
-    });
-  }
-
-  @SubscribeMessage(SocketEvents.PROCESS_STOP)
-  onStop(@ConnectedSocket() socket: Socket) {
-    this.terminalManager.stopProcess();
-
-    this.terminalManager.write(socket.id, '\x03'); // write Ctrl+C in the terminal to get a new line
-    this.terminalManager.write(socket.id, 'clear\r'); // clear the terminal
-
-    this.server.to(this.replId).emit(SocketEvents.PROCESS_STATUS, { isRunning: false });
-
-    return true;
+    return { error: null };
   }
 }

@@ -54,7 +54,7 @@ const Pricing = () => {
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                    <h2 className="text-4xl md:text-5xl font-semibold mb-6">
                         Simple, Transparent
                         <span className="text-brand"> Pricing</span>
                     </h2>

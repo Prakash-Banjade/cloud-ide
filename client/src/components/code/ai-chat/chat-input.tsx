@@ -13,9 +13,8 @@ export default function ChatInput({
 }) {
     const [agent, setAgent] = useState("Agent")
     const [model, setModel] = useState("GPT-4.1")
-    const [inputMessage, setInputMessage] = useState("")
     const { selectedFile } = useCodingStates();
-    const { isStreaming } = useAIChat();
+    const { isStreaming, inputMessage, setInputMessage } = useAIChat();
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -113,14 +112,6 @@ export default function ChatInput({
 
                 {/* Right side controls */}
                 <div>
-                    <Button type="button" disabled={isStreaming} variant="ghost" size={'icon'}>
-                        <Settings className="w-4 h-4" />
-                    </Button>
-
-                    <Button type="button" disabled={isStreaming} variant="ghost" size={'icon'}>
-                        <Mic className="w-4 h-4" />
-                    </Button>
-
                     <Button
                         type="submit"
                         variant="ghost"

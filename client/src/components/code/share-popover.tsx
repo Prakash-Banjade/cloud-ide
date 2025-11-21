@@ -121,12 +121,11 @@ export default function SharePopover() {
         <Popover>
             <PopoverTrigger asChild>
                 <Button
-                    variant={'outline'}
+                    variant={'ghost'}
                     type="button"
-                    size={'sm'}
+                    size={'icon'}
                 >
                     <Share2 />
-                    Share
                 </Button>
             </PopoverTrigger>
             <PopoverContent side='bottom' align='end' className='w-fit min-w-sm space-y-6'>

@@ -8,6 +8,7 @@ import ChatContent from "./chat-content";
 import toast from "react-hot-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useUrl from "@/hooks/useUrl";
+import { EPanel, useCodingStates } from "@/context/coding-states-provider";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -41,6 +42,9 @@ interface AIChatContextType {
     isStreaming: boolean;
     progressSteps: StreamProgressStep[];
     route: RouteChoice;
+    submitChatMessage: (message: string) => void;
+    inputMessage: string;
+    setInputMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const AIChatContext = createContext<AIChatContextType | undefined>(undefined);
@@ -53,7 +57,7 @@ export const useAIChat = () => {
     return context;
 }
 
-export default function AIChat() {
+export default function AIChatProvider({ children }: { children: React.ReactNode }) {
     const [messages, setMessages] = useState<IChatMessage[]>([]);
     const [streamingText, setStreamingText] = useState("");
     const streamingTextRef = useRef("");
@@ -65,6 +69,7 @@ export default function AIChat() {
     const routeRef = useRef<RouteChoice>(null);
     const pendingProgressRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
+    const [inputMessage, setInputMessage] = useState("")
 
     const { runnerUrl } = useUrl();
 
@@ -283,32 +288,44 @@ export default function AIChat() {
         isStreaming,
         progressSteps,
         route,
+        submitChatMessage,
+        inputMessage,
+        setInputMessage,
     };
 
     return (
         <AIChatContext.Provider value={contextValue}>
-            <div className="bg-sidebar h-full flex flex-col">
-
-                {/* Header */}
-                <div className="p-1 flex items-center justify-between">
-                    <h2 className="px-2">Chat</h2>
-
-                    <Button type="button" title={"Close Chat"} variant={"ghost"} size={'icon'}>
-                        <X />
-                    </Button>
-                </div>
-
-                {/* Chat Content */}
-                <ScrollArea className="flex-1 flex overflow-auto">
-                    <ChatContent />
-                </ScrollArea>
-
-                {/* Chat Input */}
-                <section className="p-1.5">
-                    <ChatInput submitChatMessage={submitChatMessage} />
-                </section>
-
-            </div>
+            {children}
         </AIChatContext.Provider>
     );
+}
+
+export function AIChat() {
+    const { togglePanel } = useCodingStates();
+    const { submitChatMessage } = useAIChat();
+
+    return (
+        <div className="bg-sidebar h-full flex flex-col overflow-hidden">
+
+            {/* Header */}
+            <div className="p-1 flex items-center justify-between">
+                <h2 className="px-2">Chat</h2>
+
+                <Button type="button" title={"Close Chat"} variant={"ghost"} size={'icon'} onClick={() => togglePanel(EPanel.AiChat, false)}>
+                    <X />
+                </Button>
+            </div>
+
+            {/* Chat Content */}
+            <ScrollArea className="flex-1 flex overflow-auto">
+                <ChatContent />
+            </ScrollArea>
+
+            {/* Chat Input */}
+            <section className="p-1.5">
+                <ChatInput submitChatMessage={submitChatMessage} />
+            </section>
+
+        </div>
+    )
 }

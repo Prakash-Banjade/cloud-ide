@@ -8,13 +8,14 @@ export const fileIcons = {
     tsx: <Icons.tsx className="size-4" />,
     css: <Icons.css className="size-4" />,
     html: <Icons.html className="size-4" />,
+    htm: <Icons.html className="size-4" />,
     c: <Icons.c className="size-4" />,
     cpp: <Icons.cpp className="size-4" />,
     json: <FileJson className="h-4 w-4 text-yellow-300" />,
     py: <Icons.python className="size-4" />,
     java: <Icons.java className="size-4" />,
-    markdown: <FileText className="h-4 w-4 text-gray-400" />,
-    plaintext: <FileText className="h-4 w-4 text-gray-400" />,
+    md: <FileText className="h-4 w-4 text-gray-400" />,
+    txt: <FileText className="h-4 w-4 text-gray-400" />,
     default: <FileIcon className="h-4 w-4 text-gray-400" />,
 }
 

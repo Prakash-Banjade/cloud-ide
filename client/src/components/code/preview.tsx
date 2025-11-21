@@ -1,8 +1,10 @@
+import { useCodingStates } from '@/context/coding-states-provider';
 import { ArrowLeft, ArrowRight, ExternalLink, LoaderCircle, RotateCw } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 export default function Preview() {
+    const { showPanel } = useCodingStates();
     const params = useParams();
     const replId = params.replId ?? '';
 
@@ -13,6 +15,8 @@ export default function Preview() {
     const [key, setKey] = useState(0); // forces iframe reload
 
     useEffect(() => {
+        if (!showPanel.preview) return;
+
         let intervalId: NodeJS.Timeout;
 
         const checkServer = async () => {
@@ -36,11 +40,13 @@ export default function Preview() {
         intervalId = setInterval(checkServer, 2000); // poll every 2 seconds
 
         return () => clearInterval(intervalId);
-    }, [replId]);
+    }, [replId, showPanel.preview]);
 
     // const goBack = () => previewRef.current?.contentWindow?.history.back();
     // const goForward = () => previewRef.current?.contentWindow?.history.forward();
     const reload = () => previewRef.current?.contentWindow?.location.reload();
+
+    if (!showPanel.preview) return null;
 
     return (
         <section className='flex flex-col h-full'>
@@ -62,7 +68,7 @@ export default function Preview() {
             </div>
             {
                 !isServerReady ? (
-                    <div className='h-full flex flex-col items-center justify-center gap-3'>
+                    <div className='h-full flex flex-col items-center justify-center gap-3 bg-sidebar'>
                         <LoaderCircle className="animate-spin" />
                         <p className='text-center text-sm'>Please wait for the preview to load</p>
                     </div>

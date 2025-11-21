@@ -2,12 +2,14 @@
 
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { ArrowRight, Code } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Code } from "lucide-react";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 
 export default function Hero() {
     const router = useRouter();
+    const { theme } = useTheme();
 
     return (
         <section className="relative min-h-[calc(100vh-64px)] flex items-center justify-center overflow-hidden">
@@ -34,15 +36,38 @@ export default function Hero() {
                 ))}
             </div>
 
+            <div
+                className="absolute inset-0 z-0"
+                style={{
+                    backgroundImage: `
+                    linear-gradient(to right, ${theme === "light" ? "#d1d5db" : "#232323"} 1px, transparent 1px),
+                    linear-gradient(to bottom, ${theme === "light" ? "#d1d5db" : "#232323"} 1px, transparent 1px)
+                    `,
+                    backgroundSize: "32px 32px",
+                    WebkitMaskImage:
+                        "radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 70%)",
+                    maskImage:
+                        "radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 70%)",
+                }}
+            />
 
             <div className="container mx-auto px-4 relative z-10">
                 <div
                     // initial={{ opacity: 0, y: -20 }}
                     // animate={{ opacity: 1, y: 0 }}
                     // transition={{ duration: 0.5 }}
-                    className="px-5 py-2 border-2 border-brand/80 bg-brand/10 text-brand sm:text-sm text-xs text-center font-medium w-fit rounded-full mx-auto shadow-sm mb-8"
+                    className="overflow-hidden bg-background text-brand sm:text-sm text-xs text-center font-medium w-fit rounded-full mx-auto shadow-lg mb-8"
                 >
-                    Now support with AI-powered coding assistance!
+                    <button
+                        className="group rounded-full px-1 pl-3 py-1 bg-brand/10 flex items-center gap-2"
+                        onClick={() => router.push("/auth/login")}
+                    >
+                        <div className="size-2 rounded-full bg-green-600 animate-caret-blink" />
+                        Now support with AI-powered coding agent!
+                        <span className="size-8 grid place-items-center bg-brand/20 rounded-full group-hover:rotate-45 transition-transform duration-300 origin-center">
+                            <ArrowUpRight size={18} />
+                        </span>
+                    </button>
                 </div>
 
                 <div
@@ -57,7 +82,7 @@ export default function Hero() {
                         // animate={{ opacity: 1, y: 0 }}
                         // transition={{ duration: 0.5, delay: 0.4 }}
                         className={cn(
-                            "text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-shadow-lg font-bold mb-6 lg:leading-[115px] md:leading-[90px] leading-[50px]",
+                            "text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-shadow-md mb-6 font-medium lg:leading-[110px] md:leading-[90px] leading-[50px]",
                             "gradient-text bg-linear-120 from-foreground from-50% to-foreground/60 to-100%"
                         )}
                     >
@@ -71,7 +96,7 @@ export default function Hero() {
                         // initial={{ opacity: 0, y: 20 }}
                         // animate={{ opacity: 1, y: 0 }}
                         // transition={{ duration: 0.5, delay: 0.6 }}
-                        className="sm:text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed"
+                        className="sm:text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-normal"
                     >
                         The ultimate cloud IDE. Fully browser-based coding platform that&apos;s accessible anywhere and supports multiple programming languages.
                     </p>

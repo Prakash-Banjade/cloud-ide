@@ -2,7 +2,7 @@
 
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useCodingStates } from "@/context/coding-states-provider"
+import { EPanel, useCodingStates } from "@/context/coding-states-provider"
 import { getFileIcon } from "./file-icons"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TreeItemContextMenu } from "./context-menu"
@@ -52,12 +52,9 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
         })
     }
 
-    // listen for tree mutations by other active users
-    // useListenTreeMutation();
-
     return (
-        <div className="file-tree text-sm overflow-auto h-full">
-            <ScrollArea className="h-full">
+        <div className="file-tree text-sm overflow-hidden h-full">
+            <ScrollArea className="h-[calc(100%-40px)]"> {/* 40px is the height of the EXPLORER section */}
                 <section>
                     {renderFileTree(fileStructure)}
                 </section>
@@ -124,7 +121,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
 }
 
 function FileItem({ item, level, onSelectFile }: FileItemProps) {
-    const { selectedFile, selectedItem, setMruFiles, setTreePanelOpen } = useCodingStates();
+    const { selectedFile, selectedItem, setMruFiles, togglePanel } = useCodingStates();
     const isSelected = item.path === selectedFile?.path && item.path === selectedItem?.path; // for file to be selected, both path must match
 
     const paddingLeft = `${level * 12 + 8}px`;
@@ -137,7 +134,7 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
                 onClick={() => {
                     onSelectFile(item);
                     setMruFiles(prev => [item, ...prev.filter(f => f.path !== item.path)]); // place at the beginning
-                    setTreePanelOpen(false); // close the tree panel on file selection
+                    togglePanel(EPanel.FileTree, false); // close the tree panel on file selection
                 }}
             >
                 <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>
