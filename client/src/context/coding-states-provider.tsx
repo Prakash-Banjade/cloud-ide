@@ -51,7 +51,7 @@ interface CodingStatesContextType {
     objectsList: string[];
     setObjectsList: React.Dispatch<React.SetStateAction<string[]>>;
     showPanel: Record<EPanel, boolean>;
-    togglePanel: (panel: EPanel, open?: boolean) => void
+    togglePanel: (panel: EPanel, open: boolean) => void
     observingPanelRef: React.RefObject<HTMLDivElement | null>;
     terminalPanelRef: React.RefObject<ImperativePanelHandle | null>;
     previewPanelRef: React.RefObject<ImperativePanelHandle | null>;
@@ -87,10 +87,10 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const { socket } = useSocket();
 
     const [showPanel, setShowPanel] = useState<Record<EPanel, boolean>>(() => ({
-        aiChat: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.AiChat}`) === "true",
-        fileTree: localStorage.getItem(`show:${EPanel.FileTree}`) === "true",
-        preview: localStorage.getItem(`show:${EPanel.Preview}`) === "true",
-        terminal: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.Terminal}`) === "true",
+        aiChat: permission === EPermission.WRITE,
+        fileTree: true,
+        preview: false,
+        terminal: permission === EPermission.WRITE,
     }));
 
     const termPanelRef = React.useRef<ImperativePanelHandle | null>(null);
@@ -116,62 +116,34 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
             const isOwner = project.createdBy.id === session?.user.userId;
             const permission = isOwner ? EPermission.WRITE : (collaborator?.permission || EPermission.READ);
             setPermission(permission);
-            setShowPanel({
-                aiChat: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.AiChat}`) === "true",
-                fileTree: localStorage.getItem(`show:${EPanel.FileTree}`) === "true",
-                preview: localStorage.getItem(`show:${EPanel.Preview}`) === "true",
-                terminal: permission === EPermission.WRITE && localStorage.getItem(`show:${EPanel.Terminal}`) === "true",
-            });
         }
     }, [data])
 
-    const togglePanel = (panel: EPanel, open?: boolean) => {
-        setShowPanel(prev => {
-            const panelOpen = typeof open === "boolean" ? open : !prev[panel];
-
-            localStorage.setItem(`show:${panel}`, `${panelOpen}`);
-
-
-            switch (panel) {
-                case EPanel.Terminal: {
-                    if (termPanelRef.current) {
-                        termPanelRef.current.resize(panelOpen ? 30 : 0);
-                    }
-                    break;
-                }
-                case EPanel.AiChat: {
-                    if (aiChatPanelRef.current) {
-                        aiChatPanelRef.current.resize(panelOpen ? 30 : 0);
-                    }
-                    break;
-                }
-                case EPanel.Preview: {
-                    if (previewPanelRef.current) {
-                        previewPanelRef.current.resize(panelOpen ? 30 : 0);
-                    }
-                    break;
-                }
-                case EPanel.FileTree: {
-                    if (treePanelRef.current) {
-                        treePanelRef.current.resize(panelOpen ? 30 : 0);
-                    }
-                    break;
-                }
+    const togglePanel = (panel: EPanel, open: boolean) => {
+        switch (panel) {
+            case EPanel.Terminal: {
+                open ? termPanelRef.current?.expand() : termPanelRef.current?.collapse();
+                break;
             }
+            case EPanel.AiChat: {
+                open ? aiChatPanelRef.current?.expand() : aiChatPanelRef.current?.collapse();
+                break;
+            }
+            case EPanel.Preview: {
+                open ? previewPanelRef.current?.expand() : previewPanelRef.current?.collapse();
+                break;
+            }
+            case EPanel.FileTree: {
+                open ? treePanelRef.current?.expand() : treePanelRef.current?.collapse();
+                break;
+            }
+        }
 
-            return {
-                ...prev,
-                [panel]: panelOpen
-            };
-        });
+        setShowPanel(prev => ({
+            ...prev,
+            [panel]: open
+        }));
     }
-
-    useEffect(() => {
-        termPanelRef.current?.resize(showPanel.terminal ? 30 : 0);
-        previewPanelRef.current?.resize(showPanel.preview ? 30 : 0);
-        aiChatPanelRef.current?.resize(showPanel.aiChat ? 30 : 0);
-        treePanelRef.current?.resize(showPanel.fileTree ? 30 : 0);
-    }, [showPanel]);
 
     useEffect(() => {
         if (!treeLoaded) return;

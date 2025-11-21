@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { CodeEditor } from "./editor/editor";
 import { CodingStatesProvider, EPanel, useCodingStates } from "@/context/coding-states-provider";
@@ -26,6 +26,13 @@ const XTerminalNoSSR = dynamic(() => import("./terminal"), {
 });
 
 export default function CodingPageClient() {
+    useLayoutEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [])
+
     return (
         <SocketProvider>
             <CodingStatesProvider>
@@ -106,7 +113,7 @@ export const CodingPagePostPodCreation = () => {
                             id="file-tree-panel"
                             order={1}
                             minSize={10}
-                            maxSize={!(showPanel.aiChat && showPanel.preview) ? 40 : 20}
+                            maxSize={30}
                         >
                             <FileTreePanel socket={socket} />
                         </ResizablePanel>
@@ -142,11 +149,14 @@ export const CodingPagePostPodCreation = () => {
                                 id="terminal-panel"
                                 order={2}
                                 ref={terminalPanelRef}
-                                defaultSize={0}
+                                defaultSize={30}
                                 collapsible
                                 minSize={10}
                                 onCollapse={() => {
                                     togglePanel(EPanel.Terminal, false);
+                                }}
+                                onExpand={() => {
+                                    togglePanel(EPanel.Terminal, true);
                                 }}
                             >
                                 <XTerminalNoSSR socket={ptySocket} />
@@ -176,31 +186,46 @@ export const CodingPagePostPodCreation = () => {
                                 </SheetContent>
                             </Sheet>
                         ) : (
-                            showPanel.aiChat && (
-                                <>
-                                    <ResizableHandle />
-                                    <ResizablePanel
-                                        id="ai-chat-panel"
-                                        order={3}
-                                        defaultSize={30}
-                                        ref={aiChatPanelRef}
-                                        collapsible
-                                        minSize={20}
-                                        onCollapse={() => {
-                                            togglePanel(EPanel.AiChat, false);
-                                        }}
-                                    >
-                                        <AIChat />
-                                    </ResizablePanel>
-                                </>
-                            )
+                            <>
+                                <ResizableHandle />
+                                <ResizablePanel
+                                    id="ai-chat-panel"
+                                    order={3}
+                                    defaultSize={30}
+                                    ref={aiChatPanelRef}
+                                    collapsible
+                                    minSize={10}
+                                    onCollapse={() => {
+                                        togglePanel(EPanel.AiChat, false);
+                                    }}
+                                    onExpand={() => {
+                                        togglePanel(EPanel.AiChat, true);
+                                    }}
+                                >
+                                    <AIChat />
+                                </ResizablePanel>
+                            </>
                         )
                     }
                 </AIChatProvider>
 
-
                 {
-                    showPanel.preview && (
+                    isMobile ? (
+                        <Sheet open={showPanel.preview} onOpenChange={(val) => togglePanel(EPanel.Preview, val)}>
+                            <SheetContent
+                                side="right"
+                                aria-describedby="preview-description"
+                                className="[&>button]:hidden data-[state=open]:duration-150 data-[state=closed]:duration-150 w-screen max-w-[400px]"
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                                forceMount
+                            >
+                                <SheetHeader className="sr-only">
+                                    <SheetTitle>Preview</SheetTitle>
+                                </SheetHeader>
+                                <Preview />
+                            </SheetContent>
+                        </Sheet>
+                    ) : (
                         <>
                             <ResizableHandle />
                             <ResizablePanel
@@ -209,9 +234,12 @@ export const CodingPagePostPodCreation = () => {
                                 ref={previewPanelRef}
                                 defaultSize={30}
                                 collapsible
-                                minSize={20}
+                                minSize={10}
                                 onCollapse={() => {
                                     togglePanel(EPanel.Preview, false);
+                                }}
+                                onExpand={() => {
+                                    togglePanel(EPanel.Preview, true);
                                 }}
                             >
                                 <Preview />
@@ -219,6 +247,7 @@ export const CodingPagePostPodCreation = () => {
                         </>
                     )
                 }
+
             </ResizablePanelGroup>
 
             <CodingClientFooter />

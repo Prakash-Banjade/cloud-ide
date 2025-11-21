@@ -46,8 +46,6 @@ export default function Preview() {
     // const goForward = () => previewRef.current?.contentWindow?.history.forward();
     const reload = () => previewRef.current?.contentWindow?.location.reload();
 
-    if (!showPanel.preview) return null;
-
     return (
         <section className='flex flex-col h-full'>
             <div className="flex gap-2 p-1 px-2 bg-sidebar">

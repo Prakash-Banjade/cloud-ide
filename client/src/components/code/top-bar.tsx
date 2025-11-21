@@ -36,7 +36,7 @@ export default function TopBar({ socket }: Props) {
             const key = e.key?.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === '`') {
                 e.preventDefault();
-                togglePanel(EPanel.Terminal)
+                togglePanel(EPanel.Terminal, !showPanel[EPanel.Terminal]);
             }
         }
 
@@ -45,7 +45,7 @@ export default function TopBar({ socket }: Props) {
         return () => {
             window.removeEventListener("keydown", handleTerminalShortcut);
         }
-    }, [togglePanel]);
+    }, [togglePanel, showPanel.terminal]);
 
     if (!project) return null;
 
@@ -57,7 +57,7 @@ export default function TopBar({ socket }: Props) {
                         isMobile && (
                             <Button
                                 type='button'
-                                onClick={() => togglePanel(EPanel.FileTree)}
+                                onClick={() => togglePanel(EPanel.FileTree, !showPanel.fileTree)}
                                 variant={'ghost'}
                                 size={'icon'}
                                 className='hover:!bg-secondary'
@@ -121,7 +121,7 @@ export default function TopBar({ socket }: Props) {
 
                 {
                     !isMobile && (
-                        <div className='flex-1 max-w-[85%] mr-auto'>
+                        <div className='flex-1 max-w-[75%] mr-auto'>
                             <OpenedFilesTab />
                         </div>
                     )
@@ -140,32 +140,21 @@ export default function TopBar({ socket }: Props) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem
-                                disabled={openedFiles.length === 0}
-                                onClick={() => {
-                                    setOpenedFiles([]);
-                                    setMruFiles([]);
-                                    setSelectedFile(undefined);
-                                }}
-                            >
-                                <X />
-                                Close All
-                            </DropdownMenuItem>
                             {
                                 hasWritePermission && (
                                     <>
-                                        <DropdownMenuItem onClick={() => togglePanel(EPanel.Terminal)}>
+                                        <DropdownMenuItem onClick={() => togglePanel(EPanel.Terminal, !showPanel.terminal)}>
                                             <TerminalIcon />
                                             {showPanel.terminal ? "Close" : "Open"} Terminal
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => togglePanel(EPanel.AiChat)}>
+                                        <DropdownMenuItem onClick={() => togglePanel(EPanel.AiChat, !showPanel.aiChat)}>
                                             <BotIcon />
                                             {showPanel.aiChat ? "Close" : "Open"} AI Chat
                                         </DropdownMenuItem>
                                     </>
                                 )
                             }
-                            <DropdownMenuItem onClick={() => togglePanel(EPanel.Preview)}>
+                            <DropdownMenuItem onClick={() => togglePanel(EPanel.Preview, !showPanel.preview)}>
                                 <GlobeIcon />
                                 {showPanel.preview ? "Close" : "Open"} Preview
                             </DropdownMenuItem>
@@ -192,7 +181,7 @@ function RunBtn({ socket }: { socket: Socket }) {
     function onRun() {
         if (!socket || !project) return;
 
-        togglePanel(EPanel.Terminal); // need to show the terminal when running the project
+        togglePanel(EPanel.Terminal, true); // need to show the terminal when running the project
 
         socket.emit(SocketEvents.PROCESS_RUN, { lang: project.language, path: selectedFile?.path }, (res: { error: string | null }) => {
             if (res?.error) toast.error(res.error);
