@@ -2,11 +2,12 @@ import { insertTreeItems, removeItemFromTree } from "@/app/code/[replId]/fns/tre
 import { EItemType, TFileItem, TFolderItem } from "@/types/tree.types";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { useEffect } from "react";
-import { Socket } from "socket.io-client";
 import { SocketEvents } from "@/lib/CONSTANTS";
+import { useSocket } from "@/context/socket-provider";
 
-export default function useChokidar(socket: Socket | null) {
+export default function useChokidar() {
     const { setFileStructure } = useCodingStates();
+    const { socket } = useSocket();
 
     useEffect(() => {
         if (!socket) return;

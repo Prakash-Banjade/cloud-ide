@@ -1,33 +1,15 @@
-import React from 'react'
 import ExplorerActions from './explorer-actions'
-import { TreeItem } from "@/types/tree.types"
-import { EPanel, useCodingStates } from '@/context/coding-states-provider';
-import { Socket } from 'socket.io-client';
+import { useCodingStates } from '@/context/coding-states-provider';
 import { PanelLeftIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { onItemSelect } from '@/app/code/[replId]/fns/file-manager-fns';
 import { FileTree } from './file-tree';
+import { EPanel } from '@/context/coding-states-provider/interface';
 
-type Props = {
-    socket: Socket
-}
-
-export default function FileTreePanel({ socket }: Props) {
-    const {
-        setSelectedItem,
-        setFileStructure,
-        setSelectedFile,
-        setOpenedFiles,
-        togglePanel
-    } = useCodingStates();
+export default function FileTreePanel() {
+    const { togglePanel } = useCodingStates();
 
     const isMobile = useIsMobile();
-
-    const onSelect = (file: TreeItem) => {
-        if (!socket) return;
-        onItemSelect(file, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket);
-    };
 
     return (
         <section className="@container bg-sidebar h-full">
@@ -48,7 +30,7 @@ export default function FileTreePanel({ socket }: Props) {
                     <ExplorerActions />
                 </div>
             </section>
-            <FileTree onSelectFile={onSelect} />
+            <FileTree />
         </section>
     )
 }

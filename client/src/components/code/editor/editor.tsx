@@ -1,7 +1,7 @@
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
 import { useTheme } from "next-themes";
-import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
+import { useCodingStates } from "@/context/coding-states-provider";
 import { useEffect, useRef } from "react";
 import { SocketEvents } from "@/lib/CONSTANTS";
 import { EPermission } from "@/types/types";
@@ -10,6 +10,7 @@ import { getLanguageFromName, NoFileSelected, removeInjectedCss, udpateRemoteSel
 import { debounce } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { EditorSkeleton } from "./editor-skeleton";
+import { IStandaloneCodeEditor } from "@/context/coding-states-provider/interface";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();

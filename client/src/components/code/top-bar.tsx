@@ -1,7 +1,7 @@
 import ProfileDropdown from '@/components/layout/profile-dropdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { EPanel, useCodingStates } from '@/context/coding-states-provider';
+import { useCodingStates } from '@/context/coding-states-provider';
 import { cn, languageFields } from '@/lib/utils';
 import { BotIcon, CircleCheck, GlobeIcon, LoaderCircle, MoreHorizontal, PanelLeftIcon, Play, TerminalIcon, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,13 +16,14 @@ import { EPermission } from '@/types/types';
 import ActiveUsers from './active-users';
 import OpenedFilesTab from './opened-files-tab';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { EPanel } from '@/context/coding-states-provider/interface';
 
 type Props = {
     socket: Socket
 }
 
 export default function TopBar({ socket }: Props) {
-    const { isSyncing, project, showPanel, togglePanel, permission, openedFiles, setOpenedFiles, setMruFiles, setSelectedFile } = useCodingStates();
+    const { isSyncing, project, showPanel, togglePanel, permission } = useCodingStates();
     const [open, setOpen] = useState(false);
     const isMobile = useIsMobile(1000);
 
@@ -36,7 +37,7 @@ export default function TopBar({ socket }: Props) {
             const key = e.key?.toLowerCase();
             if ((e.ctrlKey || e.metaKey) && key === '`') {
                 e.preventDefault();
-                togglePanel(EPanel.Terminal, !showPanel[EPanel.Terminal]);
+                togglePanel(EPanel.Terminal, !showPanel.terminal);
             }
         }
 
@@ -95,13 +96,15 @@ export default function TopBar({ socket }: Props) {
                                     isMobile ? (
                                         isSyncing ? <LoaderCircle className="animate-spin" size={16} /> : <CircleCheck size={16} />
                                     ) : (
-                                        <Badge variant={'outline'}>
-                                            {
-                                                isSyncing ?
-                                                    (<><LoaderCircle className="animate-spin" size={16} /> Syncing...</>)
-                                                    : (<><CircleCheck size={16} /> Synced</>)
-                                            }
-                                        </Badge>
+                                        <div className='w-[90px]'>
+                                            <Badge variant={'outline'}>
+                                                {
+                                                    isSyncing ?
+                                                        (<><LoaderCircle className="animate-spin" size={16} /> Syncing...</>)
+                                                        : (<><CircleCheck size={16} /> Synced</>)
+                                                }
+                                            </Badge>
+                                        </div>
                                     )
                                 }
                             </>
@@ -128,7 +131,7 @@ export default function TopBar({ socket }: Props) {
                 }
 
 
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -162,7 +165,7 @@ export default function TopBar({ socket }: Props) {
                     </DropdownMenu>
                     <ActiveUsers />
                     <ShareBtn />
-                    <div className='ml-2'>
+                    <div className='ml-1'>
                         <ProfileDropdown />
                     </div>
                 </div>

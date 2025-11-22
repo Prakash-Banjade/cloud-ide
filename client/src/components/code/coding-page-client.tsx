@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { CodeEditor } from "./editor/editor";
-import { CodingStatesProvider, EPanel, useCodingStates } from "@/context/coding-states-provider";
+import { CodingStatesProvider, useCodingStates } from "@/context/coding-states-provider";
 import { SocketProvider, useSocket } from "@/context/socket-provider";
 import dynamic from "next/dynamic";
 import TopBar from "./top-bar";
@@ -21,6 +21,9 @@ import useChokidar from "@/hooks/useChokidar";
 import { TreeItem } from "@/types/tree.types";
 import AIChatProvider, { AIChat } from "./ai-chat";
 import { cn } from "@/lib/utils";
+import { EPanel } from "@/context/coding-states-provider/interface";
+import { usePersistFilesState } from "@/features/usePersistFilesState";
+import { useRemoteUsers } from "@/features/useRemoteUsers";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -47,7 +50,6 @@ export const CodingPagePostPodCreation = () => {
     const {
         treeLoaded,
         setTreeLoaded,
-        observingPanelRef,
         setObjectsList,
         showPanel,
         togglePanel,
@@ -78,7 +80,12 @@ export const CodingPagePostPodCreation = () => {
         };
     }, [socket, ptySocket]);
 
-    useChokidar(socket);
+    /**
+     * Initialize features -->
+     */
+    useChokidar(); // initialize chokidar
+    usePersistFilesState(); // Persist opened files, MRU files and selected file to cookies
+    useRemoteUsers(); // Watch mode, syncing selected files, ...
 
     if (!treeLoaded) return <CodingPageLoader state="setup" />;
 
@@ -107,7 +114,7 @@ export const CodingPagePostPodCreation = () => {
                                 <SheetHeader className="sr-only">
                                     <SheetTitle>Explorer</SheetTitle>
                                 </SheetHeader>
-                                <FileTreePanel socket={socket} />
+                                <FileTreePanel />
                             </SheetContent>
                         </Sheet>
                     ) : (
@@ -117,7 +124,7 @@ export const CodingPagePostPodCreation = () => {
                             minSize={10}
                             maxSize={30}
                         >
-                            <FileTreePanel socket={socket} />
+                            <FileTreePanel />
                         </ResizablePanel>
                     )
                 }
@@ -130,7 +137,7 @@ export const CodingPagePostPodCreation = () => {
                     className="relative"
                     minSize={40}
                 >
-                    <div ref={observingPanelRef} className="h-full">
+                    <div className="h-full">
                         <ResizablePanelGroup direction="vertical" className="flex-1" autoSaveId={"editor-and-terminal-panel-group"}>
                             {/* Code editor panel */}
                             <ResizablePanel
@@ -139,18 +146,18 @@ export const CodingPagePostPodCreation = () => {
                                 defaultSize={70}
                                 minSize={30}
                             >
-                                <div className={cn("h-full flex flex-col relative", observedUser && "ring-2 ring-green-500 rounded-md")}>
+                                <div className={cn("h-full flex flex-col relative")}>
                                     {observedUser && (
-                                        <div className="absolute right-3 top-3 z-10 rounded-md bg-green-500 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                                        <div className="absolute right-3 top-3 z-10 rounded-md bg-green-700 px-3 py-1 text-xs font-medium text-white shadow-sm">
                                             Watching {observedUser.name}
                                         </div>
                                     )}
                                     <CodeEditor socket={socket} />
                                 </div>
                             </ResizablePanel>
- 
+
                             <ResizableHandle />
- 
+
                             {/* Terminal panel */}
                             <ResizablePanel
                                 id="terminal-panel"

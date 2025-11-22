@@ -24,7 +24,7 @@ export function useDeleteTreeItem() {
 
     const handleDelete = (item: TreeItem) => {
         if (!socket) return;
-        
+
         socket.emit(SocketEvents.DELETE_ITEM, { path: item.path, type: item.type }, (data: boolean) => {
             if (data) {
                 deleteItem({ path: item.path, type: item.type });

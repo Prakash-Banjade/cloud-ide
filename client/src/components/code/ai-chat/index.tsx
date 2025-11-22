@@ -8,7 +8,8 @@ import ChatContent from "./chat-content";
 import toast from "react-hot-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import useUrl from "@/hooks/useUrl";
-import { EPanel, useCodingStates } from "@/context/coding-states-provider";
+import { useCodingStates } from "@/context/coding-states-provider";
+import { EPanel } from "@/context/coding-states-provider/interface";
 
 export interface IChatMessage {
     role: "agent" | "user",

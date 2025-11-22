@@ -30,7 +30,7 @@ export default function XTerminal({ socket }: XterminalProps) {
             cursorBlink: true,
             cols: 1000,
             theme: {
-                background: theme === "dark" ? "var(--sidebar)" : "white",
+                background: theme === "dark" ? "#18181b" : "white",
                 foreground: theme === "dark" ? "white" : "black",
                 cursor: theme === "dark" ? "white" : "black",
             },
@@ -80,7 +80,7 @@ export default function XTerminal({ socket }: XterminalProps) {
     useEffect(() => {
         if (term) {
             term.options.theme = {
-                background: theme === "dark" ? "var(--sidebar)" : "white",
+                background: theme === "dark" ? "#18181b" : "white",
                 foreground: theme === "dark" ? "white" : "black",
                 cursor: theme === "dark" ? "white" : "black",
             }

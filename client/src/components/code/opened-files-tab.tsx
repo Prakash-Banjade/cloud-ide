@@ -4,19 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { CircleX, Pencil, Trash, X } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getFileIcon } from "./file-icons";
-import { onFileSelect } from "@/app/code/[replId]/fns/file-manager-fns";
-import { useSocket } from "@/context/socket-provider";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { TFileItem } from "@/types/tree.types";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { ResponsiveDialog } from "../ui/responsive-dialog";
 import { RenameItemForm } from "./rename-item-form";
 import { useDeleteTreeItem } from "./tree-item-actions";
+import { useFileSystem } from "@/features/useFileSystem";
 
 export default function OpenedFilesTab() {
-    const { selectedFile, openedFiles, setOpenedFiles, setSelectedFile, setSelectedItem, setMruFiles, mruFiles } = useCodingStates();
+    const { selectedFile, openedFiles, setOpenedFiles, setMruFiles, mruFiles } = useCodingStates();
     const selectedTabRef = useRef<HTMLDivElement>(null);
-    const { socket } = useSocket();
+    const { handleFileSelect } = useFileSystem();
 
     useEffect(() => {
         if (selectedTabRef.current) {
@@ -36,21 +35,8 @@ export default function OpenedFilesTab() {
         setMruFiles(newMruFiles);
 
         if (file.path === selectedFile?.path) {
-            selectFile(newMruFiles[0]);
+            handleFileSelect(newMruFiles[0])
         }
-    }
-
-    function selectFile(file: TFileItem | undefined) {
-        if (!socket) return;
-
-        if (file) {
-            onFileSelect({ file, setSelectedFile, setSelectedItem, socket });
-            setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]); // update MRU
-            return;
-        }
-
-        setSelectedFile(file);
-        setSelectedItem(file);
     }
 
     return (
@@ -68,7 +54,7 @@ export default function OpenedFilesTab() {
                                     role="button"
                                     className={cn("group flex items-center gap-1 cursor-pointer p-2", isSelected && "dark:bg-[#1e1e1e] bg-white font-medium rounded-md")}
                                     style={{ boxShadow: isSelected ? "inset 0 1px brand" : "" }}
-                                    onClick={() => selectFile(file)}
+                                    onClick={() => handleFileSelect(file)}
                                 >
                                     <span>
                                         {getFileIcon(file.name)}
