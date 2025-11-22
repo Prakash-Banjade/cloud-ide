@@ -55,7 +55,7 @@ export default function ActiveUsers() {
 }
 
 function AvatarDropdown({ user, remoteUsers, index }: { user: RemoteUser, index: number, remoteUsers: RemoteUser[] }) {
-    const { mutedUsers, setMutedUsers } = useCodingStates();
+    const { mutedUsers, setMutedUsers, observedUser, setObservedUser } = useCodingStates();
     const [open, setOpen] = useState(false);
 
     const words = user.name.split(" ")
@@ -63,6 +63,7 @@ function AvatarDropdown({ user, remoteUsers, index }: { user: RemoteUser, index:
     const secondInitial = words[1] ? words[1][0].toUpperCase() : ""
 
     const isMuted = mutedUsers.includes(user.userId);
+    const isWatching = observedUser?.userId === user.userId;
 
     function handleMute() {
         if (isMuted) {
@@ -82,7 +83,8 @@ function AvatarDropdown({ user, remoteUsers, index }: { user: RemoteUser, index:
                         "relative rounded-full transition-all duration-200 hover:!z-10 focus:!z-10",
                         index > 0 && "ml-[-8px]",
                         remoteUsers.length > 2 && "hover:scale-110 focus:scale-110",
-                        open && "!z-10 scale-110"
+                        open && "!z-10 scale-110",
+                        isWatching && "ring-2 ring-green-400"
                     )}
                     style={{
                         zIndex: index,
@@ -105,13 +107,14 @@ function AvatarDropdown({ user, remoteUsers, index }: { user: RemoteUser, index:
                         isMuted ? "Unmute" : "Mute"
                     }
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem
+                <DropdownMenuItem
                     onClick={() => {
-                        setObservedUser(user)
+                        setObservedUser(isWatching ? null : user);
+                        setOpen(false);
                     }}
                 >
-                    Watch
-                </DropdownMenuItem> */}
+                    {isWatching ? "Stop watching" : "Watch"}
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     )

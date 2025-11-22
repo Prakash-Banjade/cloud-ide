@@ -20,4 +20,6 @@ export const enum SocketEvents {
     USER_LEFT = "user:left",
     SELECTION_CHANGE = "selection:change",
     CODE_CHANGE = "code:change",
+    WATCH_USER = "user:watch",
+    SELECTED_FILE = "file:selected",
 }
