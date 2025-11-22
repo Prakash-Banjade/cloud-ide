@@ -24,6 +24,9 @@ export class FileSystemService {
                     reject(err);
                 } else {
                     resolve((await Promise.all(files.map(async f => {
+                        const isDir = f.isDirectory();
+
+                        if (isDir && f.name === "node_modules") return null; // ignore node_modules
 
                         const objWithKeep = f.name.endsWith('.keep');
 

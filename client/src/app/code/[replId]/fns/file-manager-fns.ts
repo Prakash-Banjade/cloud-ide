@@ -1,10 +1,10 @@
 import { Socket } from "socket.io-client";
 import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/types/tree.types";
-import { Dispatch, SetStateAction } from "react";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { useParams } from "next/navigation";
 import cookie from 'js-cookie';
 import { SocketEvents } from "@/lib/CONSTANTS";
+import { useFileSystem } from "@/features/useFileSystem";
 
 type RefreshTreeProps = {
     content: TreeItem[],
@@ -13,8 +13,9 @@ type RefreshTreeProps = {
 }
 
 export function useRefreshTree() {
-    const { setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles } = useCodingStates();
+    const { setFileStructure } = useCodingStates();
     const { replId } = useParams();
+    const { handleFileSelect } = useFileSystem();
 
     async function refreshTree({ content, socket }: RefreshTreeProps) {
         let tree = content;
@@ -39,11 +40,11 @@ export function useRefreshTree() {
             // if it has no children yet, fetch them
             if (!Array.isArray(folder.children)) {
                 const data = await fetchDirAsync(socket, cumulative)
-                tree = updateTree(tree, cumulative, data)
+                tree = updateTree(tree, cumulative, data, true)
             }
             // if it already has children, just toggle expanded
             else {
-                tree = updateTree(tree, cumulative, null)
+                tree = updateTree(tree, cumulative, null, true)
             }
 
             // update state so UI shows the expansion as we go
@@ -51,73 +52,31 @@ export function useRefreshTree() {
         }
 
         // now finally select the last segment (could be file or dir)
-        const target = findItem(tree, path)
-        if (target) {
-            onItemSelect(target, setFileStructure, setSelectedFile, setSelectedItem, setOpenedFiles, socket)
+        const targetFile = findItem(tree, path) as TFileItem | undefined;
+        if (targetFile) {
+            handleFileSelect(targetFile); // selects the file
         }
     }
 
     return refreshTree;
 }
 
-export const onItemSelect = (
-    item: TreeItem,
-    setFileStructure: Dispatch<SetStateAction<TreeItem[]>>,
-    setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
-    setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
-    setOpenedFiles: Dispatch<SetStateAction<TFileItem[]>>,
-    socket: Socket
-) => {
-    if (item.type === EItemType.DIR) {
-        setSelectedItem(item);
-        // if we already loaded children, just toggle expanded
-        if (Array.isArray(item.children)) {
-            setFileStructure(prev =>
-                updateTree(prev, item.path, null, true)
-            )
-        }
-        // otherwise fetch children, then insert & expand
-        else {
-            socket.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
-                setFileStructure(prev =>
-                    updateTree(prev, item.path, data, true)
-                )
-            })
-        }
-    } else {
-        onFileSelect({ file: item, setSelectedFile, setSelectedItem, socket });
-        setOpenedFiles(prev => {
-            return prev.some(f => f.path === item.path) ? prev : [...prev, item];
-        });
-    }
-};
-
-interface FileSelectProps {
-    file: TFileItem,
-    setSelectedFile: Dispatch<SetStateAction<TFileItem | undefined>>,
-    setSelectedItem: Dispatch<SetStateAction<TreeItem | undefined>>,
-    socket?: Socket,
-}
-
-export function onFileSelect({ file, setSelectedFile, setSelectedItem, socket }: FileSelectProps) {
-    if (file.content === undefined && socket) { // if true, load content then set the selectedFile
-        socket.emit(SocketEvents.FETCH_CONTENT, { path: file.path }, (data: string) => {
-            file.content = data;
-            setSelectedFile(file);
-            setSelectedItem(file);
-        });
-    } else { // content has already been loaded, just select
-        setSelectedFile(file);
-        setSelectedItem(file);
-    }
-}
-
+/**
+ * @param items - current tree items 
+ * @param targetPath - path of the folder to update 
+ * @param newChildren - new children of the folder, if not provided, remains the same 
+ * @param toggleExpand - whether to toggle the expanded state, default is false 
+ * @returns updated tree 
+ * @description Recursively reaches the target folder and updates its children (if provided) and expanded state (if toggleExpand is true) 
+ */
 export function updateTree(
     items: TreeItem[],
     targetPath: string,
     newChildren: TreeItem[] | null,
     toggleExpand: boolean = false
 ): TreeItem[] {
+    if (newChildren === null && !toggleExpand) return items; // no need to update
+
     return items.map(item => {
         // only folders can match
         if (item.type === EItemType.DIR) {

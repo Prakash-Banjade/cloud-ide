@@ -3,30 +3,30 @@
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useCodingStates } from "@/context/coding-states-provider"
-import { getFileIcon } from "./file-icons"
+import { fileIcons, getFileIcon } from "./file-icons"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TreeItemContextMenu } from "./context-menu"
 import { sortFolderFirst } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EItemType, TFileItem, TFolderItem, TreeItem } from "@/types/tree.types"
-
-interface FileTreeProps {
-    onSelectFile: (treeItem: TreeItem) => void
-}
+import { EPanel } from "@/context/coding-states-provider/interface"
+import { useFileSystem } from "@/features/useFileSystem"
 
 interface FolderItemProps {
     item: TFolderItem
     level: number
-    onSelectFile: (treeItem: TreeItem) => void
+    onSelectDir: (dir: TFolderItem) => void
+    onSelectFile: (file: TFileItem) => void
 }
 
 interface FileItemProps {
     item: TFileItem
     level: number
-    onSelectFile: (treeItem: TreeItem) => void
+    onSelectFile: (file: TFileItem) => void
 }
 
-export function FileTree({ onSelectFile }: FileTreeProps) {
+export function FileTree() {
     const { fileStructure, setSelectedItem } = useCodingStates();
+    const { handleDirSelect, handleFileSelect } = useFileSystem();
 
     const renderFileTree = (items: (TFileItem | TFolderItem)[], level = 0) => {
         return sortFolderFirst(items).map((item) => {
@@ -36,7 +36,8 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
                         key={item.name}
                         item={item}
                         level={level}
-                        onSelectFile={onSelectFile}
+                        onSelectDir={handleDirSelect}
+                        onSelectFile={handleFileSelect}
                     />
                 )
             } else {
@@ -45,19 +46,16 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
                         key={item.name}
                         item={item}
                         level={level}
-                        onSelectFile={onSelectFile}
+                        onSelectFile={handleFileSelect}
                     />
                 )
             }
         })
     }
 
-    // listen for tree mutations by other active users
-    // useListenTreeMutation();
-
     return (
-        <div className="file-tree text-sm overflow-auto h-full">
-            <ScrollArea className="h-full">
+        <div className="file-tree text-sm overflow-hidden h-full">
+            <ScrollArea className="h-[calc(100%-40px)]"> {/* 40px is the height of the EXPLORER section */}
                 <section>
                     {renderFileTree(fileStructure)}
                 </section>
@@ -67,7 +65,7 @@ export function FileTree({ onSelectFile }: FileTreeProps) {
     );
 }
 
-function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
+function FolderItem({ item, level, onSelectDir, onSelectFile }: FolderItemProps) {
     const { selectedItem } = useCodingStates();
     const isSelected = item.path === selectedItem?.path;
 
@@ -79,16 +77,16 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
                 <div
                     className={cn("flex items-center select-none py-1 px-2 hover:bg-sidebar-accent cursor-pointer", isSelected && "bg-sidebar-accent")}
                     style={{ paddingLeft }}
-                    onClick={() => onSelectFile(item)}
+                    onClick={() => onSelectDir(item)}
                 >
                     <span className="mr-1">
                         {item.expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </span>
                     <span className="mr-1">
                         {item.expanded ? (
-                            <FolderOpen className="h-4 w-4 text-yellow-400" />
+                            fileIcons.dirOpen
                         ) : (
-                            <Folder className="h-4 w-4 text-yellow-400" />
+                            fileIcons.dirClosed
                         )}
                     </span>
                     <span className="truncate">{item.name}</span>
@@ -104,6 +102,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
                                     item={child}
                                     level={level + 1}
                                     onSelectFile={onSelectFile}
+                                    onSelectDir={onSelectDir}
                                 />
                             )
                         } else {
@@ -124,7 +123,7 @@ function FolderItem({ item, level, onSelectFile }: FolderItemProps) {
 }
 
 function FileItem({ item, level, onSelectFile }: FileItemProps) {
-    const { selectedFile, selectedItem, setMruFiles, setTreePanelOpen } = useCodingStates();
+    const { selectedFile, selectedItem, togglePanel } = useCodingStates();
     const isSelected = item.path === selectedFile?.path && item.path === selectedItem?.path; // for file to be selected, both path must match
 
     const paddingLeft = `${level * 12 + 8}px`;
@@ -136,8 +135,7 @@ function FileItem({ item, level, onSelectFile }: FileItemProps) {
                 style={{ paddingLeft }}
                 onClick={() => {
                     onSelectFile(item);
-                    setMruFiles(prev => [item, ...prev.filter(f => f.path !== item.path)]); // place at the beginning
-                    setTreePanelOpen(false); // close the tree panel on file selection
+                    togglePanel(EPanel.FileTree, false); // close the tree panel on file selection
                 }}
             >
                 <span className="mr-1 ml-5">{getFileIcon(item.name)}</span>

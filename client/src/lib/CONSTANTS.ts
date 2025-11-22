@@ -20,7 +20,7 @@ export const RESEND_OTP_TIME_SEC = 60;
 
 export const MAX_COLLABORATORS = 2 as const;
 
-export const previewLanguages = [
+export const longRunningLanguages = [
     ELanguage.NEXT_TS,
     ELanguage.REACT_TS,
     ELanguage.REACT_JS,
@@ -54,4 +54,6 @@ export const enum SocketEvents {
     USER_LEFT = "user:left",
     SELECTION_CHANGE = "selection:change",
     CODE_CHANGE = "code:change",
+    WATCH_USER = "user:watch",
+    SELECTED_FILE = "file:selected",
 }

@@ -13,6 +13,8 @@ import { updateTree } from "@/app/code/[replId]/fns/file-manager-fns"
 import { EPermission } from "@/types/types"
 import useUpload from "@/hooks/useUpload"
 import toast from "react-hot-toast"
+import { useDeleteTreeItem } from "./tree-item-actions"
+import { FilePlus, FileUpIcon, FolderPlus, FolderUpIcon, Pencil, Trash } from "lucide-react"
 
 type Props = {
     children: React.ReactNode,
@@ -27,18 +29,8 @@ export function TreeItemContextMenu({ children, item }: Props) {
     const { socket } = useSocket();
     const [isNewItemOpen, setIsNewItemOpen] = useState(false);
     const [newItemType, setNewItemtype] = useState<EItemType>(EItemType.FILE);
-    const { deleteItem } = useDeleteTreeItem();
+    const { handleDelete } = useDeleteTreeItem();
     const { upload } = useUpload();
-
-    function handleDelete() {
-        if (!socket) return;
-
-        socket.emit(SocketEvents.DELETE_ITEM, { path: item.path, type: item.type }, (data: boolean) => {
-            if (data) {
-                deleteItem({ path: item.path, type: item.type });
-            }
-        });
-    }
 
     const handleUpload = (e: ChangeEvent<HTMLInputElement>, type: EItemType) => {
         try {
@@ -62,7 +54,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                             setIsOpen={setIsAlertOpen}
                             title={`Delete ${item.path}?`}
                             description="This folder contains items inside it. Are you sure you want to delete it?"
-                            action={handleDelete}
+                            action={() => handleDelete(item)}
                             actionLabel="Delete"
                         />
                         <ResponsiveDialog
@@ -126,80 +118,59 @@ export function TreeItemContextMenu({ children, item }: Props) {
                         item.type === EItemType.DIR && (
                             <>
                                 <ContextMenuItem
-                                    className="px-4 pr-20"
+                                    className="pr-20"
                                     onClick={() => {
                                         setNewItemtype(EItemType.FILE)
                                         setIsNewItemOpen(true)
                                     }}
                                 >
-                                    New File...
+                                    <FilePlus /> New File...
                                 </ContextMenuItem>
                                 <ContextMenuItem
-                                    className="px-4"
                                     onClick={() => {
                                         setNewItemtype(EItemType.DIR)
                                         setIsNewItemOpen(true)
                                     }}
                                 >
-                                    New Folder...
+                                    <FolderPlus /> New Folder...
                                 </ContextMenuItem>
                                 <ContextMenuItem
-                                    className="px-4"
                                     onClick={() => { }}
                                     asChild
                                 >
-                                    <label htmlFor={"files-upload" + item.path}>Upload Files</label>
+                                    <label htmlFor={"files-upload" + item.path}>
+                                        <FileUpIcon />
+                                        Upload Files
+                                    </label>
                                 </ContextMenuItem>
                                 <ContextMenuItem
-                                    className="px-4"
                                     onClick={() => { }}
                                     asChild
                                 >
-                                    <label htmlFor={"dir-upload" + item.path}>Upload Folder</label>
+                                    <label htmlFor={"dir-upload" + item.path}>
+                                        <FolderUpIcon />
+                                        Upload Folder
+                                    </label>
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                             </>
                         )
                     }
                     <ContextMenuItem
-                        className="px-4"
+                        className="pr-20"
                         onClick={() => setIsRenameOpen(true)}
                     >
-                        {/* <Pencil /> */}
-                        Rename
+                        <Pencil /> Rename
                     </ContextMenuItem>
                     <ContextMenuItem
-                        className="text-destructive hover:!text-destructive px-4"
-                        onClick={(item.type === EItemType.DIR && item.children?.length) ? () => setIsAlertOpen(true) : handleDelete} // show alert only if item is dir and has children
+                        className="text-destructive hover:!text-destructive"
+                        onClick={(item.type === EItemType.DIR && item.children?.length) ? () => setIsAlertOpen(true) : () => handleDelete(item)} // show alert only if item is dir and has children
                     >
-                        {/* <Trash className="text-destructive" /> */}
-                        Delete
+                        <Trash className="text-destructive" /> Delete
                     </ContextMenuItem>
                 </ContextMenuContent>
             </ContextMenu>
         </>
 
     )
-}
-
-
-export function useDeleteTreeItem() {
-    const { setMruFiles, setOpenedFiles, setSelectedFile, mruFiles } = useCodingStates();
-
-    function deleteItem({ path, type }: { path: string, type: EItemType }) {
-        setOpenedFiles(prev => prev.filter(f =>
-            type === EItemType.FILE
-                ? f.path !== path
-                : !f.path.startsWith(path)
-        ));
-        const newMruFiles = mruFiles.filter(f =>
-            type === EItemType.FILE
-                ? f.path !== path
-                : !f.path.startsWith(path)
-        );
-        setMruFiles(newMruFiles);
-        setSelectedFile(newMruFiles[0]);
-    }
-
-    return { deleteItem };
 }

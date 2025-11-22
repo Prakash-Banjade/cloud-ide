@@ -38,7 +38,7 @@ spec:
 
       containers:
         - name: pty
-          image: prakashbanjade/cloud-ide-pty:latest
+          image: prakashbanjade/cloud-ide-pty:0.1
           volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
@@ -61,13 +61,6 @@ spec:
                   - |
                     set -e
 
-                    # If Node project, install deps
-                    if [ -f /workspace/package.json ] && [ ! -d /workspace/node_modules ]; then
-                      echo "Installing npm dependencies…"
-                      cd /workspace
-                      npm install
-                    fi
-
                     # If Java project, install JDK
                     if [ "$LANG" = "java" ]; then
                       echo "Installing JDK for Java project…"
@@ -89,7 +82,7 @@ spec:
               ephemeral-storage: '5Gi'
 
         - name: runner
-          image: prakashbanjade/cloud-ide-runner:latest
+          image: prakashbanjade/cloud-ide-runner:0.1
           envFrom:
             - secretRef:
                 name: runner-env

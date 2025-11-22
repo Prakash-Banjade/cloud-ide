@@ -17,7 +17,7 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<Prop
 
     const { success, data } = loginMethodSchema.safeParse(method ?? "password");
 
-    const hasLoggedInBefore = localStorage.getItem("hasLoggedInBefore") === "true";
+    const hasLoggedInBefore = typeof window !== "undefined" && localStorage.getItem("hasLoggedInBefore") === "true";
 
     return (
         <div className="lg:p-8 h-screen mx-auto flex flex-col justify-center space-y-10 w-[90%] max-w-[600px]">

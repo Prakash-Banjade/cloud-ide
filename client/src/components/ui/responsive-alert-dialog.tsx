@@ -48,10 +48,7 @@ export function ResponsiveAlertDialog({
                         loadingText={loadingText}
                         type="button"
                         variant={"destructive"}
-                        onClick={async () => {
-                            await action();
-                            setIsOpen(false);
-                        }}
+                        onClick={action}
                     >
                         {actionLabel}
                     </LoadingButton>

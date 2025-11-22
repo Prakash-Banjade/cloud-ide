@@ -1,7 +1,7 @@
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Socket } from "socket.io-client";
 import { useTheme } from "next-themes";
-import { IStandaloneCodeEditor, useCodingStates } from "@/context/coding-states-provider";
+import { useCodingStates } from "@/context/coding-states-provider";
 import { useEffect, useRef } from "react";
 import { SocketEvents } from "@/lib/CONSTANTS";
 import { EPermission } from "@/types/types";
@@ -9,6 +9,8 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { getLanguageFromName, NoFileSelected, removeInjectedCss, udpateRemoteSelectionStyle, updateRemoteCursorStyle } from "./editor-utils";
 import { debounce } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { EditorSkeleton } from "./editor-skeleton";
+import { IStandaloneCodeEditor } from "@/context/coding-states-provider/interface";
 
 export const CodeEditor = ({ socket }: { socket: Socket }) => {
     const { theme } = useTheme();
@@ -249,6 +251,7 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
             height="100%"
             language={getLanguageFromName(selectedFile.name)}
             value={selectedFile.content}
+            loading={<EditorSkeleton />}
             options={{
                 padding: {
                     top: 6,
@@ -260,3 +263,4 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
         />
     )
 }
+

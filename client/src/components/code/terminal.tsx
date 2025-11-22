@@ -16,11 +16,10 @@ const decoder = new TextDecoder();
 
 type XterminalProps = {
     socket: Socket,
-    showTerm: boolean
 }
 
-export default function XTerminal({ socket, showTerm }: XterminalProps) {
-    const { permission } = useCodingStates();
+export default function XTerminal({ socket }: XterminalProps) {
+    const { permission, showPanel } = useCodingStates();
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
     const [term, setTerm] = useState<Terminal | null>(null);
@@ -31,7 +30,7 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
             cursorBlink: true,
             cols: 1000,
             theme: {
-                background: theme === "dark" ? "black" : "white",
+                background: theme === "dark" ? "#18181b" : "white",
                 foreground: theme === "dark" ? "white" : "black",
                 cursor: theme === "dark" ? "white" : "black",
             },
@@ -81,7 +80,7 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
     useEffect(() => {
         if (term) {
             term.options.theme = {
-                background: theme === "dark" ? "black" : "white",
+                background: theme === "dark" ? "#18181b" : "white",
                 foreground: theme === "dark" ? "white" : "black",
                 cursor: theme === "dark" ? "white" : "black",
             }
@@ -90,13 +89,13 @@ export default function XTerminal({ socket, showTerm }: XterminalProps) {
 
     // Focus the terminal when showTerm is true
     useEffect(() => {
-        if (showTerm && term) {
+        if (showPanel.terminal && term) {
             term.focus();
         }
-    }, [showTerm])
+    }, [showPanel.terminal])
 
     return (
-        <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-black" : "bg-white")}>
+        <div className={cn("h-full w-full p-2", theme === "dark" ? "bg-sidebar" : "bg-white")}>
             <div className="term-container h-full w-full" ref={terminalRef} />
         </div>
     );

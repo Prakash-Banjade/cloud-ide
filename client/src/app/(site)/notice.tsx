@@ -1,9 +1,15 @@
 "use client";
 
+import { useFetchData } from "@/hooks/useFetchData";
 import { X } from "lucide-react";
 import React from "react";
 
 export default function MaintenanceNotice() {
+    const { data, isLoading } = useFetchData<{ status: string }>({
+        endpoint: "health",
+        queryKey: ["health"],
+    });
+
     const [isVisible, setIsVisible] = React.useState(() => {
         if (typeof window !== "undefined") {
             return !sessionStorage.getItem("maintenance-notice-dismissed");
@@ -17,9 +23,11 @@ export default function MaintenanceNotice() {
         }
     }, []);
 
-    if (!isVisible) {
-        return null;
-    }
+    if (isLoading) return null;
+
+    if (!isVisible) return null;
+
+    if (data?.status === "ok") return null;
 
     return (
         <div className="py-3 px-4 flex items-center gap-4 bg-yellow-50 text-yellow-900 border-b border-yellow-200">

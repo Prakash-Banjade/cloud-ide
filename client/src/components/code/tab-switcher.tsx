@@ -10,16 +10,14 @@ import { useCodingStates } from "@/context/coding-states-provider"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { getFileIcon } from "./file-icons"
-import { TFileItem } from "@/types/tree.types"
-import { useSocket } from "@/context/socket-provider"
-import { onFileSelect } from "@/app/code/[replId]/fns/file-manager-fns"
+import { useFileSystem } from "@/features/useFileSystem"
 
 export function FileTabSwitcher() {
-    const { selectedFile, setSelectedItem, setSelectedFile, setMruFiles, mruFiles } = useCodingStates();
+    const { selectedFile, mruFiles } = useCodingStates();
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isAltPressed, setIsAltPressed] = useState(false);
-    const { socket } = useSocket();
+    const { handleFileSelect } = useFileSystem();
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -119,13 +117,6 @@ export function FileTabSwitcher() {
             return () => clearTimeout(timer)
         }
     }, [isOpen, isAltPressed]);
-
-    function handleFileSelect(file: TFileItem) {
-        if (!socket) return;
-        
-        onFileSelect({ file, setSelectedFile, setSelectedItem, socket });
-        setMruFiles(prev => [file, ...prev.filter(f => f.path !== file.path)]);
-    }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
