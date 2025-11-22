@@ -20,6 +20,7 @@ import ReadOnlyTopBar from "./readonly-top-bar";
 import useChokidar from "@/hooks/useChokidar";
 import { TreeItem } from "@/types/tree.types";
 import AIChatProvider, { AIChat } from "./ai-chat";
+import { cn } from "@/lib/utils";
 
 const XTerminalNoSSR = dynamic(() => import("./terminal"), {
     ssr: false,
@@ -52,7 +53,8 @@ export const CodingPagePostPodCreation = () => {
         togglePanel,
         terminalPanelRef,
         aiChatPanelRef,
-        previewPanelRef
+        previewPanelRef,
+        observedUser
     } = useCodingStates();
     const isMobile = useIsMobile(1000);
 
@@ -137,13 +139,18 @@ export const CodingPagePostPodCreation = () => {
                                 defaultSize={70}
                                 minSize={30}
                             >
-                                <div className="h-full flex flex-col">
+                                <div className={cn("h-full flex flex-col relative", observedUser && "ring-2 ring-green-500 rounded-md")}>
+                                    {observedUser && (
+                                        <div className="absolute right-3 top-3 z-10 rounded-md bg-green-500 px-3 py-1 text-xs font-medium text-white shadow-sm">
+                                            Watching {observedUser.name}
+                                        </div>
+                                    )}
                                     <CodeEditor socket={socket} />
                                 </div>
                             </ResizablePanel>
-
+ 
                             <ResizableHandle />
-
+ 
                             {/* Terminal panel */}
                             <ResizablePanel
                                 id="terminal-panel"

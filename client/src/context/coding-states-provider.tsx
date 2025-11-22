@@ -1,14 +1,14 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef, useCallback } from 'react';
 import * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api';
 import { useAxiosPrivate } from '@/hooks/useAxios';
 import { useQuery } from '@tanstack/react-query';
 import { EPermission, TProject } from '@/types/types';
 import cookie from 'js-cookie';
 import { z } from 'zod';
-import { findItem } from '@/app/code/[replId]/fns/file-manager-fns';
+import { findItem, onFileSelect } from '@/app/code/[replId]/fns/file-manager-fns';
 import { useSocket } from './socket-provider';
 import { useSession } from 'next-auth/react';
 import { SocketEvents } from '@/lib/CONSTANTS';
@@ -85,6 +85,7 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
     const [observedUser, setObservedUser] = useState<RemoteUser | null>(null);
     const axios = useAxiosPrivate();
     const { socket } = useSocket();
+    const remoteUserSelections = useRef<Record<string, string | null>>({});
 
     const [showPanel, setShowPanel] = useState<Record<EPanel, boolean>>(() => ({
         aiChat: permission === EPermission.WRITE,
@@ -201,6 +202,76 @@ export function CodingStatesProvider({ children }: CodingStatesProviderProps) {
         if (!selectedFile) return;
         cookie.set(`selectedFile:${replId}`, selectedFile?.path, { expires: 7 });
     }, [selectedFile]);
+
+    const syncObservedSelection = useCallback((path: string | null | undefined) => {
+        if (!path || !socket) return;
+
+        const found = findItem(fileStructure, path, socket);
+        if (found && found.type === EItemType.FILE) {
+            onFileSelect({ file: found, setSelectedFile, setSelectedItem, socket });
+            setOpenedFiles(prev => prev.some(f => f.path === found.path) ? prev : [...prev, found]);
+            setMruFiles(prev => [found, ...prev.filter(f => f.path !== found.path)]);
+        }
+    }, [fileStructure, socket]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.emit(SocketEvents.SELECTED_FILE, { path: selectedFile?.path ?? null });
+    }, [socket, selectedFile?.path]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleSelectedFile = ({ userId, path }: { userId: string, path: string | null }) => {
+            remoteUserSelections.current[userId] = path;
+
+            if (observedUser?.userId === userId) {
+                syncObservedSelection(path);
+            }
+        }
+
+        const handleUserLeft = ({ userId }: { userId: string }) => {
+            delete remoteUserSelections.current[userId];
+            setObservedUser(prev => prev?.userId === userId ? null : prev);
+        }
+
+        socket.on(SocketEvents.SELECTED_FILE, handleSelectedFile);
+        socket.on(SocketEvents.USER_LEFT, handleUserLeft);
+
+        return () => {
+            socket.off(SocketEvents.SELECTED_FILE, handleSelectedFile);
+            socket.off(SocketEvents.USER_LEFT, handleUserLeft);
+        }
+    }, [socket, observedUser, syncObservedSelection]);
+
+    useEffect(() => {
+        if (!observedUser) return;
+
+        const cachedPath = remoteUserSelections.current[observedUser.userId];
+        if (cachedPath) {
+            syncObservedSelection(cachedPath);
+        }
+
+        if (!socket) return;
+
+        socket.emit(SocketEvents.WATCH_USER, { userId: observedUser.userId }, (data: { path: string | null }) => {
+            syncObservedSelection(data?.path);
+        });
+    }, [socket, observedUser, syncObservedSelection]);
+
+    useEffect(() => {
+        if (!observedUser) return;
+
+        const exitWatchMode = () => setObservedUser(null);
+        const events: (keyof WindowEventMap)[] = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+
+        events.forEach(evt => window.addEventListener(evt, exitWatchMode));
+
+        return () => {
+            events.forEach(evt => window.removeEventListener(evt, exitWatchMode));
+        }
+    }, [observedUser]);
 
     const value = {
         fileStructure,

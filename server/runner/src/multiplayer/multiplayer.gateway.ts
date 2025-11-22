@@ -26,6 +26,7 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
 
   private replId: string;
   private activeUsers = new Map<string, AuthUser>();
+  private userSelectedFiles = new Map<string, string | null>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -45,6 +46,7 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
     if (!leftUser) return;
 
     this.activeUsers.delete(socket.id); // remove user
+    this.userSelectedFiles.delete(leftUser.userId);
 
     const activeUsers = this.getActiveUsers();
     this.server.to(this.replId).emit(SocketEvents.USERS_ACTIVE, activeUsers); // emit active users
@@ -107,5 +109,24 @@ export class MultiplayerGateway implements OnGatewayConnection, OnGatewayDisconn
       userId: socket["user"].userId,
       ...payload
     });
+  }
+
+  @SubscribeMessage(SocketEvents.SELECTED_FILE)
+  onSelectedFile(@MessageBody() payload: { path: string | null }, @ConnectedSocket() socket: Socket) {
+    const user = this.activeUsers.get(socket.id);
+    if (!user) return;
+
+    this.userSelectedFiles.set(user.userId, payload?.path ?? null);
+    socket.to(this.replId).emit(SocketEvents.SELECTED_FILE, {
+      userId: user.userId,
+      path: payload?.path ?? null,
+    });
+  }
+
+  @SubscribeMessage(SocketEvents.WATCH_USER)
+  onWatchUser(@MessageBody() payload: { userId: string }) {
+    return {
+      path: this.userSelectedFiles.get(payload.userId) ?? null,
+    }
   }
 }
