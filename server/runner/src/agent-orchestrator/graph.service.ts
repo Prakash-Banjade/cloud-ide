@@ -1,5 +1,5 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { StateGraph, END, Annotation, CompiledStateGraph, MemorySaver } from '@langchain/langgraph';
+import { StateGraph, END, Annotation, CompiledStateGraph, MemorySaver, messagesStateReducer } from '@langchain/langgraph';
 import { CoderState, GraphState, Plan, TaskPlan } from './types';
 import { PlannerAgent } from './agents/planner-agent.service';
 import { ArchitectAgent } from './agents/architech-agent.service';
@@ -224,6 +224,9 @@ export class GraphService implements OnModuleInit {
     private createGraph() {
         const stateAnnotation = Annotation.Root({
             user_prompt: Annotation<string>,
+            messages: Annotation<any[]>({
+                reducer: messagesStateReducer,
+            }),
             plan: Annotation<Plan>,
             task_plan: Annotation<TaskPlan>,
             coder_state: Annotation<CoderState>,
@@ -289,19 +292,21 @@ export class GraphService implements OnModuleInit {
         console.log('\n🚀 Starting Agent Graph Execution');
         console.log(`📝 User Prompt: ${input.user_prompt}\n`);
 
-        const result = await this.compiledGraph.invoke(input, defaultConfig);
+        const result = await this.compiledGraph.invoke({
+            ...input,
+            messages: [new HumanMessage(input.user_prompt)],
+        }, defaultConfig);
 
         console.log('\n🎉 Agent Graph Execution Complete!');
 
         return result;
     }
 
-
     /**
      * Stream graph execution with real-time events
      */
     async *stream(input: { user_prompt: string }, config?: any): AsyncGenerator<StreamEvent> {
-        const threadId = config?.thread_id || `thread_${Date.now()}`;
+        const threadId = config?.thread_id || this.replId;
 
         const defaultConfig = {
             recursionLimit: 100,
@@ -315,7 +320,10 @@ export class GraphService implements OnModuleInit {
         console.log(`🔗 Thread ID: ${threadId}\n`);
 
         try {
-            const stream = await this.compiledGraph.stream(input, defaultConfig);
+            const stream = await this.compiledGraph.stream({
+                ...input,
+                messages: [new HumanMessage(input.user_prompt)],
+            }, defaultConfig);
             const finalState: Partial<GraphState> = { user_prompt: input.user_prompt };
             let finalResponseSent = false;
 

@@ -3,7 +3,7 @@ import { ImplementationTask, Plan } from './types';
 export class PromptService {
     constructor() { }
 
-    plannerPrompt(userPrompt: string) {
+    plannerPrompt(userPrompt: string, workspaceContext: string = '') {
         return (
             `
                 You are the PLANNER agent. Convert the user prompt into a COMPLETE engineering project plan.
@@ -13,14 +13,19 @@ export class PromptService {
                 - Think about the complete user journey and interactions
                 - Try to keep the app as simple as possible unless user explicitly asks for complexity and structured project plan.
 
+                WORKSPACE CONTEXT:
+                ${workspaceContext}
+
                 STACK SELECTION GUIDELINES:
-                - If the user asks for a simple page/app or does not specify a framework, plan a plain HTML/CSS/JS solution (no build tools).
-                - If the user asks for a marketing site, SaaS landing page, blog, docs site, or SEO-focused site, plan a Next.js (TypeScript) app using the App Router.
-                - If the user asks for a dynamic SPA or component-heavy UI without SSR/SEO constraints, plan a React app (React-TS preferred unless JS is specified).
-                - If the user asks for a Python script/CLI/backend, plan a Python project.
-                - If the user asks for a Node.js API/CLI/backend, plan a Node.js project.
-                - If the user asks for Java, plan a Java project.
-                - If the user explicitly dictates the stack (e.g., Next.js, React, Python), follow it.
+                - **CRITICAL**: If the workspace already contains a project (e.g., package.json, vite.config.ts, etc.), YOU MUST RESPECT IT. Do NOT propose a different stack or framework unless the user explicitly asks to overwrite or migrate.
+                - If the workspace is empty or the user asks for a new project:
+                    - If the user asks for a simple page/app or does not specify a framework, plan a plain HTML/CSS/JS solution (no build tools).
+                    - If the user asks for a marketing site, SaaS landing page, blog, docs site, or SEO-focused site, plan a Next.js (TypeScript) app using the App Router.
+                    - If the user asks for a dynamic SPA or component-heavy UI without SSR/SEO constraints, plan a React app (React-TS preferred unless JS is specified).
+                    - If the user asks for a Python script/CLI/backend, plan a Python project.
+                    - If the user asks for a Node.js API/CLI/backend, plan a Node.js project.
+                    - If the user asks for Java, plan a Java project.
+                    - If the user explicitly dictates the stack (e.g., Next.js, React, Python), follow it.
 
                 NEXT.JS ARCHITECTURE RULES (when chosen):
                 - Use the App Router structure with app/ directory, layout.tsx, and page.tsx files.

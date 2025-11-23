@@ -33,11 +33,7 @@ export const enum LlmProviderTokens {
         PromptService,
         {
             provide: LlmProviderTokens.ROUTER_LLM,
-            useFactory: () => new ChatGoogleGenerativeAI({
-                model: "gemini-2.0-flash-lite",
-                maxOutputTokens: 2048,
-                temperature: 0.1
-            }),
+            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.1 }),
         },
         {
             provide: LlmProviderTokens.PLANNER_LLM,
@@ -45,11 +41,17 @@ export const enum LlmProviderTokens {
         },
         {
             provide: LlmProviderTokens.ARCHITECT_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.2 }),
+            useFactory: () => new ChatGoogleGenerativeAI({
+                model: "gemini-2.5-flash",
+                temperature: 0.2
+            }),
         },
         {
             provide: LlmProviderTokens.CODER_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.1 }),
+            useFactory: () => new ChatGoogleGenerativeAI({
+                model: "gemini-2.5-flash",
+                temperature: 0.1
+            }),
         },
         {
             provide: LlmProviderTokens.DIRECT_LLM,
@@ -60,10 +62,7 @@ export const enum LlmProviderTokens {
         },
         {
             provide: LlmProviderTokens.SUMMARY_LLM,
-            useFactory: () => new ChatGoogleGenerativeAI({
-                model: "gemini-2.0-flash-lite",
-                temperature: 0.5
-            }),
+            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.5 }),
         },
         ToolsService,
         RouterAgent,

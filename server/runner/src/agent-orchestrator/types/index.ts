@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BaseMessage } from '@langchain/core/messages';
 
 // File schema
 export const FileSchema = z.object({
@@ -45,6 +46,7 @@ export interface CoderState {
 // Graph State
 export interface GraphState {
     user_prompt?: string;
+    messages?: BaseMessage[];
     plan?: Plan;
     task_plan?: TaskPlan;
     coder_state?: CoderState;

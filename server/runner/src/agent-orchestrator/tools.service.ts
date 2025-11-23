@@ -5,7 +5,7 @@ import {
 import * as path from 'path';
 import { existsSync, promises as fs } from 'fs';
 import { exec } from 'child_process';
-import { FileSystemService } from 'src/file-system/file-system.service';
+import { FileSystemService, IGNORED_DIRS } from 'src/file-system/file-system.service';
 import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { tool } from '@langchain/core/tools';
 import z from 'zod/v3';
@@ -41,7 +41,7 @@ export class ToolsService {
                 description: 'Create a new file or directory in the project',
                 schema: z.object({
                     path: z.string().describe('Path to the file or directory with leading slash'),
-                    content: z.string().nullable().describe('Content of the file'),
+                    content: z.string().optional().describe('Content of the file'),
                     type: z.enum(['file', 'dir']).describe('Type of the item'),
                 }),
             }
@@ -91,12 +91,17 @@ export class ToolsService {
                 ): Promise<string[]> => {
                     const results: string[] = [];
                     const dirents = await fs.readdir(cur, { withFileTypes: true });
+
                     for (const ent of dirents) {
                         const entPath = path.join(cur, ent.name);
                         const rel = path.relative(base, entPath);
+
                         if (ent.isFile()) {
                             results.push(rel);
                         } else if (ent.isDirectory()) {
+                            if (IGNORED_DIRS.has(ent.name)) {
+                                continue;
+                            }
                             const children = await walk(entPath, base);
                             for (const c of children) {
                                 results.push(c);

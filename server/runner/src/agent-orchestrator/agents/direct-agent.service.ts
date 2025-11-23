@@ -17,6 +17,7 @@ export class DirectAgent {
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {
         const userPrompt = state.user_prompt;
+        const messages = state.messages || [];
 
         if (!userPrompt) {
             throw new Error('User prompt is required');
@@ -37,22 +38,26 @@ export class DirectAgent {
             tools: directTools,
         });
 
+        // Filter out any existing SystemMessages from history to avoid duplication/errors
+        const history = messages.filter(msg => msg._getType() !== 'system');
+
         const result = await reactAgent.invoke({
             messages: [
                 new SystemMessage(this.promptService.directAgentSystemPrompt()),
-                new HumanMessage(userPrompt)
+                ...history
             ],
         });
 
         // Extract the final response from the agent
-        const messages = result.messages;
-        const lastMessage = messages[messages.length - 1];
+        const resultMessages = result.messages;
+        const lastMessage = resultMessages[resultMessages.length - 1];
         const directResponse = lastMessage.content.toString();
 
         console.log('✅ Direct Agent: Response generated: ', directResponse);
 
         return {
             direct_response: directResponse,
+            messages: resultMessages,
             status: 'DONE',
         };
     }

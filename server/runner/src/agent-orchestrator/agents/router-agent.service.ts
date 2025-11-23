@@ -2,13 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { GraphState } from '../types';
 import { PromptService } from '../prompts.service';
 import { LlmProviderTokens } from '../agent-orchestrator.module';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatGroq } from '@langchain/groq';
 
 @Injectable()
 export class RouterAgent {
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGoogleGenerativeAI
+        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq
     ) { }
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {
@@ -20,6 +20,8 @@ export class RouterAgent {
 
         console.log('🔀 Router Agent: Analyzing user prompt...');
 
+        // Use the last message or construct a context aware prompt
+        // For now, we just use the user prompt but we could pass history if needed
         const response = await this.llm.invoke(this.promptService.routerPrompt(userPrompt));
         const route = response.content.toString().trim().toLowerCase();
 

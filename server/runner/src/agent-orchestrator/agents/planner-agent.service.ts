@@ -3,12 +3,14 @@ import { GraphState, PlanSchema, Plan } from '../types';
 import { PromptService } from '../prompts.service';
 import { ChatGroq } from '@langchain/groq';
 import { LlmProviderTokens } from '../agent-orchestrator.module';
+import { ToolsService } from '../tools.service';
 
 @Injectable()
 export class PlannerAgent {
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq
+        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq,
+        private readonly toolsService: ToolsService
     ) { }
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {
@@ -20,8 +22,16 @@ export class PlannerAgent {
 
         console.log('🎯 Planner Agent: Creating project plan...');
 
+        // Check workspace state
+        const files = await this.getWorkspaceFiles();
+        const workspaceContext = files.length > 0
+            ? `Workspace contains existing files:\n${files.join('\n')}`
+            : 'Workspace is empty.';
+
         const structuredLlm = this.llm.withStructuredOutput<Plan>(PlanSchema);
-        const response = await structuredLlm.invoke(this.promptService.plannerPrompt(userPrompt));
+        const response = await structuredLlm.invoke(
+            this.promptService.plannerPrompt(userPrompt, workspaceContext)
+        );
 
         if (!response) {
             throw new Error('Planner did not return a valid response.');
@@ -35,5 +45,21 @@ export class PlannerAgent {
 
 
         return { plan: response as Plan };
+    }
+
+    private async getWorkspaceFiles(): Promise<string[]> {
+        try {
+            const listFilesTool = this.toolsService.getListFilesTool();
+            const result = await listFilesTool.invoke({ relDir: '.' });
+
+            if (typeof result === 'string') {
+                if (result === 'No files found.') return [];
+                return result.split('\n');
+            }
+            return [];
+        } catch (error) {
+            console.warn('Failed to list workspace files:', error);
+            return [];
+        }
     }
 }
