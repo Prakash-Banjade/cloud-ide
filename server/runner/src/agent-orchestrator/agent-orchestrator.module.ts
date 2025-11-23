@@ -12,6 +12,7 @@ import { AgentOrchestratorService } from './agent-orchestrator.service';
 import { ToolsService } from './tools.service';
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 export const enum LlmProviderTokens {
     ROUTER_LLM = 'ROUTER_LLM',
@@ -32,7 +33,11 @@ export const enum LlmProviderTokens {
         PromptService,
         {
             provide: LlmProviderTokens.ROUTER_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.1 }),
+            useFactory: () => new ChatGoogleGenerativeAI({
+                model: "gemini-2.0-flash-lite",
+                maxOutputTokens: 2048,
+                temperature: 0.1
+            }),
         },
         {
             provide: LlmProviderTokens.PLANNER_LLM,
@@ -48,11 +53,17 @@ export const enum LlmProviderTokens {
         },
         {
             provide: LlmProviderTokens.DIRECT_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.5 }),
+            useFactory: () => new ChatGoogleGenerativeAI({
+                model: "gemini-2.0-flash",
+                temperature: 0.5
+            }),
         },
         {
             provide: LlmProviderTokens.SUMMARY_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.3 }),
+            useFactory: () => new ChatGoogleGenerativeAI({
+                model: "gemini-2.0-flash-lite",
+                temperature: 0.5
+            }),
         },
         ToolsService,
         RouterAgent,

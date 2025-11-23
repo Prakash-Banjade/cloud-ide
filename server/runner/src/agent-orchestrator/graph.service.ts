@@ -1,23 +1,23 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { StateGraph, END, Annotation, CompiledStateGraph } from '@langchain/langgraph';
+import { StateGraph, END, Annotation, CompiledStateGraph, MemorySaver } from '@langchain/langgraph';
 import { CoderState, GraphState, Plan, TaskPlan } from './types';
 import { PlannerAgent } from './agents/planner-agent.service';
 import { ArchitectAgent } from './agents/architech-agent.service';
 import { CoderAgent } from './agents/coder-agent.service';
 import { ConfigService } from '@nestjs/config';
-import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
 import { StreamEvent, StreamEventType } from './types/streaming.types';
 import { PromptService } from './prompts.service';
 import { LlmProviderTokens } from './agent-orchestrator.module';
-import { ChatGroq } from '@langchain/groq';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
     private compiledGraph: CompiledStateGraph<any, any, any>;
-    // private checkpointer: PostgresSaver;
+    private checkpointer: MemorySaver = new MemorySaver();
+    private readonly replId: string;
 
     constructor(
         private plannerAgent: PlannerAgent,
@@ -27,14 +27,12 @@ export class GraphService implements OnModuleInit {
         private directAgent: DirectAgent,
         private readonly configService: ConfigService,
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGroq,
+        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGoogleGenerativeAI,
     ) {
-        // this.checkpointer = PostgresSaver.fromConnString(this.configService.getOrThrow('DATABASE_URL'));
+        this.replId = this.configService.getOrThrow("REPL_ID");
     }
 
     async onModuleInit() {
-        // need to call checkpointer.setup() the first time you’re using Postgres checkpointer
-        // await this.checkpointer.setup();
         this.compiledGraph = this.createGraph();
     }
 
@@ -277,14 +275,14 @@ export class GraphService implements OnModuleInit {
             );
 
         return builder.compile({
-            // checkpointer: this.checkpointer
+            checkpointer: this.checkpointer
         });
     }
 
     async invoke(input: { user_prompt: string }, config?: any) {
         const defaultConfig = {
             recursionLimit: 100,
-            configurable: { thread_id: this.configService.getOrThrow("REPL_ID") },
+            configurable: { thread_id: this.replId },
             ...config,
         };
 
@@ -303,18 +301,18 @@ export class GraphService implements OnModuleInit {
      * Stream graph execution with real-time events
      */
     async *stream(input: { user_prompt: string }, config?: any): AsyncGenerator<StreamEvent> {
-        // const threadId = config?.thread_id || `thread_${Date.now()}`;
+        const threadId = config?.thread_id || `thread_${Date.now()}`;
 
         const defaultConfig = {
             recursionLimit: 100,
-            // configurable: { thread_id: threadId },
+            configurable: { thread_id: threadId },
             streamMode: 'updates' as const,
             ...config,
         };
 
         console.log('\n🚀 Starting Streaming Agent Graph Execution');
         console.log(`📝 User Prompt: ${input.user_prompt}`);
-        // console.log(`🔗 Thread ID: ${threadId}\n`);
+        console.log(`🔗 Thread ID: ${threadId}\n`);
 
         try {
             const stream = await this.compiledGraph.stream(input, defaultConfig);

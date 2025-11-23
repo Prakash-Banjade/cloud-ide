@@ -84,6 +84,7 @@ export default function TopBar({ socket }: Props) {
                                     defaultValues={{ projectName: project.name }}
                                     projectId={project.id}
                                     setIsOpen={setOpen}
+                                    toastOnSuccess={false}
                                 />
                             }
                         </PopoverContent>

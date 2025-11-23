@@ -10,6 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import useUrl from "@/hooks/useUrl";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { EPanel } from "@/context/coding-states-provider/interface";
+import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export interface IChatMessage {
     role: "agent" | "user",
@@ -70,7 +72,9 @@ export default function AIChatProvider({ children }: { children: React.ReactNode
     const routeRef = useRef<RouteChoice>(null);
     const pendingProgressRef = useRef<StreamProgressStep[]>([]);
     const eventSourceRef = useRef<EventSource | null>(null);
-    const [inputMessage, setInputMessage] = useState("")
+    const [inputMessage, setInputMessage] = useState("");
+    const { replId } = useParams();
+    const { data } = useSession()
 
     const { runnerUrl } = useUrl();
 
@@ -224,7 +228,7 @@ export default function AIChatProvider({ children }: { children: React.ReactNode
             eventSourceRef.current = null;
         }
 
-        const url = `${runnerUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}`;
+        const url = `${runnerUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}&thread_id=${replId}-${data?.user.userId}`;
         const eventSource = new EventSource(url);
         eventSourceRef.current = eventSource;
 

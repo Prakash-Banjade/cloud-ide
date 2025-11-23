@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { GraphState } from '../types';
-import { ChatGroq } from '@langchain/groq';
 import { PromptService } from '../prompts.service';
 import { LlmProviderTokens } from '../agent-orchestrator.module';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 
 @Injectable()
 export class RouterAgent {
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq
+        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGoogleGenerativeAI
     ) { }
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {
