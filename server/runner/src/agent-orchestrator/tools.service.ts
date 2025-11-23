@@ -1,125 +1,112 @@
-import {
-    Injectable,
-    BadRequestException,
-} from '@nestjs/common';
-import * as path from 'path';
-import { existsSync, promises as fs } from 'fs';
+import { Injectable } from '@nestjs/common';
 import { exec } from 'child_process';
-import { FileSystemService, IGNORED_DIRS } from 'src/file-system/file-system.service';
-import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { tool } from '@langchain/core/tools';
 import z from 'zod/v3';
 import { ELanguage } from './types/language.types';
 import { MinioService } from 'src/minio/minio.service';
+import { McpClientService } from './mcp-client.service';
+import { WORKSPACE_PATH } from 'src/CONSTANTS';
+import { RepoMapService } from './repo-map.service';
 
 @Injectable()
 export class ToolsService {
     constructor(
-        private readonly fileSystemService: FileSystemService,
         private readonly minioService: MinioService,
+        private readonly mcpClient: McpClientService,
+        private readonly repoMapService: RepoMapService,
     ) { }
 
-    getPath(path: string) {
-        return path.startsWith(WORKSPACE_PATH)
-            ? path
-            : path.startsWith('/')
-                ? `${WORKSPACE_PATH}${path}`
-                : `${WORKSPACE_PATH}/${path}`;
+    private normalizeUri(pathOrUri: string): string {
+        if (pathOrUri.startsWith('file://')) {
+            return pathOrUri;
+        }
+
+        const normalized = pathOrUri.startsWith('/')
+            ? pathOrUri
+            : `/${pathOrUri}`;
+
+        return `file://${WORKSPACE_PATH}${normalized}`;
     }
 
-    getCreateItemTool() {
-        return tool(
-            async ({ content, path, type = 'file' }: { path: string, content: string, type: 'file' | 'dir' }) => {
-                const pathWithLeadingSlash = path.startsWith('/') ? path : `/${path}`;
-                console.log(`createItemTool: ${type} at ${pathWithLeadingSlash}`);
+    private async formatResources(): Promise<string[]> {
+        const resources = await this.mcpClient.listResources();
+        return resources
+            .map((resource) => {
+                if (typeof resource === 'string') return resource;
+                if (resource?.uri) {
+                    try {
+                        const uri = new URL(resource.uri);
+                        return uri.pathname.replace(WORKSPACE_PATH, '').replace(/^\//, '');
+                    } catch {
+                        return resource.uri;
+                    }
+                }
+                if (resource?.name) return resource.name;
+                return '';
+            })
+            .filter(Boolean);
+    }
 
-                const result = await this.fileSystemService.createItem({ path: pathWithLeadingSlash, type, content: content ?? '' });
-                return { ok: result.success, error: result.error };
+    getListResourcesTool() {
+        return tool(
+            async ({ relDir }: { relDir?: string }) => {
+                const resources = await this.formatResources();
+                const filtered = relDir
+                    ? resources.filter((res) => res.startsWith(relDir))
+                    : resources;
+                return filtered.length ? filtered.join('\n') : 'No files found.';
             },
             {
-                name: 'create_item',
-                description: 'Create a new file or directory in the project',
+                name: 'list_resources',
+                description: 'List resources available in the workspace via MCP',
+                schema: z.object({ relDir: z.string().optional().describe('Relative directory prefix to filter resources') }),
+            }
+        );
+    }
+
+    getReadResourceTool() {
+        return tool(
+            async ({ uri }: { uri: string }) => {
+                const normalizedUri = this.normalizeUri(uri);
+                return await this.mcpClient.readResource(normalizedUri);
+            },
+            {
+                name: 'read_resource',
+                description: 'Read a resource via MCP (accepts absolute file:// URI or workspace-relative path)',
+                schema: z.object({ uri: z.string().describe('file:// URI or workspace-relative path to read') }),
+            }
+        );
+    }
+
+    getCallToolProxy() {
+        return tool(
+            async ({ name, input }: { name: string, input?: Record<string, any> }) => {
+                return await this.mcpClient.callTool(name, input ?? {});
+            },
+            {
+                name: 'call_tool',
+                description: 'Proxy to call any MCP tool exposed by the filesystem server',
                 schema: z.object({
-                    path: z.string().describe('Path to the file or directory with leading slash'),
-                    content: z.string().optional().describe('Content of the file'),
-                    type: z.enum(['file', 'dir']).describe('Type of the item'),
+                    name: z.string().describe('Tool name to call, e.g., write_file or make_directory'),
+                    input: z.record(z.any()).optional().describe('Arguments for the target tool'),
                 }),
             }
-        )
+        );
     }
 
-    getReadFileTool() {
+    getRepoMapTool() {
         return tool(
-            async ({ path }: { path: string }) => {
-                const absPath = this.getPath(path);
-                console.log(`readFileTool: ${absPath}`);
-
-                return await this.fileSystemService.fetchFileContent(absPath);
+            async ({ maxDepth = 5 }: { maxDepth?: number }) => {
+                return await this.repoMapService.generateRepoMap(maxDepth);
             },
             {
-                name: 'read_file',
-                description: 'Read file',
-                schema: z.object({ path: z.string().describe('Path to the file with leading slash') }),
+                name: 'repo_map',
+                description: 'Generate an ASCII tree of the repository respecting .gitignore and common noise directories',
+                schema: z.object({
+                    maxDepth: z.number().min(1).max(10).optional().describe('Maximum depth for the tree rendering'),
+                }),
             }
-        )
-    }
-
-    getListFilesTool() {
-        return tool(
-            async ({ relDir = '.' }: { relDir: string }) => {
-                const dirPath = this.getPath(relDir);
-                console.log('Calling listFiles, dirPath = ' + dirPath);
-
-                let entries: string[];
-                try {
-                    entries = await fs.readdir(dirPath, { withFileTypes: true }).then((ents) =>
-                        ents
-                            .filter((e) => e.isFile())
-                            .map((e) => e.name), // this only lists immediate files
-                    );
-                } catch (err) {
-                    throw new BadRequestException(`${dirPath} is not a directory or cannot be read`);
-                }
-
-                if (entries.length === 0) {
-                    return 'No files found.';
-                }
-                // recursive helper:
-                const walk = async (
-                    cur: string,
-                    base: string,
-                ): Promise<string[]> => {
-                    const results: string[] = [];
-                    const dirents = await fs.readdir(cur, { withFileTypes: true });
-
-                    for (const ent of dirents) {
-                        const entPath = path.join(cur, ent.name);
-                        const rel = path.relative(base, entPath);
-
-                        if (ent.isFile()) {
-                            results.push(rel);
-                        } else if (ent.isDirectory()) {
-                            if (IGNORED_DIRS.has(ent.name)) {
-                                continue;
-                            }
-                            const children = await walk(entPath, base);
-                            for (const c of children) {
-                                results.push(c);
-                            }
-                        }
-                    }
-                    return results;
-                };
-
-                const all = await walk(dirPath, WORKSPACE_PATH);
-                return all.join('\n');
-            },
-            {
-                name: 'list_files',
-                description: 'List files in a directory',
-                schema: z.object({ relDir: z.string().describe('Relative path to the directory') }),
-            }
-        )
+        );
     }
 
     getRunCmdTool() {
@@ -148,13 +135,8 @@ export class ToolsService {
         return tool(
             async ({ language, targetRelPath }: { language: ELanguage; targetRelPath?: string }) => {
                 const targetPath = targetRelPath && targetRelPath.trim().length > 0
-                    ? path.join(WORKSPACE_PATH, targetRelPath)
+                    ? `${WORKSPACE_PATH}/${targetRelPath}`
                     : WORKSPACE_PATH;
-
-                // Ensure target folder exists if provided
-                if (targetRelPath && targetRelPath.trim().length > 0) {
-                    await fs.mkdir(targetPath, { recursive: true });
-                }
 
                 await this.minioService.fetchMinioFolder(`base/${language}`, targetPath);
 
@@ -173,9 +155,10 @@ export class ToolsService {
 
     getAllTools() {
         return [
-            this.getCreateItemTool(),
-            this.getReadFileTool(),
-            this.getListFilesTool(),
+            this.getListResourcesTool(),
+            this.getReadResourceTool(),
+            this.getCallToolProxy(),
+            this.getRepoMapTool(),
             this.getRunCmdTool(),
             this.getPullBaseFilesTool(),
         ];
@@ -183,22 +166,16 @@ export class ToolsService {
 
     getCoderTools() {
         return [
-            this.getCreateItemTool(),
-            this.getReadFileTool(),
-            this.getListFilesTool(),
+            this.getListResourcesTool(),
+            this.getReadResourceTool(),
+            this.getCallToolProxy(),
+            this.getRepoMapTool(),
             this.getRunCmdTool(),
             this.getPullBaseFilesTool(),
         ];
     }
 
     async readFile(filepath: string): Promise<string> {
-        // check if file exists
-        const absPath = this.getPath(filepath);
-        if (!existsSync(absPath)) {
-            return ""
-        }
-
-        const tool = this.getReadFileTool();
-        return tool.invoke({ path: filepath });
+        return this.mcpClient.readResource(this.normalizeUri(filepath));
     }
 }
