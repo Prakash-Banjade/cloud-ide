@@ -5,6 +5,7 @@ import * as archiver from 'archiver';
 import * as fs from 'fs';
 import { MinioService } from 'src/minio/minio.service';
 import { EItemType, TFileItem, TFolderItem, TreeItem } from 'src/tree.types';
+import { IGNORED_DIRS } from 'src/file-system/file-system.service';
 
 @Injectable()
 export class ProjectService {
@@ -28,7 +29,10 @@ export class ProjectService {
 
         archive.glob('**/*', {
             cwd: `/workspace`,
-            ignore: ['node_modules/**', '.git/**', '*.log'],
+            ignore: [
+                '*.log',
+                ...Array.from(IGNORED_DIRS).map(dir => `${dir}/**`),
+            ],
         });
 
         await archive.finalize();

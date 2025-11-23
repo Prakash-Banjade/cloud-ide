@@ -41,7 +41,7 @@ export class CoderAgent {
             currentTask.filepath
         );
 
-        const systemPrompt = this.promptService.codingPrompt();
+        const systemPrompt = this.promptService.codingPrompt(state.stack_context);
         const userPrompt = `
             CURRENT TASK (${coderState.current_step_idx + 1}/${steps.length}):
             ${currentTask.task_description}
@@ -51,10 +51,10 @@ export class CoderAgent {
             ${context}
 
             INSTRUCTIONS:
-            1. Read any related files mentioned in the task using read_file tool
-            3. Implement COMPLETE, WORKING code - no placeholders or TODOs
+            1. Read any related files mentioned in the task using read_resource or list_resources
+            2. Implement COMPLETE, WORKING code - no placeholders or TODOs
             3. Ensure all event listeners and function calls are properly connected
-            4. Use create_item tool to create the file with full implementation
+            4. Use call_tool (e.g., write_file) to create or update the file with full implementation
 
             Remember: This file must work seamlessly with the other files in the project.
         `.trim();
