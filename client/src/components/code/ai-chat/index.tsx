@@ -75,6 +75,7 @@ export default function AIChatProvider({ children }: { children: React.ReactNode
     const [inputMessage, setInputMessage] = useState("");
     const { replId } = useParams();
     const { data } = useSession()
+    const { project } = useCodingStates();
 
     const { runnerUrl } = useUrl();
 
@@ -228,7 +229,7 @@ export default function AIChatProvider({ children }: { children: React.ReactNode
             eventSourceRef.current = null;
         }
 
-        const url = `${runnerUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}&thread_id=${replId}-${data?.user.userId}`;
+        const url = `${runnerUrl}/vibe/stream?user_prompt=${encodeURIComponent(prompt)}&thread_id=${replId}-${data?.user.userId}&language=${project?.language}`;
         const eventSource = new EventSource(url);
         eventSourceRef.current = eventSource;
 

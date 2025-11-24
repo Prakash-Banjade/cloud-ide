@@ -216,16 +216,27 @@ export class ToolsService {
         );
     }
 
+    /**
+     * Programmatic version of the `pull_base_files` tool.
+     * Lets the orchestrator initialize a blank workspace BEFORE the agent runs.
+     */
+    async pullBaseFiles(
+        language: ELanguage,
+        targetRelPath?: string,
+    ): Promise<{ success: boolean; error: string | null }> {
+        const targetPath = targetRelPath && targetRelPath.trim().length > 0
+            ? `${WORKSPACE_PATH}/${targetRelPath}`
+            : WORKSPACE_PATH;
+
+        await this.minioService.fetchMinioFolder(`base/${language}`, targetPath);
+
+        return { success: true, error: null };
+    }
+
     getPullBaseFilesTool() {
         return tool(
             async ({ language, targetRelPath }: { language: ELanguage; targetRelPath?: string }) => {
-                const targetPath = targetRelPath && targetRelPath.trim().length > 0
-                    ? `${WORKSPACE_PATH}/${targetRelPath}`
-                    : WORKSPACE_PATH;
-
-                await this.minioService.fetchMinioFolder(`base/${language}`, targetPath);
-
-                return { success: true, error: null };
+                return await this.pullBaseFiles(language, targetRelPath);
             },
             {
                 name: 'pull_base_files',
@@ -236,6 +247,23 @@ export class ToolsService {
                 }),
             }
         )
+    }
+
+    /**
+     * Utility to check if the workspace is "empty enough" to need base files.
+     * Uses MCP resources via `formatResources` / `listWorkspacePaths`.
+     * You can refine this later (e.g., ignore .git, .env only).
+     */
+    async isWorkspaceEffectivelyEmpty(): Promise<boolean> {
+        const resources = await this.listWorkspacePaths(); // existing method in your file
+        if (!resources || resources.length === 0) return true;
+
+        // Heuristic: ignore obvious non-source junk; adjust to your setup
+        const sourceLike = resources.filter((res) =>
+            /\.(tsx?|jsx?|py|c|cpp|mjs|mts)$/i.test(res),
+        );
+
+        return sourceLike.length === 0;
     }
 
     getCoderTools() {

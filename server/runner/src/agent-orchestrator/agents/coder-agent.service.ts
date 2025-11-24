@@ -3,15 +3,15 @@ import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { GraphState, CoderState } from '../types';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { PromptService } from '../prompts.service';
-import { ChatGroq } from '@langchain/groq';
 import { ToolsService } from '../tools.service';
 import { LlmProviderTokens } from '../agent-orchestrator.module';
+import { ChatOpenAI } from '@langchain/openai';
 
 @Injectable()
 export class CoderAgent {
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq,
+        @Inject(LlmProviderTokens.CODER_LLM) private readonly llm: ChatOpenAI,
         private readonly toolsService: ToolsService
     ) { }
 

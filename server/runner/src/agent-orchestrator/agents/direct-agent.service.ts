@@ -11,7 +11,7 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 export class DirectAgent {
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGoogleGenerativeAI,
+        @Inject(LlmProviderTokens.DIRECT_LLM) private readonly llm: ChatGoogleGenerativeAI,
         private readonly toolsService: ToolsService
     ) { }
 

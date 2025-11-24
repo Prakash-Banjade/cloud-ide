@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { GraphState, TaskPlanSchema, TaskPlan } from '../types';
 import { PromptService } from '../prompts.service';
-import { ChatGroq } from '@langchain/groq';
 import { LlmProviderTokens } from '../agent-orchestrator.module';
+import { ChatOpenAI } from '@langchain/openai';
 
 @Injectable()
 export class ArchitectAgent {
 
     constructor(
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.ROUTER_LLM) private readonly llm: ChatGroq
+        @Inject(LlmProviderTokens.ARCHITECT_LLM) private readonly llm: ChatOpenAI
     ) { }
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {

@@ -29,6 +29,7 @@
     "@langchain/groq": "^0.2.4",
     "@langchain/langgraph": "^0.4.9",
     "@langchain/langgraph-checkpoint-postgres": "^0.1.2",
+    "@langchain/openai": "^1.1.2",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@modelcontextprotocol/server-filesystem": "^2025.8.21",
     "@nestjs/common": "^11.0.1",

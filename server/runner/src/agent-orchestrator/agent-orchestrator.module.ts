@@ -20,6 +20,7 @@ import { RepoMapService } from './repo-map.service';
 import { ProjectProfileService } from './project-profile.service';
 import { ValidationAgent } from './agents/validation-agent.service';
 import { TesterAgent } from './agents/tester-agent.service';
+import { ChatOpenAI } from "@langchain/openai"
 
 export const enum LlmProviderTokens {
     ROUTER_LLM = 'ROUTER_LLM',
@@ -45,21 +46,24 @@ export const enum LlmProviderTokens {
         },
         {
             provide: LlmProviderTokens.PLANNER_LLM,
-            useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.2 }),
+            // useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.2 }),
+            useFactory: () => new ChatOpenAI({ model: 'gpt-5-mini', temperature: 0.2 }),
         },
         {
             provide: LlmProviderTokens.ARCHITECT_LLM,
-            useFactory: () => new ChatGoogleGenerativeAI({
-                model: "gemini-2.5-flash",
-                temperature: 0.2
-            }),
+            // useFactory: () => new ChatGoogleGenerativeAI({
+            //     model: "gemini-2.5-flash",
+            //     temperature: 0.2
+            // }),
+            useFactory: () => new ChatOpenAI({ model: 'gpt-5-mini', temperature: 0.1 }),
         },
         {
             provide: LlmProviderTokens.CODER_LLM,
-            useFactory: () => new ChatGoogleGenerativeAI({
-                model: "gemini-2.5-flash",
-                temperature: 0.1
-            }),
+            // useFactory: () => new ChatGoogleGenerativeAI({
+            //     model: "gemini-2.5-flash",
+            //     temperature: 0.1
+            // }),
+            useFactory: () => new ChatOpenAI({ model: 'gpt-4o', temperature: 0.1 }),
         },
         {
             provide: LlmProviderTokens.DIRECT_LLM,
