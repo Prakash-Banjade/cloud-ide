@@ -123,10 +123,12 @@ export class PromptService {
                 2. Use tools as needed:
                    - list_resources to inspect the current workspace contents
                    - read_resource to gather necessary context from existing files (file:// URIs or relative paths)
-                   - repo_map to quickly visualize the project tree respecting .gitignore
+                   - list_files and repo_map to quickly visualize the project tree respecting .gitignore
+                   - search_in_repo for fast, precise codebase searches (uses ripgrep)
                    - pull_base_files to scaffold base files for a language/framework when instructed (optionally into a target folder)
                    - call_tool to invoke MCP filesystem helpers (e.g., write_file, make_directory)
-                   - run_cmd to install dependencies or initialize frameworks/libraries when required
+                   - apply_diff to make minimal, patch-based edits instead of rewriting full files
+                   - run_command to install dependencies or initialize frameworks/libraries when required
                 3. Implement the COMPLETE file or action; for multi-file operations (like scaffolding), ensure tasks are executed in order.
                 4. Ensure event listeners, function calls, and DOM selections match exactly where applicable
                 5. Include proper error handling and edge cases

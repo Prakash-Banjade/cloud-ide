@@ -1,5 +1,8 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { WORKSPACE_PATH } from 'src/CONSTANTS';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 type McpClient = any;
 type McpTransport = any;
@@ -45,44 +48,116 @@ export class McpClientService implements OnModuleDestroy {
         if (this.client) return this.client;
         if (this.initializationPromise) return this.initializationPromise;
 
-        this.initializationPromise = this.initializeClient();
+        this.initializationPromise = this.initializeClient().catch((error) => {
+            this.initializationPromise = undefined;
+            throw error;
+        });
         this.client = await this.initializationPromise;
         return this.client;
     }
 
     private async initializeClient(): Promise<McpClient> {
-        // @ts-ignore
-        const sdk = await import('@modelcontextprotocol/sdk');
-        const { Client, StdioClientTransport } = sdk as any;
+        try {
+            // @ts-ignore
+            const { Client } = await import('@modelcontextprotocol/sdk/client');
+            const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio');
 
-        const transport = new StdioClientTransport({
-            command: 'npx',
-            args: ['-y', '@modelcontextprotocol/server-filesystem', '--root', WORKSPACE_PATH, '--stdio'],
-        });
+            const transport = new StdioClientTransport({
+                command: 'npx',
+                args: ['-y', '@modelcontextprotocol/server-filesystem', '--root', WORKSPACE_PATH, '--stdio'],
+            });
 
-        const client = new Client(
-            {
-                name: 'cloud-ide-runner',
-                version: '1.0.0',
+            const client = new Client(
+                {
+                    name: 'cloud-ide-runner',
+                    version: '1.0.0',
+                },
+                { transport }
+            );
+
+            this.transport = transport;
+
+            const transportLifecycle = transport as { connect?: () => Promise<void>; start?: () => Promise<void> };
+            if (typeof transportLifecycle.connect === 'function') {
+                await transportLifecycle.connect();
+            } else if (typeof transportLifecycle.start === 'function') {
+                await transportLifecycle.start();
+            }
+
+            if (typeof client.connect === 'function') {
+                await client.connect();
+            } else if (typeof client.initialize === 'function') {
+                await client.initialize();
+            }
+
+            return client;
+        } catch (error) {
+            console.warn('Falling back to filesystem MCP shim', error);
+            return this.createFilesystemClient();
+        }
+    }
+
+    private createFilesystemClient(): McpClient {
+        const resolvePath = (uriOrPath: string): string => {
+            if (!uriOrPath) return WORKSPACE_PATH;
+            try {
+                if (uriOrPath.startsWith('file://')) {
+                    return fileURLToPath(uriOrPath);
+                }
+            } catch { }
+            return path.isAbsolute(uriOrPath) ? uriOrPath : path.join(WORKSPACE_PATH, uriOrPath);
+        };
+
+        const walk = async (dir: string, maxDepth: number, depth = 0, acc: string[] = []): Promise<string[]> => {
+            const entries = await fs.readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.name.startsWith('.git')) continue;
+                const fullPath = path.join(dir, entry.name);
+                acc.push(`file://${fullPath}`);
+                if (entry.isDirectory() && depth < maxDepth) {
+                    await walk(fullPath, maxDepth, depth + 1, acc);
+                }
+            }
+            return acc;
+        };
+
+        return {
+            listResources: async () => {
+                try {
+                    return await walk(WORKSPACE_PATH, 3);
+                } catch (err) {
+                    console.warn('Filesystem MCP shim: listResources failed', err);
+                    return [];
+                }
             },
-            { transport }
-        );
-
-        this.transport = transport;
-
-        if (typeof transport.connect === 'function') {
-            await transport.connect();
-        } else if (typeof transport.start === 'function') {
-            await transport.start();
-        }
-
-        if (typeof client.connect === 'function') {
-            await client.connect();
-        } else if (typeof client.initialize === 'function') {
-            await client.initialize();
-        }
-
-        return client;
+            readResource: async ({ uri }: { uri: string }) => {
+                const target = resolvePath(uri);
+                try {
+                    return await fs.readFile(target, 'utf-8');
+                } catch (err) {
+                    console.warn('Filesystem MCP shim: readResource failed', err);
+                    return '';
+                }
+            },
+            callTool: async ({ name, arguments: args = {} }: { name: string; arguments?: Record<string, any> }) => {
+                const targetPath = resolvePath(args.path || args.uri || args.target || '');
+                try {
+                    if (name === 'write_file') {
+                        await fs.mkdir(path.dirname(targetPath), { recursive: true });
+                        await fs.writeFile(targetPath, args.content ?? args.text ?? '', 'utf-8');
+                        return { content: 'ok' };
+                    }
+                    if (name === 'make_directory') {
+                        await fs.mkdir(targetPath, { recursive: true });
+                        return { content: 'ok' };
+                    }
+                    throw new Error(`Unsupported tool in filesystem shim: ${name}`);
+                } catch (err: any) {
+                    return { error: err?.message ?? String(err) };
+                }
+            },
+            close: async () => { },
+        } as McpClient;
     }
 
     private async teardown() {

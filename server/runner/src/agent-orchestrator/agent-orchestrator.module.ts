@@ -17,6 +17,9 @@ import { McpClientService } from './mcp-client.service';
 import { TechLeadAgent } from './agents/tech-lead.agent';
 import { PromptFactory } from './prompt-factory.service';
 import { RepoMapService } from './repo-map.service';
+import { ProjectProfileService } from './project-profile.service';
+import { ValidationAgent } from './agents/validation-agent.service';
+import { TesterAgent } from './agents/tester-agent.service';
 
 export const enum LlmProviderTokens {
     ROUTER_LLM = 'ROUTER_LLM',
@@ -71,6 +74,7 @@ export const enum LlmProviderTokens {
         },
         McpClientService,
         RepoMapService,
+        ProjectProfileService,
         ToolsService,
         RouterAgent,
         DirectAgent,
@@ -78,6 +82,8 @@ export const enum LlmProviderTokens {
         ArchitectAgent,
         CoderAgent,
         TechLeadAgent,
+        ValidationAgent,
+        TesterAgent,
         GraphService,
         AgentOrchestratorService,
     ],
