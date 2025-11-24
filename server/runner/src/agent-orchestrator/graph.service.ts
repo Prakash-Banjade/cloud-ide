@@ -13,6 +13,8 @@ import { LlmProviderTokens } from './agent-orchestrator.module';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { TechLeadAgent } from './agents/tech-lead.agent';
+import { ValidationAgent } from './agents/validation-agent.service';
+import { TesterAgent } from './agents/tester-agent.service';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
@@ -27,6 +29,8 @@ export class GraphService implements OnModuleInit {
         private routerAgent: RouterAgent,
         private directAgent: DirectAgent,
         private techLeadAgent: TechLeadAgent,
+        private validationAgent: ValidationAgent,
+        private testerAgent: TesterAgent,
         private readonly configService: ConfigService,
         private readonly promptService: PromptService,
         @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGoogleGenerativeAI,
@@ -230,9 +234,12 @@ export class GraphService implements OnModuleInit {
                 reducer: messagesStateReducer,
             }),
             stack_context: Annotation<any>(),
+            project_profile: Annotation<any>(),
             plan: Annotation<Plan>,
             task_plan: Annotation<TaskPlan>,
             coder_state: Annotation<CoderState>,
+            validation_issues: Annotation<any>(),
+            test_results: Annotation<any>(),
             status: Annotation<string>,
             route: Annotation<'agent' | 'direct'>,
             direct_response: Annotation<string>,
@@ -257,6 +264,12 @@ export class GraphService implements OnModuleInit {
             .addNode('coder', async (state: GraphState) => {
                 return await this.coderAgent.execute(state);
             })
+            .addNode('validation', async (state: GraphState) => {
+                return await this.validationAgent.execute(state);
+            })
+            .addNode('tester', async (state: GraphState) => {
+                return await this.testerAgent.execute(state);
+            })
             .addEdge("__start__", "tech_lead")
             .addEdge("tech_lead", "router")
             .addConditionalEdges(
@@ -276,11 +289,36 @@ export class GraphService implements OnModuleInit {
             .addConditionalEdges(
                 'coder',
                 (state: GraphState) => {
-                    return state.status === 'DONE' ? 'END' : 'coder';
+                    const steps = state.coder_state?.task_plan?.implementation_steps ?? [];
+                    const idx = state.coder_state?.current_step_idx ?? 0;
+                    if (state.status === 'RETRY_VALIDATION' || idx >= steps.length) {
+                        return 'validation';
+                    }
+                    return 'coder';
                 },
                 {
-                    END: END,
                     coder: 'coder',
+                    validation: 'validation',
+                }
+            )
+            .addConditionalEdges(
+                'validation',
+                (state: GraphState) => {
+                    return state.validation_issues?.length ? 'coder' : 'tester';
+                },
+                {
+                    coder: 'coder',
+                    tester: 'tester',
+                }
+            )
+            .addConditionalEdges(
+                'tester',
+                (state: GraphState) => {
+                    return state.status === 'NEEDS_FIX' ? 'coder' : 'END';
+                },
+                {
+                    coder: 'coder',
+                    END: END,
                 }
             );
 
@@ -349,6 +387,15 @@ export class GraphService implements OnModuleInit {
                 }
                 if (nodeOutput?.stack_context) {
                     finalState.stack_context = nodeOutput.stack_context as any;
+                }
+                if (nodeOutput?.project_profile) {
+                    finalState.project_profile = nodeOutput.project_profile as any;
+                }
+                if (nodeOutput?.validation_issues) {
+                    finalState.validation_issues = nodeOutput.validation_issues as any;
+                }
+                if (nodeOutput?.test_results) {
+                    finalState.test_results = nodeOutput.test_results as any;
                 }
                 if (nodeOutput?.status) {
                     finalState.status = nodeOutput.status as string;
