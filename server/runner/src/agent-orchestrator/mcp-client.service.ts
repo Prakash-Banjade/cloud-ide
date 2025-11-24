@@ -73,10 +73,11 @@ export class McpClientService implements OnModuleDestroy {
 
         this.transport = transport;
 
-        if (typeof transport.connect === 'function') {
-            await transport.connect();
-        } else if (typeof transport.start === 'function') {
-            await transport.start();
+        const transportLifecycle = transport as { connect?: () => Promise<void>; start?: () => Promise<void> };
+        if (typeof transportLifecycle.connect === 'function') {
+            await transportLifecycle.connect();
+        } else if (typeof transportLifecycle.start === 'function') {
+            await transportLifecycle.start();
         }
 
         if (typeof client.connect === 'function') {
