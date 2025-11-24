@@ -13,6 +13,10 @@ import { ToolsService } from './tools.service';
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { McpClientService } from './mcp-client.service';
+import { TechLeadAgent } from './agents/tech-lead.agent';
+import { PromptFactory } from './prompt-factory.service';
+import { RepoMapService } from './repo-map.service';
 
 export const enum LlmProviderTokens {
     ROUTER_LLM = 'ROUTER_LLM',
@@ -31,6 +35,7 @@ export const enum LlmProviderTokens {
     controllers: [AgentOrchestratorController],
     providers: [
         PromptService,
+        PromptFactory,
         {
             provide: LlmProviderTokens.ROUTER_LLM,
             useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.1 }),
@@ -64,12 +69,15 @@ export const enum LlmProviderTokens {
             provide: LlmProviderTokens.SUMMARY_LLM,
             useFactory: () => new ChatGroq({ model: 'llama-3.3-70b-versatile', temperature: 0.5 }),
         },
+        McpClientService,
+        RepoMapService,
         ToolsService,
         RouterAgent,
         DirectAgent,
         PlannerAgent,
         ArchitectAgent,
         CoderAgent,
+        TechLeadAgent,
         GraphService,
         AgentOrchestratorService,
     ],

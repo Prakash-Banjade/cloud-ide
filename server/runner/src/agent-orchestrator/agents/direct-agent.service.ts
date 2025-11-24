@@ -27,9 +27,9 @@ export class DirectAgent {
 
         // Give direct agent access to read-only tools
         const directTools = [
-            this.toolsService.getReadFileTool(),
-            this.toolsService.getListFilesTool(),
-
+            this.toolsService.getReadResourceTool(),
+            this.toolsService.getListResourcesTool(),
+            this.toolsService.getRepoMapTool(),
         ];
 
         // Create a react agent with tool access
