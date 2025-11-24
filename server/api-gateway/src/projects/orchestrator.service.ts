@@ -97,10 +97,18 @@ export class OrchestratorService {
         } catch (err: any) {
             if (err?.code === 404) {
                 this.logger.log(`Creating Deployment ${manifest.metadata.name}...`);
-                await this.appsV1Api.createNamespacedDeployment({
-                    body: manifest,
-                    namespace,
-                });
+                try {
+                    await this.appsV1Api.createNamespacedDeployment({
+                        body: manifest,
+                        namespace,
+                    });
+                } catch (createErr: any) {
+                    if (createErr?.code === 409) {
+                        this.logger.log(`Deployment ${manifest.metadata.name} already exists (race condition handled)`);
+                        return;
+                    }
+                    throw createErr;
+                }
             } else {
                 throw new HttpException(`Error checking Deployment: ${err.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -117,10 +125,18 @@ export class OrchestratorService {
         } catch (err: any) {
             if (err?.code === 404) {
                 this.logger.log(`Creating Service ${manifest.metadata.name}...`);
-                await this.coreV1Api.createNamespacedService({
-                    body: manifest,
-                    namespace,
-                });
+                try {
+                    await this.coreV1Api.createNamespacedService({
+                        body: manifest,
+                        namespace,
+                    });
+                } catch (createErr: any) {
+                    if (createErr?.code === 409) {
+                        this.logger.log(`Service ${manifest.metadata.name} already exists (race condition handled)`);
+                        return;
+                    }
+                    throw createErr;
+                }
             } else {
                 throw err;
             }
@@ -137,10 +153,18 @@ export class OrchestratorService {
         } catch (err: any) {
             if (err?.code === 404) {
                 this.logger.log(`Creating Ingress ${manifest.metadata.name}...`);
-                await this.networkingV1Api.createNamespacedIngress({
-                    body: manifest,
-                    namespace
-                });
+                try {
+                    await this.networkingV1Api.createNamespacedIngress({
+                        body: manifest,
+                        namespace
+                    });
+                } catch (createErr: any) {
+                    if (createErr?.code === 409) {
+                        this.logger.log(`Ingress ${manifest.metadata.name} already exists (race condition handled)`);
+                        return;
+                    }
+                    throw createErr;
+                }
             } else {
                 throw err;
             }

@@ -20,7 +20,7 @@ import { RepoMapService } from './repo-map.service';
 import { ProjectProfileService } from './project-profile.service';
 import { ValidationAgent } from './agents/validation-agent.service';
 import { TesterAgent } from './agents/tester-agent.service';
-import { ChatOpenAI } from "@langchain/openai"
+import { ChatOpenAI } from '@langchain/openai';
 
 export const enum LlmProviderTokens {
     ROUTER_LLM = 'ROUTER_LLM',
