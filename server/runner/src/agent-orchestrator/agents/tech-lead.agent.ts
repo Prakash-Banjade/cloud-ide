@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { WORKSPACE_PATH } from 'src/CONSTANTS';
 import { McpClientService } from '../mcp-client.service';
-import { GraphState, StackContext } from '../types';
+import { GraphState, ProjectProfile, StackContext } from '../types';
+import { ProjectProfileService } from '../project-profile.service';
 
 @Injectable()
 export class TechLeadAgent {
-    constructor(private readonly mcpClient: McpClientService) { }
+    constructor(
+        private readonly mcpClient: McpClientService,
+        private readonly projectProfileService: ProjectProfileService,
+    ) { }
 
     async execute(state: GraphState): Promise<Partial<GraphState>> {
+        const project_profile = await this.projectProfileService.generateProfile();
         let resources: any[] = [];
         try {
             resources = await this.mcpClient.listResources();
@@ -19,10 +24,10 @@ export class TechLeadAgent {
         const hasExistingProject = workspacePaths.length > 0;
 
         const stackContext = hasExistingProject
-            ? await this.detectFromWorkspace(workspacePaths)
-            : this.inferFromPrompt(state.user_prompt ?? '');
+            ? await this.detectFromWorkspace(workspacePaths, project_profile)
+            : this.inferFromPrompt(state.user_prompt ?? '', project_profile);
 
-        return { stack_context: stackContext };
+        return { stack_context: stackContext, project_profile };
     }
 
     private extractPaths(resources: any[]): string[] {
@@ -43,64 +48,52 @@ export class TechLeadAgent {
             .filter((path) => Boolean(path));
     }
 
-    private async detectFromWorkspace(paths: string[]): Promise<StackContext> {
+    private async detectFromWorkspace(paths: string[], profile: ProjectProfile): Promise<StackContext> {
         const lowerPaths = paths.map((p) => p.toLowerCase());
         const rules = ['Respect the existing repository conventions and directory layout.'];
 
         if (lowerPaths.some((p) => p.includes('pom.xml'))) {
             rules.push('Preserve Maven module structure.');
-            return { language: 'java', framework: 'none', projectType: 'binary', rules };
+            return { language: 'java', framework: 'none', projectType: 'binary', rules, profile };
         }
 
         if (lowerPaths.some((p) => p.includes('cargo.toml'))) {
             rules.push('Use cargo for builds and dependency management.');
-            return { language: 'rust', framework: 'none', projectType: 'binary', rules };
+            return { language: 'rust', framework: 'none', projectType: 'binary', rules, profile };
         }
 
         if (lowerPaths.some((p) => p.includes('pyproject.toml') || p.endsWith('.py'))) {
             rules.push('Keep modules organized with __init__.py where appropriate.');
-            return { language: 'python', framework: 'none', projectType: 'script', rules };
+            return { language: 'python', framework: 'none', projectType: 'script', rules, profile };
         }
 
-        if (lowerPaths.some((p) => p.includes('package.json'))) {
-            const pkg = await this.readPackageJson();
-            const deps = Object.keys(pkg);
-
-            if (deps.some((dep) => dep.startsWith('next'))) {
-                rules.push('STRICT: Use App Router (app/) with layout.tsx and route.ts files.');
-                return { language: 'typescript', framework: 'nextjs', projectType: 'app-router', rules };
+        if (profile.framework === 'next') {
+            if (profile.router === 'app') {
+                rules.push('STRICT: Use Next.js App Router under the app/ directory and never create pages/.');
+                if (profile.conventions.componentsDir) rules.push(`Place shared UI in ${profile.conventions.componentsDir}.`);
+                if (profile.conventions.hooksDir) rules.push(`Store hooks in ${profile.conventions.hooksDir}.`);
+                return { language: profile.language === 'ts' ? 'typescript' : 'javascript', framework: 'nextjs', projectType: 'app-router', rules, profile };
             }
-
-            if (deps.some((dep) => dep === 'react' || dep === 'react-dom')) {
-                rules.push('Place React components in a components/ directory and pages under pages/.');
-                return { language: 'typescript', framework: 'react', projectType: 'pages-router', rules };
-            }
+            rules.push('Follow Next.js Pages Router conventions under pages/.');
+            return { language: profile.language === 'ts' ? 'typescript' : 'javascript', framework: 'nextjs', projectType: 'pages-router', rules, profile };
         }
 
-        if (lowerPaths.some((p) => p.startsWith('app/') || p.includes('next.config'))) {
-            rules.push('STRICT: Use App Router (app/) with layout.tsx and server components by default.');
-            return { language: 'typescript', framework: 'nextjs', projectType: 'app-router', rules };
-        }
-
-        if (lowerPaths.some((p) => p.startsWith('pages/'))) {
-            rules.push('Follow the Next.js pages router conventions.');
-            return { language: 'typescript', framework: 'nextjs', projectType: 'pages-router', rules };
-        }
-
-        if (lowerPaths.some((p) => p.includes('vite.config'))) {
-            rules.push('Keep Vite entrypoints consistent (main.tsx, index.html).');
-            return { language: 'typescript', framework: 'react', projectType: 'pages-router', rules };
+        if (profile.framework === 'react') {
+            if (profile.conventions.componentsDir) rules.push(`Reuse components under ${profile.conventions.componentsDir}.`);
+            if (profile.conventions.hooksDir) rules.push(`Reuse hooks under ${profile.conventions.hooksDir}.`);
+            return { language: profile.language === 'ts' ? 'typescript' : 'javascript', framework: 'react', projectType: 'pages-router', rules, profile };
         }
 
         return {
-            language: 'typescript',
+            language: profile.language === 'ts' ? 'typescript' : 'javascript',
             framework: 'none',
-            projectType: 'script',
+            projectType: profile.router === 'pages' ? 'pages-router' : 'app-router',
             rules,
+            profile,
         };
     }
 
-    private inferFromPrompt(prompt: string): StackContext {
+    private inferFromPrompt(prompt: string, profile: ProjectProfile): StackContext {
         const normalized = prompt.toLowerCase();
         const rules = ['Align the stack choice with the user intent.'];
 
@@ -126,20 +119,11 @@ export class TechLeadAgent {
         }
 
         return {
-            language: 'typescript',
+            language: profile.language === 'ts' ? 'typescript' : 'javascript',
             framework: 'nextjs',
             projectType: 'app-router',
             rules: rules.concat(['Default to modern Next.js 14+ conventions.']),
+            profile,
         };
-    }
-
-    private async readPackageJson(): Promise<Record<string, string>> {
-        try {
-            const raw = await this.mcpClient.readResource(`file://${WORKSPACE_PATH}/package.json`);
-            const parsed = JSON.parse(raw ?? '{}');
-            return { ...(parsed.dependencies ?? {}), ...(parsed.devDependencies ?? {}) };
-        } catch {
-            return {};
-        }
     }
 }

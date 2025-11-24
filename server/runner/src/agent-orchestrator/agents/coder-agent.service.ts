@@ -21,11 +21,32 @@ export class CoderAgent {
             current_step_idx: 0,
         };
 
+        if (state.status === 'NEEDS_FIX' && ((state.validation_issues?.length ?? 0) > 0 || this.hasTestFailures(state))) {
+            console.log('\n🛠️  Coder Agent: Addressing validation/test issues...');
+
+            const systemPrompt = this.promptService.codingPrompt(state.stack_context);
+            const userPrompt = this.buildFixPrompt(state);
+            const coderTools = this.toolsService.getCoderTools();
+            const reactAgent = createReactAgent({
+                llm: this.llm,
+                tools: coderTools,
+            });
+
+            const messages = [new SystemMessage(systemPrompt), new HumanMessage(userPrompt)];
+            await reactAgent.invoke({ messages });
+
+            return {
+                coder_state: coderState,
+                status: 'RETRY_VALIDATION',
+                validation_issues: [],
+            };
+        }
+
         const steps = coderState.task_plan.implementation_steps;
 
         if (coderState.current_step_idx >= steps.length) {
             console.log('✅ Coder Agent: All tasks completed!');
-            return { coder_state: coderState, status: 'DONE' };
+            return { coder_state: coderState, status: 'READY_FOR_VALIDATION' };
         }
 
         const currentTask = steps[coderState.current_step_idx];
@@ -77,6 +98,43 @@ export class CoderAgent {
         coderState.current_step_idx += 1;
 
         return { coder_state: coderState };
+    }
+
+    private hasTestFailures(state: GraphState): boolean {
+        return (state.test_results?.commands ?? []).some((cmd) => cmd.success === false || (cmd.exitCode ?? 0) !== 0);
+    }
+
+    private buildFixPrompt(state: GraphState): string {
+        const issues = state.validation_issues ?? [];
+        const tests = state.test_results?.commands ?? [];
+
+        const issueText = issues.length
+            ? issues.map((issue, idx) => `${idx + 1}. ${issue.message}${issue.suggestion ? ` (Fix: ${issue.suggestion})` : ''}`).join('\n')
+            : 'None provided';
+
+        const testText = tests.length
+            ? tests
+                .map((cmd) => `Command: ${cmd.command}\nCWD: ${cmd.cwd}\nExit: ${cmd.exitCode}\nstdout:\n${cmd.stdout}\nstderr:\n${cmd.stderr}`)
+                .join('\n\n')
+            : 'No automated tests were run.';
+
+        return `
+Validation and testing discovered issues. Fix them without undoing completed work.
+
+STACK GUARDRAILS:
+- Follow the existing stack conventions from the project profile (Next.js App Router => app/ only, no pages/; reuse src/components and src/hooks when present).
+- Keep changes minimal and targeted.
+
+ISSUES TO FIX:
+${issueText}
+
+TEST OUTPUT:
+${testText}
+
+Expectations:
+- Prefer minimal diffs using apply_diff; keep changes surgical.
+- Run targeted commands with run_command if needed to validate fixes.
+        `.trim();
     }
 
     private async buildTaskContext(

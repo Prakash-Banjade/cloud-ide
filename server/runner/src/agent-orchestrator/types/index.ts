@@ -1,6 +1,27 @@
 import { z } from 'zod';
 import { BaseMessage } from '@langchain/core/messages';
 
+export type ProjectProfile = {
+    framework: 'next' | 'react' | 'node' | 'python' | 'unknown';
+    router: 'app' | 'pages' | 'none';
+    language: 'ts' | 'js' | 'py' | 'java' | 'unknown';
+    srcDir?: string | null;
+    appDir?: string | null;
+    conventions: {
+        componentsDir?: string | null;
+        hooksDir?: string | null;
+        utilsDir?: string | null;
+        pagesDir?: string | null;
+        testsDir?: string | null;
+    };
+    versions: {
+        next?: string;
+        react?: string;
+        node?: string;
+    };
+    configFiles: string[];
+};
+
 // File schema
 export const FileSchema = z.object({
     path: z.string().describe('The path to the file to be created or modified'),
@@ -43,14 +64,34 @@ export interface CoderState {
     current_file_content?: string;
 }
 
+export type ValidationIssue = {
+    message: string;
+    suggestion?: string;
+};
+
+export type TestRunResult = {
+    attempted: boolean;
+    commands: Array<{
+        command: string;
+        cwd: string;
+        success: boolean;
+        stdout: string;
+        stderr: string;
+        exitCode: number | null;
+    }>;
+};
+
 // Graph State
 export interface GraphState {
     user_prompt?: string;
     messages?: BaseMessage[];
     stack_context?: StackContext;
+    project_profile?: ProjectProfile;
     plan?: Plan;
     task_plan?: TaskPlan;
     coder_state?: CoderState;
+    validation_issues?: ValidationIssue[];
+    test_results?: TestRunResult;
     status?: string;
     route?: 'agent' | 'direct';
     direct_response?: string;
@@ -61,4 +102,5 @@ export type StackContext = {
     framework: string;
     projectType: string;
     rules: string[];
+    profile?: ProjectProfile;
 };

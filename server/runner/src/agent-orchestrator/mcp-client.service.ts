@@ -45,15 +45,18 @@ export class McpClientService implements OnModuleDestroy {
         if (this.client) return this.client;
         if (this.initializationPromise) return this.initializationPromise;
 
-        this.initializationPromise = this.initializeClient();
+        this.initializationPromise = this.initializeClient().catch((error) => {
+            this.initializationPromise = undefined;
+            throw error;
+        });
         this.client = await this.initializationPromise;
         return this.client;
     }
 
     private async initializeClient(): Promise<McpClient> {
         // @ts-ignore
-        const sdk = await import('@modelcontextprotocol/sdk');
-        const { Client, StdioClientTransport } = sdk as any;
+        const { Client } = await import('@modelcontextprotocol/sdk/client');
+        const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio');
 
         const transport = new StdioClientTransport({
             command: 'npx',
