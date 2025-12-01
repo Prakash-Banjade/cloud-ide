@@ -6,9 +6,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/context/session-provider";
+import { Analytics } from "@vercel/analytics/next"
 
 const ibmPlexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"] });
-
 export const metadata: Metadata = {
   title: {
     default: "Qubide – Your IDE in the Cloud | Code & Deploy Instantly",
@@ -27,22 +27,23 @@ export default function RootLayout({
       <body
         className={`${ibmPlexSans.className} antialiased h-screen`}
       >
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <Toaster
-                position="bottom-right"
-                reverseOrder={false}
-              />
-              <AuthProvider>
-                {children}
-              </AuthProvider>
-            </ThemeProvider>
-          </QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Toaster
+              position="bottom-right"
+              reverseOrder={false}
+            />
+            <AuthProvider>
+              {children}
+              <Analytics />
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );
