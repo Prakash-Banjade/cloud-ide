@@ -30,7 +30,7 @@ export class PlannerAgent {
 
         const structuredLlm = this.llm.withStructuredOutput<Plan>(PlanSchema);
         const response = await structuredLlm.invoke(
-            this.promptService.plannerPrompt(userPrompt, workspaceContext)
+            this.promptService.plannerPrompt(userPrompt, workspaceContext, state.stack_context)
         );
 
         if (!response) {
@@ -49,8 +49,8 @@ export class PlannerAgent {
 
     private async getWorkspaceFiles(): Promise<string[]> {
         try {
-            const listFilesTool = this.toolsService.getListFilesTool();
-            const result = await listFilesTool.invoke({ relDir: '.' });
+            const listResourcesTool = this.toolsService.getListResourcesTool();
+            const result = await listResourcesTool.invoke({ relDir: '.' });
 
             if (typeof result === 'string') {
                 if (result === 'No files found.') return [];
