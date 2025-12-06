@@ -15,6 +15,8 @@ export interface File {
     language?: string
 }
 
+export const IGNORED_DIRS = new Set(['node_modules', 'dist', 'build', '.next', '.git', 'coverage', '.DS_Store']);
+
 @Injectable()
 export class FileSystemService {
     fetchDir(dir: string, baseDir: string): Promise<File[]> {
@@ -26,7 +28,7 @@ export class FileSystemService {
                     resolve((await Promise.all(files.map(async f => {
                         const isDir = f.isDirectory();
 
-                        if (isDir && f.name === "node_modules") return null; // ignore node_modules
+                        if (isDir && IGNORED_DIRS.has(f.name)) return null; // ignore node_modules
 
                         const objWithKeep = f.name.endsWith('.keep');
 

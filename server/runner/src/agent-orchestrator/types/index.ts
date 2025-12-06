@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BaseMessage } from '@langchain/core/messages';
 
 // File schema
 export const FileSchema = z.object({
@@ -45,6 +46,8 @@ export interface CoderState {
 // Graph State
 export interface GraphState {
     user_prompt?: string;
+    messages?: BaseMessage[];
+    stack_context?: StackContext;
     plan?: Plan;
     task_plan?: TaskPlan;
     coder_state?: CoderState;
@@ -52,3 +55,10 @@ export interface GraphState {
     route?: 'agent' | 'direct';
     direct_response?: string;
 }
+
+export type StackContext = {
+    language: string;
+    framework: string;
+    projectType: string;
+    rules: string[];
+};

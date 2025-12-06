@@ -1,13 +1,13 @@
 "use client";
 
-import { useMutation, UseMutationResult, useQueryClient } from '@tanstack/react-query';
+import { useMutation, UseMutationOptions, UseMutationResult, useQueryClient } from '@tanstack/react-query';
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import toast from 'react-hot-toast';
 import { useAxiosPrivate } from './useAxios';
 
 interface MutationParams<TData> {
     endpoint: string;
-    invalidateTags?: string[] | string[][];
+    invalidateTags?: string[];
     method: 'post' | 'patch' | 'delete';
     data?: TData;
     config?: AxiosRequestConfig;
@@ -15,11 +15,9 @@ interface MutationParams<TData> {
     toastOnSuccess?: boolean;
 }
 
-export const useAppMutation = <TData, TResponse>(): UseMutationResult<
-    AxiosResponse<TResponse>,
-    unknown,
-    MutationParams<TData>
-> => {
+export const useAppMutation = <TData, TResponse>(options?: UseMutationOptions<AxiosResponse<TResponse>, unknown, MutationParams<TData>, unknown>):
+    UseMutationResult<AxiosResponse<TResponse>, unknown, MutationParams<TData>> => {
+
     const queryClient = useQueryClient();
     const axios = useAxiosPrivate();
 
@@ -50,23 +48,16 @@ export const useAppMutation = <TData, TResponse>(): UseMutationResult<
             console.log(error)
         },
         onSuccess(data, { invalidateTags, toastOnSuccess = true }) {
-            if (invalidateTags) {
-                if (invalidateTags[0] instanceof Array) {
-                    for (const tag of invalidateTags) {
-                        queryClient.invalidateQueries({
-                            queryKey: tag as string[],
-                        })
-                    }
-                } else {
-                    queryClient.invalidateQueries({
-                        queryKey: invalidateTags as string[],
-                    })
-                }
+            if (invalidateTags?.length) {
+                queryClient.invalidateQueries({
+                    queryKey: invalidateTags,
+                })
             }
 
             if (toastOnSuccess) {
                 toast.success(data.data.message ?? 'Success!');
             }
         },
+        ...options,
     })
 };

@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, Mic, Paperclip, Send, X } from "lucide-react";
+import { LoaderCircle, Paperclip, Send, X } from "lucide-react";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { cn } from "@/lib/utils";
 import { useAIChat } from ".";
@@ -10,8 +9,6 @@ export default function ChatInput({
 }: {
     submitChatMessage: (message: string) => void,
 }) {
-    const [agent, setAgent] = useState("Agent")
-    const [model, setModel] = useState("GPT-4.1")
     const { selectedFile } = useCodingStates();
     const { isStreaming, inputMessage, setInputMessage } = useAIChat();
 

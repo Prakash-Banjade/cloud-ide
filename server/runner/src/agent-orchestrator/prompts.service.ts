@@ -1,9 +1,18 @@
-import { ImplementationTask, Plan } from './types';
+import { Injectable } from '@nestjs/common';
+import { ImplementationTask, Plan, StackContext } from './types';
+import { PromptFactory } from './prompt-factory.service';
 
+@Injectable()
 export class PromptService {
-    constructor() { }
+    constructor(private readonly promptFactory: PromptFactory) { }
 
-    plannerPrompt(userPrompt: string) {
+    private stackRules(stackContext?: StackContext): string {
+        const rendered = this.promptFactory.renderRulebook(stackContext);
+        return rendered ? `\nSTACK RULEBOOK:\n${rendered}\n` : '';
+    }
+
+    plannerPrompt(userPrompt: string, workspaceContext: string = '', stackContext?: StackContext) {
+        const stackRules = this.stackRules(stackContext);
         return (
             `
                 You are the PLANNER agent. Convert the user prompt into a COMPLETE engineering project plan.
@@ -13,14 +22,21 @@ export class PromptService {
                 - Think about the complete user journey and interactions
                 - Try to keep the app as simple as possible unless user explicitly asks for complexity and structured project plan.
 
+                WORKSPACE CONTEXT:
+                ${workspaceContext}
+
+                ${stackRules}
+
                 STACK SELECTION GUIDELINES:
-                - If the user asks for a simple page/app or does not specify a framework, plan a plain HTML/CSS/JS solution (no build tools).
-                - If the user asks for a marketing site, SaaS landing page, blog, docs site, or SEO-focused site, plan a Next.js (TypeScript) app using the App Router.
-                - If the user asks for a dynamic SPA or component-heavy UI without SSR/SEO constraints, plan a React app (React-TS preferred unless JS is specified).
-                - If the user asks for a Python script/CLI/backend, plan a Python project.
-                - If the user asks for a Node.js API/CLI/backend, plan a Node.js project.
-                - If the user asks for Java, plan a Java project.
-                - If the user explicitly dictates the stack (e.g., Next.js, React, Python), follow it.
+                - **CRITICAL**: If the workspace already contains a project (e.g., package.json, vite.config.ts, etc.), YOU MUST RESPECT IT. Do NOT propose a different stack or framework unless the user explicitly asks to overwrite or migrate.
+                - If the workspace is empty or the user asks for a new project:
+                    - If the user asks for a simple page/app or does not specify a framework, plan a plain HTML/CSS/JS solution (no build tools).
+                    - If the user asks for a marketing site, SaaS landing page, blog, docs site, or SEO-focused site, plan a Next.js (TypeScript) app using the App Router.
+                    - If the user asks for a dynamic SPA or component-heavy UI without SSR/SEO constraints, plan a React app (React-TS preferred unless JS is specified).
+                    - If the user asks for a Python script/CLI/backend, plan a Python project.
+                    - If the user asks for a Node.js API/CLI/backend, plan a Node.js project.
+                    - If the user asks for Java, plan a Java project.
+                    - If the user explicitly dictates the stack (e.g., Next.js, React, Python), follow it.
 
                 NEXT.JS ARCHITECTURE RULES (when chosen):
                 - Use the App Router structure with app/ directory, layout.tsx, and page.tsx files.
@@ -39,10 +55,13 @@ export class PromptService {
         )
     }
 
-    architectPrompt(plan: string) {
+    architectPrompt(plan: string, stackContext?: StackContext) {
+        const stackRules = this.stackRules(stackContext);
         return (
             `
                 You are the ARCHITECT agent. Break down the project plan into DETAILED, EXPLICIT engineering tasks.
+
+                ${stackRules}
 
                 CRITICAL RULES FOR TASK CREATION:
                 1. **Explicit Integration**: Describe HOW files connect (e.g., "button with id='add-btn' calls addTodo() from app.js")
@@ -51,10 +70,10 @@ export class PromptService {
 
                 LANGUAGE SCAFFOLDING & WORKSPACE STATE:
                 - If the plan's tech stack or user intent indicates starting a specific framework/language project (e.g., React, Next.js, Python, Node.js, Java), add early tasks to ensure base scaffolding is present.
-                - Before scaffolding, include a task to check whether the workspace is empty using the list_files tool (e.g., list_files with relDir='.') and interpret output:
+                - Before scaffolding, include a task to check whether the workspace is empty using the list_resources tool (e.g., list_resources with relDir='.') and interpret output:
                   - If the workspace is empty (e.g., "No files found."), add a task to pull base files using pull_base_files with the appropriate language.
                   - If the workspace has files, prefer updating/augmenting existing files when applicable. If incompatible or a clean scaffold is preferred, add tasks to:
-                    1) create a new folder (e.g., 'app', 'client', or a clear project name) via create_item type='dir', and
+                    1) create a new folder (e.g., 'app', 'client', or a clear project name) via call_tool using the filesystem helper (e.g., make_directory), and
                     2) call pull_base_files with targetRelPath set to that folder name.
                 - Map tech stacks to the available language options when calling pull_base_files:
                   • React (JS) -> 'react-js' | React (TS) -> 'react-ts'
@@ -85,10 +104,13 @@ export class PromptService {
         )
     }
 
-    codingPrompt() {
+    codingPrompt(stackContext?: StackContext) {
+        const stackRules = this.stackRules(stackContext);
         return (
             `
                 You are the CODER agent implementing engineering tasks.
+
+                ${stackRules}
 
                 CRITICAL IMPLEMENTATION RULES:
                 1. **Read ALL Related Files First**: Before writing, read all files mentioned in the task
@@ -99,10 +121,11 @@ export class PromptService {
                 WORKFLOW:
                 1. Read the task description carefully - note all specified names
                 2. Use tools as needed:
-                   - list_files to inspect the current workspace contents
-                   - read_file to gather necessary context from existing files
+                   - list_resources to inspect the current workspace contents
+                   - read_resource to gather necessary context from existing files (file:// URIs or relative paths)
+                   - repo_map to quickly visualize the project tree respecting .gitignore
                    - pull_base_files to scaffold base files for a language/framework when instructed (optionally into a target folder)
-                   - create_item to create or update specific files/directories
+                   - call_tool to invoke MCP filesystem helpers (e.g., write_file, make_directory)
                    - run_cmd to install dependencies or initialize frameworks/libraries when required
                 3. Implement the COMPLETE file or action; for multi-file operations (like scaffolding), ensure tasks are executed in order.
                 4. Ensure event listeners, function calls, and DOM selections match exactly where applicable
@@ -123,7 +146,7 @@ export class PromptService {
                 - ✅ No placeholder comments like "// Add logic here"
                 - ✅ Variables and functions are properly scoped
 
-                You have access to tools: read_file, list_files, create_item, pull_base_files, run_cmd
+                You have access to tools: list_resources, read_resource, call_tool, repo_map, pull_base_files, run_cmd
             `.trim()
         )
     }
@@ -167,8 +190,9 @@ export class PromptService {
             - Help debug and review existing code
 
             Your tools:
-            - read_file(path): Read the contents of a file
-            - list_files(directory): List all files in a directory
+            - read_resource(uri): Read the contents of a file (accepts file:// URI or workspace-relative path)
+            - list_resources(directory): List all files in a directory
+            - repo_map(maxDepth?): Render a quick ASCII tree of the repo respecting ignores
 
             Guidelines:
             - Be concise but informative

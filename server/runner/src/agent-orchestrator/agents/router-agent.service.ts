@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { GraphState } from '../types';
-import { ChatGroq } from '@langchain/groq';
 import { PromptService } from '../prompts.service';
 import { LlmProviderTokens } from '../agent-orchestrator.module';
+import { ChatGroq } from '@langchain/groq';
 
 @Injectable()
 export class RouterAgent {
@@ -20,6 +20,8 @@ export class RouterAgent {
 
         console.log('🔀 Router Agent: Analyzing user prompt...');
 
+        // Use the last message or construct a context aware prompt
+        // For now, we just use the user prompt but we could pass history if needed
         const response = await this.llm.invoke(this.promptService.routerPrompt(userPrompt));
         const route = response.content.toString().trim().toLowerCase();
 

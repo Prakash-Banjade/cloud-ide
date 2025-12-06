@@ -1,23 +1,24 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { StateGraph, END, Annotation, CompiledStateGraph } from '@langchain/langgraph';
+import { StateGraph, END, Annotation, CompiledStateGraph, MemorySaver, messagesStateReducer } from '@langchain/langgraph';
 import { CoderState, GraphState, Plan, TaskPlan } from './types';
 import { PlannerAgent } from './agents/planner-agent.service';
 import { ArchitectAgent } from './agents/architech-agent.service';
 import { CoderAgent } from './agents/coder-agent.service';
 import { ConfigService } from '@nestjs/config';
-import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { RouterAgent } from './agents/router-agent.service';
 import { DirectAgent } from './agents/direct-agent.service';
 import { StreamEvent, StreamEventType } from './types/streaming.types';
 import { PromptService } from './prompts.service';
 import { LlmProviderTokens } from './agent-orchestrator.module';
-import { ChatGroq } from '@langchain/groq';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { TechLeadAgent } from './agents/tech-lead.agent';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
     private compiledGraph: CompiledStateGraph<any, any, any>;
-    // private checkpointer: PostgresSaver;
+    private checkpointer: MemorySaver = new MemorySaver();
+    private readonly replId: string;
 
     constructor(
         private plannerAgent: PlannerAgent,
@@ -25,16 +26,15 @@ export class GraphService implements OnModuleInit {
         private coderAgent: CoderAgent,
         private routerAgent: RouterAgent,
         private directAgent: DirectAgent,
+        private techLeadAgent: TechLeadAgent,
         private readonly configService: ConfigService,
         private readonly promptService: PromptService,
-        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGroq,
+        @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGoogleGenerativeAI,
     ) {
-        // this.checkpointer = PostgresSaver.fromConnString(this.configService.getOrThrow('DATABASE_URL'));
+        this.replId = this.configService.getOrThrow("REPL_ID");
     }
 
     async onModuleInit() {
-        // need to call checkpointer.setup() the first time you’re using Postgres checkpointer
-        // await this.checkpointer.setup();
         this.compiledGraph = this.createGraph();
     }
 
@@ -226,6 +226,10 @@ export class GraphService implements OnModuleInit {
     private createGraph() {
         const stateAnnotation = Annotation.Root({
             user_prompt: Annotation<string>,
+            messages: Annotation<any[]>({
+                reducer: messagesStateReducer,
+            }),
+            stack_context: Annotation<any>(),
             plan: Annotation<Plan>,
             task_plan: Annotation<TaskPlan>,
             coder_state: Annotation<CoderState>,
@@ -235,6 +239,9 @@ export class GraphService implements OnModuleInit {
         });
 
         const builder = new StateGraph(stateAnnotation)
+            .addNode('tech_lead', async (state: GraphState) => {
+                return await this.techLeadAgent.execute(state);
+            })
             .addNode('router', async (state: GraphState) => {
                 return await this.routerAgent.execute(state);
             })
@@ -250,7 +257,8 @@ export class GraphService implements OnModuleInit {
             .addNode('coder', async (state: GraphState) => {
                 return await this.coderAgent.execute(state);
             })
-            .addEdge("__start__", "router")
+            .addEdge("__start__", "tech_lead")
+            .addEdge("tech_lead", "router")
             .addConditionalEdges(
                 'router',
                 (state: GraphState) => {
@@ -277,47 +285,52 @@ export class GraphService implements OnModuleInit {
             );
 
         return builder.compile({
-            // checkpointer: this.checkpointer
+            checkpointer: this.checkpointer
         });
     }
 
     async invoke(input: { user_prompt: string }, config?: any) {
         const defaultConfig = {
             recursionLimit: 100,
-            configurable: { thread_id: this.configService.getOrThrow("REPL_ID") },
+            configurable: { thread_id: this.replId },
             ...config,
         };
 
         console.log('\n🚀 Starting Agent Graph Execution');
         console.log(`📝 User Prompt: ${input.user_prompt}\n`);
 
-        const result = await this.compiledGraph.invoke(input, defaultConfig);
+        const result = await this.compiledGraph.invoke({
+            ...input,
+            messages: [new HumanMessage(input.user_prompt)],
+        }, defaultConfig);
 
         console.log('\n🎉 Agent Graph Execution Complete!');
 
         return result;
     }
 
-
     /**
      * Stream graph execution with real-time events
      */
     async *stream(input: { user_prompt: string }, config?: any): AsyncGenerator<StreamEvent> {
-        // const threadId = config?.thread_id || `thread_${Date.now()}`;
+        const threadId = config?.thread_id || this.replId;
 
         const defaultConfig = {
             recursionLimit: 100,
-            // configurable: { thread_id: threadId },
+            configurable: { thread_id: threadId },
             streamMode: 'updates' as const,
             ...config,
         };
 
         console.log('\n🚀 Starting Streaming Agent Graph Execution');
         console.log(`📝 User Prompt: ${input.user_prompt}`);
-        // console.log(`🔗 Thread ID: ${threadId}\n`);
+        console.log(`🔗 Thread ID: ${threadId}\n`);
 
         try {
-            const stream = await this.compiledGraph.stream(input, defaultConfig);
+            const stream = await this.compiledGraph.stream({
+                ...input,
+                messages: [new HumanMessage(input.user_prompt)],
+            }, defaultConfig);
             const finalState: Partial<GraphState> = { user_prompt: input.user_prompt };
             let finalResponseSent = false;
 
@@ -333,6 +346,9 @@ export class GraphService implements OnModuleInit {
                 }
                 if (nodeOutput?.coder_state) {
                     finalState.coder_state = nodeOutput.coder_state as CoderState;
+                }
+                if (nodeOutput?.stack_context) {
+                    finalState.stack_context = nodeOutput.stack_context as any;
                 }
                 if (nodeOutput?.status) {
                     finalState.status = nodeOutput.status as string;

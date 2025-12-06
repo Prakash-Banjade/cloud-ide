@@ -4,6 +4,7 @@ import { Socket } from 'socket.io';
 import { SocketEvents, WORKSPACE_PATH } from 'src/CONSTANTS';
 import { MinioService } from 'src/minio/minio.service';
 import * as fs from 'fs';
+import { IGNORED_DIRS } from 'src/file-system/file-system.service';
 
 @Injectable()
 export class ChokidarService {
@@ -23,10 +24,7 @@ export class ChokidarService {
         const watcher = chokidar.watch(WORKSPACE_PATH, {
             ignored: [
                 /(^|[\/\\])\../, // ignore dotfiles
-                /node_modules/,  // ignore node_modules
-                /dist/,
-                /build/,
-                /.next/
+                ...Array.from(IGNORED_DIRS).map(dir => new RegExp(`^${dir}`)),
             ],
             persistent: true,
             ignoreInitial: true, // don’t fire events for existing files

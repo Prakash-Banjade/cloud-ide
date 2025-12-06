@@ -14,6 +14,9 @@ importers:
       '@langchain/core':
         specifier: ^0.3.78
         version: 0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))
+      '@langchain/google-genai':
+        specifier: ^1.0.3
+        version: 1.0.3(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))
       '@langchain/groq':
         specifier: ^0.2.4
         version: 0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))
@@ -64,7 +67,7 @@ importers:
         version: 0.14.2
       langchain:
         specifier: ^0.3.35
-        version: 0.3.36(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))(@langchain/groq@0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))))(handlebars@4.7.8)(openai@5.12.2(ws@8.18.3)(zod@3.25.76))(ws@8.18.3)
+        version: 0.3.36(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))(@langchain/google-genai@1.0.3(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))))(@langchain/groq@0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))))(handlebars@4.7.8)(openai@5.12.2(ws@8.18.3)(zod@3.25.76))(ws@8.18.3)
       minio:
         specifier: ^8.0.5
         version: 8.0.6
@@ -422,6 +425,10 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -707,6 +714,12 @@ packages:
   '@langchain/core@0.3.79':
     resolution: {integrity: sha512-ZLAs5YMM5N2UXN3kExMglltJrKKoW7hs3KMZFlXUnD7a5DFKBYxPFMeXA4rT+uvTxuJRZPCYX0JKI5BhyAWx4A==}
     engines: {node: '>=18'}
+
+  '@langchain/google-genai@1.0.3':
+    resolution: {integrity: sha512-ZN3f6SPFZI3FMjJ1C0y5A/lWlZ/x+A9RoIKg1PNYdX6bEu7/BR7oz0dYYI2+YGl3TRp1u75e3SzzL0MxmfWfDA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': 1.0.6
 
   '@langchain/groq@0.2.4':
     resolution: {integrity: sha512-5/XteG1Kio2UEe6irm8Ne8fazO5ZKKNGutIPxiAp5slLb/SKzdNbZoocvYlOnD4w5z8ZmM+0LzisCinUNv9YeA==}
@@ -4127,6 +4140,10 @@ packages:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
@@ -4608,6 +4625,8 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
+  '@google/generative-ai@0.24.1': {}
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -5029,6 +5048,12 @@ snapshots:
       - '@opentelemetry/exporter-trace-otlp-proto'
       - '@opentelemetry/sdk-trace-base'
       - openai
+
+  '@langchain/google-genai@1.0.3(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))':
+    dependencies:
+      '@google/generative-ai': 0.24.1
+      '@langchain/core': 0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))
+      uuid: 11.1.0
 
   '@langchain/groq@0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))':
     dependencies:
@@ -7621,7 +7646,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  langchain@0.3.36(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))(@langchain/groq@0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))))(handlebars@4.7.8)(openai@5.12.2(ws@8.18.3)(zod@3.25.76))(ws@8.18.3):
+  langchain@0.3.36(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))(@langchain/google-genai@1.0.3(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))))(@langchain/groq@0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))))(handlebars@4.7.8)(openai@5.12.2(ws@8.18.3)(zod@3.25.76))(ws@8.18.3):
     dependencies:
       '@langchain/core': 0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76))
       '@langchain/openai': 0.6.16(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))(ws@8.18.3)
@@ -7636,6 +7661,7 @@ snapshots:
       yaml: 2.8.1
       zod: 3.25.76
     optionalDependencies:
+      '@langchain/google-genai': 1.0.3(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))
       '@langchain/groq': 0.2.4(@langchain/core@0.3.79(openai@5.12.2(ws@8.18.3)(zod@3.25.76)))
       handlebars: 4.7.8
     transitivePeerDependencies:
@@ -8763,6 +8789,8 @@ snapshots:
       which-typed-array: 1.1.19
 
   uuid@10.0.0: {}
+
+  uuid@11.1.0: {}
 
   uuid@9.0.1: {}
 

@@ -11,6 +11,7 @@ import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { deleteProject } from "@/lib/actions/project.actions";
+import cookie from 'js-cookie';
 
 export default function ProjectCardActions({ project }: { project: TProjectsResponse["data"][0] }) {
     const { data: session, status } = useSession();
@@ -22,6 +23,12 @@ export default function ProjectCardActions({ project }: { project: TProjectsResp
         startTransition(async () => {
             try {
                 const res = await deleteProject(project.id);
+
+                // remove cookies associated with project
+                cookie.remove(`openedFiles:${project.replId}`);
+                cookie.remove(`mruFiles:${project.replId}`);
+                cookie.remove(`selectedFile:${project.replId}`);
+
                 toast.success(res.message);
                 setIsDeleteOpen(false);
             } catch (e) {

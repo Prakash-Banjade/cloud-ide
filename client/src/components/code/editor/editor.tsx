@@ -247,20 +247,25 @@ export const CodeEditor = ({ socket }: { socket: Socket }) => {
     if (!selectedFile) return <NoFileSelected />;
 
     return (
-        <Editor
-            height="100%"
-            language={getLanguageFromName(selectedFile.name)}
-            value={selectedFile.content}
-            loading={<EditorSkeleton />}
-            options={{
-                padding: {
-                    top: 6,
-                },
-                readOnly: permission === EPermission.READ
-            }}
-            onMount={handleEditorDidMount}
-            theme={theme === "dark" ? "vs-dark" : "light"}
-        />
+        <div className="h-full">
+            <div className="dark:bg-[#1e1e1e] bg-white text-muted-foreground text-xs px-6 py-0.5">
+                {selectedFile.path.split('/').slice(1).join(' > ')}
+            </div>
+            <Editor
+                height="100%"
+                language={getLanguageFromName(selectedFile.name)}
+                value={selectedFile.content}
+                loading={<EditorSkeleton />}
+                options={{
+                    padding: {
+                        top: 6,
+                    },
+                    readOnly: permission === EPermission.READ
+                }}
+                onMount={handleEditorDidMount}
+                theme={theme === "dark" ? "vs-dark" : "light"}
+            />
+        </div>
     )
 }
 
