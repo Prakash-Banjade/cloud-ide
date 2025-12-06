@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useCodingStates } from "@/context/coding-states-provider";
 import { SocketEvents } from "@/lib/CONSTANTS";
 import { EPermission } from "@/types/types";
+import { useParams } from "next/navigation";
 
 const fitAddon = new FitAddon();
 const decoder = new TextDecoder();
@@ -20,6 +21,7 @@ type XterminalProps = {
 
 export default function XTerminal({ socket }: XterminalProps) {
     const { permission, showPanel } = useCodingStates();
+    const { replId } = useParams();
 
     const terminalRef = useRef<HTMLDivElement | null>(null);
     const [term, setTerm] = useState<Terminal | null>(null);
@@ -55,9 +57,12 @@ export default function XTerminal({ socket }: XterminalProps) {
         setTerm(term);
 
         socket.emit(SocketEvents.TERMINAL_REQUEST);
+
+        const terminalRegex = new RegExp(`.*root@${replId}-[a-zA-Z0-9-]+:\/`, "ig");
+
         socket.on(SocketEvents.TERMINAL, ({ data }: { data: string | ArrayBuffer }) => {
             const text = typeof data === "string" ? data : decoder.decode(data);
-            term.write(text);
+            term.write(text.replaceAll(terminalRegex, ""));
         });
 
         term.onData((input) => {
