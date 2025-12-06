@@ -12,6 +12,7 @@ import { PromptService } from './prompts.service';
 import { LlmProviderTokens } from './agent-orchestrator.module';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { TechLeadAgent } from './agents/tech-lead.agent';
 
 @Injectable()
 export class GraphService implements OnModuleInit {
@@ -25,6 +26,7 @@ export class GraphService implements OnModuleInit {
         private coderAgent: CoderAgent,
         private routerAgent: RouterAgent,
         private directAgent: DirectAgent,
+        private techLeadAgent: TechLeadAgent,
         private readonly configService: ConfigService,
         private readonly promptService: PromptService,
         @Inject(LlmProviderTokens.SUMMARY_LLM) private readonly summaryLlm: ChatGoogleGenerativeAI,
@@ -227,6 +229,7 @@ export class GraphService implements OnModuleInit {
             messages: Annotation<any[]>({
                 reducer: messagesStateReducer,
             }),
+            stack_context: Annotation<any>(),
             plan: Annotation<Plan>,
             task_plan: Annotation<TaskPlan>,
             coder_state: Annotation<CoderState>,
@@ -236,6 +239,9 @@ export class GraphService implements OnModuleInit {
         });
 
         const builder = new StateGraph(stateAnnotation)
+            .addNode('tech_lead', async (state: GraphState) => {
+                return await this.techLeadAgent.execute(state);
+            })
             .addNode('router', async (state: GraphState) => {
                 return await this.routerAgent.execute(state);
             })
@@ -251,7 +257,8 @@ export class GraphService implements OnModuleInit {
             .addNode('coder', async (state: GraphState) => {
                 return await this.coderAgent.execute(state);
             })
-            .addEdge("__start__", "router")
+            .addEdge("__start__", "tech_lead")
+            .addEdge("tech_lead", "router")
             .addConditionalEdges(
                 'router',
                 (state: GraphState) => {
@@ -339,6 +346,9 @@ export class GraphService implements OnModuleInit {
                 }
                 if (nodeOutput?.coder_state) {
                     finalState.coder_state = nodeOutput.coder_state as CoderState;
+                }
+                if (nodeOutput?.stack_context) {
+                    finalState.stack_context = nodeOutput.stack_context as any;
                 }
                 if (nodeOutput?.status) {
                     finalState.status = nodeOutput.status as string;

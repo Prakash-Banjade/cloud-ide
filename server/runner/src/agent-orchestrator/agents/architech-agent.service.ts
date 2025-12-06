@@ -23,7 +23,7 @@ export class ArchitectAgent {
 
         const structuredLlm = this.llm.withStructuredOutput<TaskPlan>(TaskPlanSchema);
         const response = await structuredLlm.invoke(
-            this.promptService.architectPrompt(JSON.stringify(plan, null, 2))
+            this.promptService.architectPrompt(JSON.stringify(plan, null, 2), state.stack_context)
         );
 
         if (!response) {
