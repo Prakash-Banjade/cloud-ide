@@ -8,7 +8,7 @@ import { SocketProvider, useSocket } from "@/context/socket-provider";
 import dynamic from "next/dynamic";
 import TopBar from "./top-bar";
 import { FileTabSwitcher } from "./tab-switcher";
-import { SocketEvents } from "@/lib/CONSTANTS";
+import { longRunningLanguages, SocketEvents } from "@/lib/CONSTANTS";
 import Preview from "./preview";
 import CodingPageLoader from "./coding-page-loader";
 import FileTreePanel from "./file-tree-panel";
@@ -223,48 +223,60 @@ export const CodingPagePostPodCreation = () => {
                     }
                 </AIChatProvider>
 
-                {
-                    isMobile ? (
-                        <Sheet open={showPanel.preview} onOpenChange={(val) => togglePanel(EPanel.Preview, val)}>
-                            <SheetContent
-                                side="right"
-                                aria-describedby="preview-description"
-                                className="[&>button]:hidden data-[state=open]:duration-150 data-[state=closed]:duration-150 w-screen max-w-[400px]"
-                                onOpenAutoFocus={(e) => e.preventDefault()}
-                                forceMount
-                            >
-                                <SheetHeader className="sr-only">
-                                    <SheetTitle>Preview</SheetTitle>
-                                </SheetHeader>
-                                <Preview />
-                            </SheetContent>
-                        </Sheet>
-                    ) : (
-                        <>
-                            <ResizableHandle />
-                            <ResizablePanel
-                                id="preview-panel"
-                                order={4}
-                                ref={previewPanelRef}
-                                defaultSize={30}
-                                collapsible
-                                minSize={10}
-                                onCollapse={() => {
-                                    togglePanel(EPanel.Preview, false);
-                                }}
-                                onExpand={() => {
-                                    togglePanel(EPanel.Preview, true);
-                                }}
-                            >
-                                <Preview />
-                            </ResizablePanel>
-                        </>
-                    )
-                }
+                <PreviewPanel />
 
             </ResizablePanelGroup>
 
             <CodingClientFooter />
         </div>
     );
+}
+
+
+function PreviewPanel() {
+    const { showPanel, togglePanel, previewPanelRef, project } = useCodingStates();
+    const isMobile = useIsMobile(1000);
+
+    if (!project || !longRunningLanguages.includes(project?.language)) return null;
+
+    if (isMobile) {
+        return (
+            <Sheet open={showPanel.preview} onOpenChange={(val) => togglePanel(EPanel.Preview, val)}>
+                <SheetContent
+                    side="right"
+                    aria-describedby="preview-description"
+                    className="[&>button]:hidden data-[state=open]:duration-150 data-[state=closed]:duration-150 w-screen max-w-[400px]"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                    forceMount
+                >
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>Preview</SheetTitle>
+                    </SheetHeader>
+                    <Preview />
+                </SheetContent>
+            </Sheet>
+        )
+    }
+
+    return (
+        <>
+            <ResizableHandle />
+            <ResizablePanel
+                id="preview-panel"
+                order={4}
+                ref={previewPanelRef}
+                defaultSize={30}
+                collapsible
+                minSize={10}
+                onCollapse={() => {
+                    togglePanel(EPanel.Preview, false);
+                }}
+                onExpand={() => {
+                    togglePanel(EPanel.Preview, true);
+                }}
+            >
+                <Preview />
+            </ResizablePanel>
+        </>
+    )
 }

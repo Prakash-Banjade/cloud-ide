@@ -14,6 +14,7 @@ import { OrchestratorService } from './orchestrator.service';
 import { JwtService } from 'src/auth-system/jwt/jwt.service';
 import { EPermission } from 'src/collaborators/entities/collaborator.entity';
 import { ConfigService } from '@nestjs/config';
+import { MAX_PROJECTS } from './config';
 
 @Injectable()
 export class ProjectsService {
@@ -27,6 +28,10 @@ export class ProjectsService {
   ) { }
 
   async create(createProjectDto: CreateProjectDto, currentUser: AuthUser) {
+    const projectsCount = await this.getProjectsCount(currentUser.userId);
+
+    if (projectsCount >= MAX_PROJECTS) throw new ForbiddenException("You have reached the maximum number of projects");
+
     const replId = this.configService.get("NODE_ENV") === "production"
       ? await this.getReplId(createProjectDto.projectName)
       : "node-node";
@@ -194,5 +199,9 @@ export class ProjectsService {
     });
 
     return { access_token };
+  }
+
+  async getProjectsCount(userId: string): Promise<number> {
+    return await this.projectRepo.count({ where: { createdBy: { id: userId } } });
   }
 }

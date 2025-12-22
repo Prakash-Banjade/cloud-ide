@@ -42,9 +42,8 @@ export class AuthController {
     login(
         @Body() signInDto: SignInDto,
         @Req() request: FastifyRequest,
-        @Res({ passthrough: true }) response: FastifyReply,
     ) {
-        return this.authService.login(signInDto, request, response);
+        return this.authService.login(signInDto, request);
     }
 
     @ApiOperation({ summary: 'Refresh access token' })

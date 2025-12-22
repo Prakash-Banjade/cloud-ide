@@ -19,7 +19,7 @@ export type WorkspacePageProps = {
 export default async function WorkspacePage(props: WorkspacePageProps) {
     return (
         <div className="space-y-6">
-            <header className="flex items-center justify-between">
+            <header className="flex items-start justify-between">
                 <h1 className="text-3xl font-semibold">My Workspace</h1>
                 <CreateProjectButton />
             </header>
