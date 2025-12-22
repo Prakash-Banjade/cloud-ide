@@ -158,10 +158,14 @@ export default function TopBar({ socket }: Props) {
                                     </>
                                 )
                             }
-                            <DropdownMenuItem onClick={() => togglePanel(EPanel.Preview, !showPanel.preview)}>
-                                <GlobeIcon />
-                                {showPanel.preview ? "Close" : "Open"} Preview
-                            </DropdownMenuItem>
+                            {
+                                longRunningLanguages.includes(project.language) && (
+                                    <DropdownMenuItem onClick={() => togglePanel(EPanel.Preview, !showPanel.preview)}>
+                                        <GlobeIcon />
+                                        {showPanel.preview ? "Close" : "Open"} Preview
+                                    </DropdownMenuItem>
+                                )
+                            }
                         </DropdownMenuContent>
                     </DropdownMenu>
                     <ActiveUsers />

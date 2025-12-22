@@ -25,6 +25,8 @@ import { User } from '../users/entities/user.entity';
 import { EAuthEvents } from './helpers/auth-events.service';
 import { MailEvents } from 'src/mail/mail.service';
 import { ResetPasswordMailEventDto } from 'src/mail/dto/events.dto';
+import { Project } from 'src/projects/entities/project.entity';
+import { MAX_PROJECTS } from 'src/projects/config';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuthService extends BaseRepository {
@@ -38,7 +40,7 @@ export class AuthService extends BaseRepository {
     private readonly refreshTokenService: RefreshTokenService,
   ) { super(datasource, req) }
 
-  async login(signInDto: SignInDto, req: FastifyRequest, reply: FastifyReply) {
+  async login(signInDto: SignInDto, req: FastifyRequest) {
     const data = await this.authHelper.validateAccount(signInDto.email, signInDto.password);
 
     if (!(data instanceof Account)) return data; // this can be a message after sending mail to unverified user

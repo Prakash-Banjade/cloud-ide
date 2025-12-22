@@ -97,16 +97,21 @@ export function NewProjectForm() {
 
     async function onSubmit(values: formSchemaType) {
         startTransition(async () => {
-            const res = await mutateAsync({
-                endpoint: `/projects`,
-                method: 'post',
-                data: values
-            });
+            try {
+                const res = await mutateAsync({
+                    endpoint: `/projects`,
+                    method: 'post',
+                    data: values,
+                    invalidateTags: ['projects', 'count']
+                });
 
-            if (res.status === 201) {
-                const replId = res.data.replId;
+                if (res.status === 201) {
+                    const replId = res.data.replId;
 
-                router.push(`/code/${replId}`);
+                    router.push(`/code/${replId}`);
+                }
+            } catch (e) {
+                console.log(e);
             }
         })
     }

@@ -1,5 +1,4 @@
 import { notFound, redirect } from 'next/navigation';
-import React from 'react'
 import CodingPageClient from '@/components/code/coding-page-client';
 import { serverFetch } from '@/lib/axios-server';
 

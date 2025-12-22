@@ -7,6 +7,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AuthUser } from 'src/common/global.types';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ProjectsQueryDto, ProjectTokenQueryDto } from './dto/projects-query.dto';
+import { MAX_PROJECTS } from './config';
 
 @ApiBearerAuth()
 @ApiTags('Projects')
@@ -35,6 +36,12 @@ export class ProjectsController {
   @Get('token')
   getAccessTokenWithProjectPermission(@Query() queryDto: ProjectTokenQueryDto, @CurrentUser() currentUser: AuthUser) {
     return this.projectsService.getAccessTokenWithProjectPermission(queryDto.replId, currentUser);
+  }
+
+  @Get('count')
+  async count(@CurrentUser() currentUser: AuthUser): Promise<{ count: number }> {
+    const count = await this.projectsService.getProjectsCount(currentUser.userId);
+    return { count: MAX_PROJECTS - count }
   }
 
   @Get(':replId')
