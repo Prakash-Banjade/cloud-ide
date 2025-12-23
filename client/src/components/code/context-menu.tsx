@@ -1,6 +1,6 @@
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu"
 import { EItemType, TreeItem } from "@/types/tree.types"
-import { ChangeEvent, useState } from "react"
+import { ChangeEvent, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { useSocket } from "@/context/socket-provider"
 import { ResponsiveAlertDialog } from "@/components/ui/responsive-alert-dialog"
@@ -34,7 +34,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
 
     const handleUpload = (e: ChangeEvent<HTMLInputElement>, type: EItemType) => {
         try {
-            upload(e, { type, path: item.path });
+            upload(e, { type, path: itemPath });
         } catch (e) {
             if (e instanceof Error) {
                 toast.error(e.message);
@@ -44,6 +44,10 @@ export function TreeItemContextMenu({ children, item }: Props) {
         }
     }
 
+    const itemPath = useMemo(() => {
+        return item.path || "/";
+    }, [item])
+
     return (
         <>
             {
@@ -52,7 +56,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                         <ResponsiveAlertDialog
                             isOpen={permission === EPermission.WRITE && isAlertOpen}
                             setIsOpen={setIsAlertOpen}
-                            title={`Delete ${item.path}?`}
+                            title={`Delete ${itemPath}?`}
                             description="This folder contains items inside it. Are you sure you want to delete it?"
                             action={() => handleDelete(item)}
                             actionLabel="Delete"
@@ -61,19 +65,19 @@ export function TreeItemContextMenu({ children, item }: Props) {
                             title={newItemType === EItemType.FILE ? 'New file' : 'New folder'}
                             isOpen={permission === EPermission.WRITE && isNewItemOpen}
                             setIsOpen={setIsNewItemOpen}
-                            description={`Location: ${item.path}`}
+                            description={`Location: ${itemPath}`}
                         >
-                            <NewItemForm parentFolderPath={item.path} itemType={newItemType} setIsOpen={setIsNewItemOpen} />
+                            <NewItemForm parentFolderPath={itemPath} itemType={newItemType} setIsOpen={setIsNewItemOpen} />
                         </ResponsiveDialog>
                         <input
-                            id={"files-upload" + item.path}
+                            id={"files-upload" + itemPath}
                             type="file"
                             multiple
                             className="sr-only"
                             onChange={e => handleUpload(e, EItemType.FILE)}
                         />
                         <input
-                            id={"dir-upload" + item.path}
+                            id={"dir-upload" + itemPath}
                             type="file"
                             multiple
                             className="sr-only"
@@ -95,16 +99,16 @@ export function TreeItemContextMenu({ children, item }: Props) {
             </ResponsiveDialog>
 
             <ContextMenu onOpenChange={setIsContextMenuOpen}>
-                <ContextMenuTrigger disabled={permission !== EPermission.WRITE}>
+                <ContextMenuTrigger disabled={permission !== EPermission.WRITE} className="grow flex flex-col">
                     <section
-                        className={cn(isContextMenuOpen && "outline")}
+                        className={cn(isContextMenuOpen && "outline", "grow flex flex-col")}
                         onContextMenu={() => {
                             if (permission !== EPermission.WRITE) return;
 
                             if (item.type === EItemType.DIR && !Array.isArray(item.children)) { // fetch children if they don't exist, this is to show alert dialog based on children presence
-                                socket?.emit(SocketEvents.FETCH_DIR, item.path, (data: TreeItem[]) => {
+                                socket?.emit(SocketEvents.FETCH_DIR, itemPath, (data: TreeItem[]) => {
                                     setFileStructure(prev =>
-                                        updateTree(prev, item.path, data)
+                                        updateTree(prev, itemPath, data)
                                     )
                                 });
                             }
@@ -138,7 +142,7 @@ export function TreeItemContextMenu({ children, item }: Props) {
                                     onClick={() => { }}
                                     asChild
                                 >
-                                    <label htmlFor={"files-upload" + item.path}>
+                                    <label htmlFor={"files-upload" + itemPath}>
                                         <FileUpIcon />
                                         Upload Files
                                     </label>
@@ -147,27 +151,37 @@ export function TreeItemContextMenu({ children, item }: Props) {
                                     onClick={() => { }}
                                     asChild
                                 >
-                                    <label htmlFor={"dir-upload" + item.path}>
+                                    <label htmlFor={"dir-upload" + itemPath}>
                                         <FolderUpIcon />
                                         Upload Folder
                                     </label>
                                 </ContextMenuItem>
-                                <ContextMenuSeparator />
                             </>
                         )
                     }
-                    <ContextMenuItem
-                        className="pr-20"
-                        onClick={() => setIsRenameOpen(true)}
-                    >
-                        <Pencil /> Rename
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                        className="text-destructive hover:!text-destructive"
-                        onClick={(item.type === EItemType.DIR && item.children?.length) ? () => setIsAlertOpen(true) : () => handleDelete(item)} // show alert only if item is dir and has children
-                    >
-                        <Trash className="text-destructive" /> Delete
-                    </ContextMenuItem>
+                    {
+                        (item.type === EItemType.DIR && itemPath !== "/") && (
+                            <ContextMenuSeparator />
+                        )
+                    }
+                    {
+                        itemPath !== "/" && (
+                            <>
+                                <ContextMenuItem
+                                    className="pr-20"
+                                    onClick={() => setIsRenameOpen(true)}
+                                >
+                                    <Pencil /> Rename
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    className="text-destructive hover:text-destructive!"
+                                    onClick={(item.type === EItemType.DIR && item.children?.length) ? () => setIsAlertOpen(true) : () => handleDelete(item)} // show alert only if item is dir and has children
+                                >
+                                    <Trash className="text-destructive" /> Delete
+                                </ContextMenuItem>
+                            </>
+                        )
+                    }
                 </ContextMenuContent>
             </ContextMenu>
         </>
