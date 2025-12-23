@@ -33,7 +33,7 @@ export function FileTree() {
             if (item.type === EItemType.DIR) {
                 return (
                     <FolderItem
-                        key={item.name}
+                        key={item.path}
                         item={item}
                         level={level}
                         onSelectDir={handleDirSelect}
@@ -43,7 +43,7 @@ export function FileTree() {
             } else {
                 return (
                     <FileItem
-                        key={item.name}
+                        key={item.path}
                         item={item}
                         level={level}
                         onSelectFile={handleFileSelect}
@@ -59,7 +59,19 @@ export function FileTree() {
                 <section>
                     {renderFileTree(fileStructure)}
                 </section>
-                <div className="min-h-80 grow" onClick={() => setSelectedItem(undefined)}></div>
+                <TreeItemContextMenu
+                    item={{
+                        children: fileStructure,
+                        name: "",
+                        path: "",
+                        type: EItemType.DIR,
+                        expanded: true,
+                    }}
+                >
+                    <div className="min-h-80 grow flex items-center justify-center" onClick={() => setSelectedItem(undefined)}>
+                        {fileStructure.length === 0 && <span className="text-sm text-muted-foreground">No files found</span>}
+                    </div>
+                </TreeItemContextMenu>
             </ScrollArea>
         </div>
     );
@@ -98,7 +110,7 @@ function FolderItem({ item, level, onSelectDir, onSelectFile }: FolderItemProps)
                         if (child.type === EItemType.DIR) {
                             return (
                                 <FolderItem
-                                    key={child.name}
+                                    key={child.path}
                                     item={child}
                                     level={level + 1}
                                     onSelectFile={onSelectFile}
@@ -108,7 +120,7 @@ function FolderItem({ item, level, onSelectDir, onSelectFile }: FolderItemProps)
                         } else {
                             return (
                                 <FileItem
-                                    key={child.name}
+                                    key={child.path}
                                     item={child}
                                     level={level + 1}
                                     onSelectFile={onSelectFile}

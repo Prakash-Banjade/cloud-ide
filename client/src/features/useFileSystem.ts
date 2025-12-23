@@ -19,8 +19,15 @@ export function useFileSystem() {
      * @param file 
      * @description Updates opened and mru files, fetches file content if not loaded, sets file as selectedItem and selectedFile
      */
-    function handleFileSelect(file: TFileItem) {
+    function handleFileSelect(file: TFileItem | undefined) {
         if (!socket) return;
+
+        if (!file) {
+            setOpenedFiles([]);
+            setMruFiles([]);
+            setSelectedFile(undefined);
+            return;
+        }
 
         // update opened and mru files
         setOpenedFiles(prev => prev.some(f => f.path === file.path) ? prev : [...prev, file]);

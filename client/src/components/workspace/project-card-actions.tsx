@@ -12,11 +12,13 @@ import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { deleteProject } from "@/lib/actions/project.actions";
 import cookie from 'js-cookie';
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProjectCardActions({ project }: { project: TProjectsResponse["data"][0] }) {
     const { data: session, status } = useSession();
     const [isPending, startTransition] = useTransition();
     const [isOpen, setIsOpen] = useState(false);
+    const queryClient = useQueryClient();
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
     function onDelete() {
@@ -31,6 +33,10 @@ export default function ProjectCardActions({ project }: { project: TProjectsResp
 
                 toast.success(res.message);
                 setIsDeleteOpen(false);
+
+                queryClient.invalidateQueries({
+                    queryKey: ["projects", "count"],
+                });
             } catch (e) {
                 console.log(e);
                 toast.error('Something went wrong. Please try again.');

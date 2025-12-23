@@ -4,10 +4,12 @@ import { useCodingStates } from "@/context/coding-states-provider";
 import { useEffect } from "react";
 import { SocketEvents } from "@/lib/CONSTANTS";
 import { useSocket } from "@/context/socket-provider";
+import { useDeleteTreeItem } from "@/components/code/tree-item-actions";
 
 export default function useChokidar() {
     const { setFileStructure } = useCodingStates();
     const { socket } = useSocket();
+    const { deleteItem } = useDeleteTreeItem();
 
     useEffect(() => {
         if (!socket) return;
@@ -36,6 +38,9 @@ export default function useChokidar() {
         socket.on(SocketEvents.FILE_REMOVED, (data: { path: string }) => {
             console.log('chokidar:file-removed', data);
             setFileStructure(prev => removeItemFromTree(prev, data.path));
+
+            // update mru and opened files
+            deleteItem({ path: data.path, type: EItemType.FILE })
         });
 
         socket.on(SocketEvents.DIR_CREATED, (data: { path: string }) => {
@@ -63,6 +68,9 @@ export default function useChokidar() {
             console.log('chokidar:dir-removed', data);
 
             setFileStructure(prev => removeItemFromTree(prev, data.path));
+
+            // update mru and opened files
+            deleteItem({ path: data.path, type: EItemType.DIR })
         });
 
         socket.on(SocketEvents.FILE_CHANGED, (data: { path: string }) => {
@@ -70,11 +78,11 @@ export default function useChokidar() {
         });
 
         return () => {
-            socket.off('chokidar:file-added');
-            socket.off('chokidar:file-removed');
-            socket.off('chokidar:dir-added');
-            socket.off('chokidar:dir-removed');
-            socket.off('chokidar:file-changed');
+            socket.off(SocketEvents.FILE_CREATED);
+            socket.off(SocketEvents.FILE_REMOVED);
+            socket.off(SocketEvents.DIR_CREATED);
+            socket.off(SocketEvents.DIR_REMOVED);
+            socket.off(SocketEvents.FILE_CHANGED);
         };
     }, [socket])
 }

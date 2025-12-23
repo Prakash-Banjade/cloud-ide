@@ -25,7 +25,7 @@ interface NewItemFormProps {
     setIsOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function NewItemForm({ parentFolderPath, itemType, setIsOpen }: NewItemFormProps) {
+export function NewItemForm({ parentFolderPath = "/", itemType, setIsOpen }: NewItemFormProps) {
     const { fileStructure, setSelectedFile, setSelectedItem, editorInstance, setMruFiles, setOpenedFiles } = useCodingStates();
     const { socket } = useSocket();
 
